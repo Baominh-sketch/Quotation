@@ -529,6 +529,99 @@
       window.chuyenManHinhKapella('STUDIO');
     });
   </script>
+<script>
+// --- CÁC HÀM XỬ LÝ LƯU MASTER DATA & CRM VÀO FIREBASE ---
 
+// 1. Thêm Sản Phẩm Mới vào Collection "Database"
+async function themSanPhamNhanh() {
+  const maSP = document.getElementById('qtMaSP')?.value.trim();
+  const tenSP = document.getElementById('qtTenSP')?.value.trim();
+  const dvt = document.getElementById('qtDVT')?.value.trim() || 'Kg';
+  const gia = parseFloat(document.getElementById('qtGia')?.value) || 0;
+
+  if (!maSP || !tenSP) {
+    alert("⚠️ Vui lòng nhập đầy đủ Mã sản phẩm và Tên sản phẩm!");
+    return;
+  }
+
+  try {
+    await db.collection("Database").doc(maSP).set({
+      maSP: maSP,
+      tenSP: tenSP,
+      dvt: dvt,
+      gia: gia,
+      createdAt: new Date().toISOString()
+    });
+    alert("✅ Đã lưu sản phẩm thành công vào Firebase!");
+    // Clear form
+    document.getElementById('qtMaSP').value = '';
+    document.getElementById('qtTenSP').value = '';
+    document.getElementById('qtGia').value = '0';
+    // Load lại danh sách nếu có hàm cập nhật
+    if (typeof taiDuLieuMasterTuFirestore === 'function') taiDuLieuMasterTuFirestore();
+  } catch (error) {
+    console.error("Lỗi khi lưu sản phẩm:", error);
+    alert("❌ Không thể lưu sản phẩm: " + error.message);
+  }
+}
+
+// 2. Thêm Khách Hàng mới vào Collection "KhachHang"
+async function themKhachHangNhanh() {
+  const tenKH = document.getElementById('qtTenKH')?.value.trim();
+  const infoKH = document.getElementById('qtInfoKH')?.value.trim();
+
+  if (!tenKH) {
+    alert("⚠️ Vui lòng nhập tên công ty hoặc đối tác khách hàng!");
+    return;
+  }
+
+  try {
+    await db.collection("KhachHang").add({
+      tenKH: tenKH,
+      infoKH: infoKH,
+      createdAt: new Date().toISOString()
+    });
+    alert("✅ Đã lưu khách hàng mới thành công vào Firebase!");
+    document.getElementById('qtTenKH').value = '';
+    document.getElementById('qtInfoKH').value = '';
+    if (typeof taiDuLieuMasterTuFirestore === 'function') taiDuLieuMasterTuFirestore();
+  } catch (error) {
+    console.error("Lỗi khi lưu khách hàng:", error);
+    alert("❌ Không thể lưu khách hàng: " + error.message);
+  }
+}
+
+// 3. Thêm Ngân Hàng T/T vào Collection "DM_Bank"
+async function themBankNhanh() {
+  const bankName = document.getElementById('qtBankName')?.value.trim();
+  const accName = document.getElementById('qtAccName')?.value.trim();
+  const accNo = document.getElementById('qtAccNo')?.value.trim();
+  const swift = document.getElementById('qtSwift')?.value.trim();
+
+  if (!bankName || !accNo) {
+    alert("⚠️ Vui lòng nhập Tên ngân hàng và Số tài khoản!");
+    return;
+  }
+
+  try {
+    await db.collection("DM_Bank").add({
+      bankName: bankName,
+      accName: accName,
+      accNo: accNo,
+      swift: swift,
+      createdAt: new Date().toISOString()
+    });
+    alert("✅ Đã lưu thông tin ngân hàng thành công vào Firebase!");
+    document.getElementById('qtBankName').value = '';
+    document.getElementById('qtAccName').value = '';
+    document.getElementById('qtAccNo').value = '';
+    document.getElementById('qtSwift').value = '';
+    if (typeof taiDuLieuMasterTuFirestore === 'function') taiDuLieuMasterTuFirestore();
+  } catch (error) {
+    console.error("Lỗi khi lưu ngân hàng:", error);
+    alert("❌ Không thể lưu ngân hàng: " + error.message);
+  }
+}
+</script>
 </body>
 </html>
