@@ -624,7 +624,7 @@ async function themBankNhanh() {
 }
 </script>
 <script>
-// Hàm tải toàn bộ Master Data từ Firestore và đổ vào các thẻ Select tương ứng
+// Hàm tải toàn bộ Master Data linh hoạt từ Firestore
 async function taiDuLieuMasterTuFirestore() {
   try {
     // 1. Tải danh sách Sản Phẩm vào #spSelect
@@ -634,33 +634,41 @@ async function taiDuLieuMasterTuFirestore() {
       spSelect.innerHTML = '<option value="">-- Chọn sản phẩm từ Database --</option>';
       spSnapshot.forEach(doc => {
         const d = doc.data();
-        spSelect.innerHTML += `<option value="${d.maSP}">${d.tenSP} - ${d.gia}đ (${d.dvt})</option>`;
+        const ma = d.maSP || d.id || doc.id;
+        const ten = d.tenSP || d.name || d.productName || 'Sản phẩm';
+        const gia = d.gia || d.price || 0;
+        const dvt = d.dvt || d.unit || '';
+        spSelect.innerHTML += `<option value="${ma}">${ten} - ${gia}đ (${dvt})</option>`;
       });
     }
 
-    // 2. Tải danh sách Khách Hàng vào #khSelect
+    // 2. Tải danh sách Khách Hàng vào #khSelect (Hỗ trợ nhiều tên trường khác nhau)
     const khSnapshot = await db.collection("KhachHang").get();
     const khSelect = document.getElementById('khSelect');
     if (khSelect) {
       khSelect.innerHTML = '<option value="">-- Chọn khách hàng lưu sẵn --</option>';
       khSnapshot.forEach(doc => {
         const d = doc.data();
-        khSelect.innerHTML += `<option value="${d.tenKH}">${d.tenKH}</option>`;
+        const tenKH = d.tenKH || d.tenKhachHang || d.customerName || d.name || doc.id;
+        khSelect.innerHTML += `<option value="${tenKH}">${tenKH}</option>`;
       });
     }
 
-    // 3. Tải danh sách Ngân Hàng vào #bankSelect
+    // 3. Tải danh sách Ngân Hàng vào #bankSelect (Hỗ trợ nhiều tên trường khác nhau)
     const bankSnapshot = await db.collection("DM_Bank").get();
     const bankSelect = document.getElementById('bankSelect');
     if (bankSelect) {
       bankSelect.innerHTML = '<option value="">-- Chọn Bank từ Sheet --</option>';
       bankSnapshot.forEach(doc => {
         const d = doc.data();
-        bankSelect.innerHTML += `<option value="${d.accNo}">${d.bankName} - A/C: ${d.accNo} (${d.accName})</option>`;
+        const bankName = d.bankName || d.tenBank || d.nganHang || 'Ngân hàng';
+        const accNo = d.accNo || d.soTaiKhoan || d.accountNumber || '';
+        const accName = d.accName || d.tenTaiKhoan || '';
+        bankSelect.innerHTML += `<option value="${accNo}">${bankName} - A/C: ${accNo} (${accName})</option>`;
       });
     }
 
-    console.log("✅ Đã tải và đồng bộ toàn bộ Master Data từ Firestore thành công!");
+    console.log("✅ Đã tải và đồng bộ toàn bộ Master Data (SP, KH, Bank) thành công!");
   } catch (error) {
     console.error("❌ Lỗi tải dữ liệu Master từ Firestore:", error);
   }
