@@ -623,5 +623,53 @@ async function themBankNhanh() {
   }
 }
 </script>
+<script>
+// Hàm tải toàn bộ Master Data từ Firestore và đổ vào các thẻ Select tương ứng
+async function taiDuLieuMasterTuFirestore() {
+  try {
+    // 1. Tải danh sách Sản Phẩm vào #spSelect
+    const spSnapshot = await db.collection("Database").get();
+    const spSelect = document.getElementById('spSelect');
+    if (spSelect) {
+      spSelect.innerHTML = '<option value="">-- Chọn sản phẩm từ Database --</option>';
+      spSnapshot.forEach(doc => {
+        const d = doc.data();
+        spSelect.innerHTML += `<option value="${d.maSP}">${d.tenSP} - ${d.gia}đ (${d.dvt})</option>`;
+      });
+    }
+
+    // 2. Tải danh sách Khách Hàng vào #khSelect
+    const khSnapshot = await db.collection("KhachHang").get();
+    const khSelect = document.getElementById('khSelect');
+    if (khSelect) {
+      khSelect.innerHTML = '<option value="">-- Chọn khách hàng lưu sẵn --</option>';
+      khSnapshot.forEach(doc => {
+        const d = doc.data();
+        khSelect.innerHTML += `<option value="${d.tenKH}">${d.tenKH}</option>`;
+      });
+    }
+
+    // 3. Tải danh sách Ngân Hàng vào #bankSelect
+    const bankSnapshot = await db.collection("DM_Bank").get();
+    const bankSelect = document.getElementById('bankSelect');
+    if (bankSelect) {
+      bankSelect.innerHTML = '<option value="">-- Chọn Bank từ Sheet --</option>';
+      bankSnapshot.forEach(doc => {
+        const d = doc.data();
+        bankSelect.innerHTML += `<option value="${d.accNo}">${d.bankName} - A/C: ${d.accNo} (${d.accName})</option>`;
+      });
+    }
+
+    console.log("✅ Đã tải và đồng bộ toàn bộ Master Data từ Firestore thành công!");
+  } catch (error) {
+    console.error("❌ Lỗi tải dữ liệu Master từ Firestore:", error);
+  }
+}
+
+// Tự động chạy hàm tải dữ liệu ngay khi trang vừa mở xong
+window.addEventListener('DOMContentLoaded', () => {
+  taiDuLieuMasterTuFirestore();
+});
+</script>
 </body>
 </html>
