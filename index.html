@@ -60,13 +60,13 @@
   </div>
 
   <!-- ========================================================= -->
-  <!-- MÀN HÌNH 1: KAPELLA DASHBOARD                              -->
+  <!-- MÀN HÌNH 1: KAPELLA DASHBOARD (ĐÃ KHÔI PHỤC ĐẦY ĐỦ GIAO DIỆN) -->
   <!-- ========================================================= -->
-  <div id="viewDashboard" style="display:none; padding:20px;">
-    <div class="kp-welcome-banner">
+  <div id="viewDashboard" style="display:none; padding:20px; background:#f8fafc; min-height:85vh;">
+    <div class="kp-welcome-banner" style="background:linear-gradient(135deg, #001737 0%, #1e293b 100%); color:#fff; padding:20px; border-radius:12px; display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
       <div>
         <h3 style="margin:0 0 4px 0;font-size:18px;font-weight:800;">Bảng Điều Khiển Quản Trị Báo Giá & Ngoại Thương</h3>
-        <div style="font-size:12px;opacity:0.9;">Dữ liệu đồng bộ thời gian thực từ Google Sheets (Cloud Orders, CRM, Database & DM_Bank)</div>
+        <div style="font-size:12px;opacity:0.9;">Dữ liệu đồng bộ thời gian thực từ Firebase Firestore</div>
       </div>
       <button onclick="taiDanhSachDonLuuApp()" style="background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.4);padding:7px 14px;border-radius:6px;cursor:pointer;font-weight:700;font-size:12px;">
         🔄 Làm mới dữ liệu
@@ -74,55 +74,55 @@
     </div>
 
     <!-- 4 THẺ KPI KAPELLA -->
-    <div class="kp-grid-4">
-      <div class="kp-card">
-        <div class="kp-stat-title">☁️ Tổng Đơn Lưu Cloud</div>
-        <div class="kp-stat-val" id="kpTotalOrders">0</div>
-        <div class="kp-progress"><div class="kp-progress-bar" style="width:100%;background:#464dee;"></div></div>
+    <div class="kp-grid-4" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:15px; margin-bottom:20px;">
+      <div class="kp-card" style="background:#fff; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+        <div class="kp-stat-title" style="font-size:12px; color:#64748b; font-weight:700;">☁️ Tổng Đơn Lưu Cloud</div>
+        <div class="kp-stat-val" id="kpTotalOrders" style="font-size:24px; font-weight:800; color:#0f172a; margin:8px 0;">0</div>
+        <div class="kp-progress" style="background:#e2e8f0; height:6px; border-radius:3px;"><div class="kp-progress-bar" style="width:100%;background:#464dee; height:6px; border-radius:3px;"></div></div>
       </div>
-      <div class="kp-card">
-        <div class="kp-stat-title">🌐 Báo Giá Quốc Tế (Quote / PI)</div>
-        <div class="kp-stat-val" id="kpCountEN" style="color:#0ddbb9;">0</div>
-        <div class="kp-progress"><div class="kp-progress-bar" id="kpBarEN" style="width:50%;background:#0ddbb9;"></div></div>
+      <div class="kp-card" style="background:#fff; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+        <div class="kp-stat-title" style="font-size:12px; color:#64748b; font-weight:700;">🌐 Báo Giá Quốc Tế (Quote / PI)</div>
+        <div class="kp-stat-val" id="kpCountEN" style="font-size:24px; font-weight:800; color:#0ddbb9; margin:8px 0;">0</div>
+        <div class="kp-progress" style="background:#e2e8f0; height:6px; border-radius:3px;"><div class="kp-progress-bar" id="kpBarEN" style="width:50%;background:#0ddbb9; height:6px; border-radius:3px;"></div></div>
       </div>
-      <div class="kp-card">
-        <div class="kp-stat-title">🇻🇳 Báo Giá Nội Địa & Xuất Kho</div>
-        <div class="kp-stat-val" id="kpCountVN" style="color:#f6881f;">0</div>
-        <div class="kp-progress"><div class="kp-progress-bar" id="kpBarVN" style="width:50%;background:#f6881f;"></div></div>
+      <div class="kp-card" style="background:#fff; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+        <div class="kp-stat-title" style="font-size:12px; color:#64748b; font-weight:700;">🇻🇳 Báo Giá Nội Địa & Xuất Kho</div>
+        <div class="kp-stat-val" id="kpCountVN" style="font-size:24px; font-weight:800; color:#f6881f; margin:8px 0;">0</div>
+        <div class="kp-progress" style="background:#e2e8f0; height:6px; border-radius:3px;"><div class="kp-progress-bar" id="kpBarVN" style="width:50%;background:#f6881f; height:6px; border-radius:3px;"></div></div>
       </div>
-      <div class="kp-card">
-        <div class="kp-stat-title">📦 Danh Mục SP & Khách Hàng</div>
-        <div class="kp-stat-val" id="kpCountMaster" style="color:#ee5b5b;">0 SP / 0 KH</div>
-        <div class="kp-progress"><div class="kp-progress-bar" style="width:85%;background:#ee5b5b;"></div></div>
+      <div class="kp-card" style="background:#fff; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+        <div class="kp-stat-title" style="font-size:12px; color:#64748b; font-weight:700;">📦 Danh Mục SP & Khách Hàng</div>
+        <div class="kp-stat-val" id="kpCountMaster" style="font-size:20px; font-weight:800; color:#ee5b5b; margin:8px 0;">0 SP / 0 KH</div>
+        <div class="kp-progress" style="background:#e2e8f0; height:6px; border-radius:3px;"><div class="kp-progress-bar" style="width:85%;background:#ee5b5b; height:6px; border-radius:3px;"></div></div>
       </div>
     </div>
 
-    <!-- BẢNG ĐƠN HÀNG GẦN ĐÂY & BIỂU ĐỒ KAPELLA -->
-    <div class="kp-main-grid">
-      <div class="kp-card">
+    <!-- BẢNG ĐƠN HÀNG GẦN ĐÂY & BIỂU ĐỒ -->
+    <div class="kp-main-grid" style="display:grid; grid-template-columns:2fr 1fr; gap:20px;">
+      <div class="kp-card" style="background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
           <div style="font-weight:800;font-size:14px;color:#001737;">📋 Danh Sách Đơn Hàng Cloud Gần Đây</div>
-          <input type="text" id="kpSearchOrder" placeholder="🔍 Tìm mã đơn hoặc tên khách..." oninput="renderKapellaDashboard()" style="width:220px;padding:5px 10px;font-size:12px;">
+          <input type="text" id="kpSearchOrder" placeholder="🔍 Tìm mã đơn hoặc tên khách..." oninput="renderKapellaDashboard()" style="width:220px;padding:6px 10px;font-size:12px;border:1px solid #cbd5e1;border-radius:6px;">
         </div>
         <div style="max-height:360px;overflow-y:auto;">
-          <table class="kp-table">
+          <table class="kp-table" style="width:100%; border-collapse:collapse; font-size:13px;">
             <thead>
-              <tr>
-                <th>Mã chứng từ</th>
-                <th>Phân loại</th>
-                <th>Khách hàng / Đối tác</th>
-                <th>Ngày lập</th>
-                <th style="text-align:right;">Thao tác</th>
+              <tr style="border-bottom:2px solid #e2e8f0; text-align:left; color:#475569;">
+                <th style="padding:8px;">Mã chứng từ</th>
+                <th style="padding:8px;">Phân loại</th>
+                <th style="padding:8px;">Khách hàng / Đối tác</th>
+                <th style="padding:8px;">Ngày lập</th>
+                <th style="padding:8px;text-align:right;">Thao tác</th>
               </tr>
             </thead>
             <tbody id="kpRecentOrdersBody">
-              <tr><td colspan="5" style="text-align:center;color:#94a3b8;">Đang tải dữ liệu...</td></tr>
+              <tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:20px;">Đang tải dữ liệu...</td></tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <div class="kp-card">
+      <div class="kp-card" style="background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
         <div style="font-weight:800;font-size:14px;color:#001737;margin-bottom:12px;">📈 Tỷ Trọng Chứng Từ</div>
         <div style="height:240px;display:flex;align-items:center;justify-content:center;">
           <canvas id="kpOrderChart"></canvas>
@@ -206,7 +206,7 @@
             <div class="form-group col"><label>Valid until</label><input type="text" id="inValidUntil" oninput="updatePreview()"></div>
           </div>
 
-          <!-- BỘ CHỌN INCOTERMS & LOGISTICS THÔNG MINH -->
+          <!-- BỘ CHỌN INCOTERMS & LOGISTICS -->
           <div id="divIncotermBuilder" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;padding:8px;border-radius:6px;margin-bottom:10px;">
             <label style="color:#15803d;font-weight:800;font-size:11px;margin-bottom:6px;display:block;">🚢 Tạo nhanh Incoterms & Logistics</label>
             <div class="row" style="gap:6px;margin-bottom:6px;">
@@ -221,11 +221,6 @@
 
           <div class="form-group">
             <label>Ghi chú & Điều khoản</label>
-            <div class="preset-bar">
-              <span class="preset-chip" onclick="chenMauNhanh('inDieuKhoan', 'The above rates are CNF SHANGHAI')">+ CNF SHANGHAI</span>
-              <span class="preset-chip" onclick="chenMauNhanh('inDieuKhoan', 'The above rates are FOB HO CHI MINH CITY')">+ FOB HCMC</span>
-              <span class="preset-chip" onclick="chenMauNhanh('inDieuKhoan', 'Giao hàng trong vòng 3 ngày.')">+ Giao nhanh</span>
-            </div>
             <textarea id="inDieuKhoan" rows="2" placeholder="Nhập ghi chú hoặc điều khoản..." oninput="updatePreview()"></textarea>
           </div>
 
@@ -234,18 +229,11 @@
             <textarea id="inEnNote" rows="2" placeholder="Please contact us via information..." oninput="updatePreview()"></textarea>
           </div>
 
-          <!-- PHƯƠNG THỨC THANH TOÁN (VN & EN) -->
           <div class="form-group" id="divPaymentTermInput">
             <label id="lblPaymentTermInput">Phương thức thanh toán</label>
-            <div class="preset-bar">
-              <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'Thanh toán 100% bằng chuyển khoản hoặc tiền mặt ngay khi nhận hàng.', true)">+ TT 100% (VN)</span>
-              <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'Đặt cọc 50% ngay sau khi xác nhận đơn hàng, 50% còn lại thanh toán trước khi giao hàng.', true)">+ Cọc 50-50 (VN)</span>
-              <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'The buyer shall deposit 30% of the total contract value upon signing the contract. The remaining 70% shall be paid within 3 days upon receipt of the copy documents via email.', true)">+ Cọc 30-70 (EN)</span>
-            </div>
             <textarea id="inPaymentTerm" rows="2" placeholder="Nhập điều khoản / phương thức thanh toán..." oninput="updatePreview()"></textarea>
           </div>
 
-          <!-- NGÂN HÀNG T/T CHỌN TỪ SHEET -->
           <div class="form-group" id="divBankInfoInput" style="display:none;">
             <label style="color:var(--argon-primary);">🏦 Thông tin Ngân hàng Quốc tế (PI)</label>
             <select id="bankSelect" onchange="chonBankTuSheet()" style="margin-bottom:6px;"><option value="">-- Chọn Bank từ Sheet --</option></select>
@@ -261,8 +249,8 @@
           </div>
 
           <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;background:#f8fafc;padding:8px;border-radius:6px;">
-            <label id="lblToggleTotal" style="display:flex;align-items:center;gap:4px;margin:0;font-size:11px;color:#059669;cursor:pointer;"><input type="checkbox" id="chkShowTotal" checked onchange="renderTable()"> Hiện Tổng cộng</label>
-            <label id="lblToggleWords" style="display:flex;align-items:center;gap:4px;margin:0;font-size:11px;color:#d9460f;cursor:pointer;"><input type="checkbox" id="chkShowWords" checked onchange="renderTable()"> Đọc số thành chữ</label>
+            <label style="display:flex;align-items:center;gap:4px;margin:0;font-size:11px;color:#059669;cursor:pointer;"><input type="checkbox" id="chkShowTotal" checked onchange="renderTable()"> Hiện Tổng cộng</label>
+            <label style="display:flex;align-items:center;gap:4px;margin:0;font-size:11px;color:#d9460f;cursor:pointer;"><input type="checkbox" id="chkShowWords" checked onchange="renderTable()"> Đọc số thành chữ</label>
             <label style="display:flex;align-items:center;gap:4px;margin:0;font-size:11px;color:var(--argon-primary);cursor:pointer;"><input type="checkbox" id="chkShowImage" checked onchange="renderTable()"> Hiện cột Ảnh</label>
           </div>
 
@@ -279,12 +267,12 @@
             </div>
           </div>
 
-          <div class="form-group"><select id="spSelect" onchange="chonSPDatabase()"></select></div>
+          <div class="form-group"><select id="spSelect" onchange="chonSPDatabase()"><option value="">-- Chọn sản phẩm từ Database --</option></select></div>
           <div class="form-group"><label>Tên / Mô tả quy cách</label><textarea id="inTenSP" rows="2"></textarea></div>
 
           <div class="row">
             <div class="form-group col"><label>Mã SP</label><input type="text" id="inMaSPMoi" placeholder="Tự động"></div>
-            <div class="form-group col"><label>ĐVT</label><input type="text" id="inDVT" value="Trái" oninput="renderTable()"></div>
+            <div class="form-group col"><label>ĐVT</label><input type="text" id="inDVT" value="Kg" oninput="renderTable()"></div>
             <div class="form-group col"><label>Số lượng</label><input type="number" id="inSL" value="1" min="0" step="any"></div>
           </div>
 
@@ -354,7 +342,7 @@
       </div>
     </div>
 
-    <!-- CỘT PHẢI: XEM TRƯỚC TỜ A4 (ĐÃ ĐƯỢC ĐẶT ĐÚNG TRONG #viewStudio) -->
+    <!-- CỘT PHẢI: XEM TRƯỚC TỜ A4 -->
     <div class="panel-right" id="panelRightScroll">
       <div class="preview-toolbar">
         <div class="toolbar-item">
@@ -425,14 +413,12 @@
               <span id="preAmountInWords" style="font-weight:700;font-style:italic;"></span>
             </div>
 
-            <!-- KHUNG CHÍNH: TERMS & NOTES, PAYMENT TERM, BANK INFO -->
             <div class="terms-section" id="termsSectionBox" style="display:none;">
               <div class="terms-block" id="boxNotesSection" style="display:none;"><div class="terms-title" id="lblNotesHeader">ĐIỀU KHOẢN & GHI CHÚ:</div><div class="terms-content" id="preDieuKhoan"></div></div>
               <div class="terms-block" id="boxPaymentTermPre" style="display:none;"><div class="terms-title" id="lblPaymentHeader">PHƯƠNG THỨC THANH TOÁN:</div><div class="terms-content" id="prePaymentTerm"></div></div>
               <div class="terms-block" id="boxBankInfoPre" style="display:none;border-top:1px dashed #cbd5e1;padding-top:8px;"><div class="terms-title">BANKING INFORMATION FOR T/T:</div><div class="terms-content" id="preBankInfo" style="font-weight:700;"></div></div>
             </div>
 
-            <!-- CÂU NOTE LIÊN HỆ NẰM NGOÀI KHUNG -->
             <div id="boxEnNotePre" style="display:none;margin-top:12px;font-size:11.5px;font-style:italic;color:#334155;line-height:1.5;"><span id="preEnNote"></span></div>
 
             <div class="signatures-xk-container" id="sigXKContainer">
@@ -454,12 +440,12 @@
       </div>
     </div>
 
-  </div><!-- ĐÓNG #viewStudio CHUẨN XÁC -->
+  </div><!-- ĐÓNG #viewStudio -->
 
   <!-- ========================================================= -->
   <!-- MÀN HÌNH 3: QUẢN LÝ MASTER DATA & CRM                      -->
   <!-- ========================================================= -->
-  <div id="manHinhQuanLyMaster" class="main-content-tab" style="display: none; padding: 25px; background: #f8fafc; min-height: 80vh;">
+  <div id="manHinhQuanLyMaster" class="main-content-tab" style="display:none; padding:25px; background:#f8fafc; min-height:80vh;">
     <h2 style="color: #1e293b; margin-bottom: 20px;">⚙️ Quản Lý Nhanh Dữ Liệu (Database, Khách Hàng, Ngân Hàng)</h2>
     
     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
@@ -467,58 +453,28 @@
       <!-- 1. THÊM SẢN PHẨM MỚI -->
       <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
         <h3 style="color: #0d9488; margin-bottom: 15px;">➕ Thêm Sản Phẩm Mới</h3>
-        <div style="margin-bottom: 10px;">
-          <label style="font-size: 13px; font-weight: 600;">Mã SP:</label>
-          <input type="text" id="qtMaSP" placeholder="VD: GACAP" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
-        </div>
-        <div style="margin-bottom: 10px;">
-          <label style="font-size: 13px; font-weight: 600;">Tên Sản Phẩm:</label>
-          <input type="text" id="qtTenSP" placeholder="Nhập tên sản phẩm..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
-        </div>
-        <div style="margin-bottom: 10px;">
-          <label style="font-size: 13px; font-weight: 600;">Đơn Vị Tính (ĐVT):</label>
-          <input type="text" id="qtDVT" value="Kg" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
-        </div>
-        <div style="margin-bottom: 15px;">
-          <label style="font-size: 13px; font-weight: 600;">Đơn Giá (VND/USD):</label>
-          <input type="number" id="qtGia" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
-        </div>
+        <div style="margin-bottom: 10px;"><label style="font-size: 13px; font-weight: 600;">Mã SP:</label><input type="text" id="qtMaSP" placeholder="VD: GACAP" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
+        <div style="margin-bottom: 10px;"><label style="font-size: 13px; font-weight: 600;">Tên Sản Phẩm:</label><input type="text" id="qtTenSP" placeholder="Nhập tên sản phẩm..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
+        <div style="margin-bottom: 10px;"><label style="font-size: 13px; font-weight: 600;">Đơn Vị Tính (ĐVT):</label><input type="text" id="qtDVT" value="Kg" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
+        <div style="margin-bottom: 15px;"><label style="font-size: 13px; font-weight: 600;">Đơn Giá:</label><input type="number" id="qtGia" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
         <button onclick="themSanPhamNhanh()" style="width: 100%; background: #0d9488; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;">Lưu Sản Phẩm Vào Firebase</button>
       </div>
 
       <!-- 2. THÊM KHÁCH HÀNG MỚI -->
       <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
         <h3 style="color: #2563eb; margin-bottom: 15px;">👤 Thêm Khách Hàng (CRM)</h3>
-        <div style="margin-bottom: 10px;">
-          <label style="font-size: 13px; font-weight: 600;">Tên Công Ty / Đối Tác:</label>
-          <input type="text" id="qtTenKH" placeholder="Nhập tên khách hàng..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
-        </div>
-        <div style="margin-bottom: 15px;">
-          <label style="font-size: 13px; font-weight: 600;">Thông Tin Liên Hệ (SĐT, Địa chỉ):</label>
-          <textarea id="qtInfoKH" rows="4" placeholder="Địa chỉ, SĐT, Email..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;"></textarea>
-        </div>
+        <div style="margin-bottom: 10px;"><label style="font-size: 13px; font-weight: 600;">Tên Công Ty / Đối Tác:</label><input type="text" id="qtTenKH" placeholder="Nhập tên khách hàng..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
+        <div style="margin-bottom: 15px;"><label style="font-size: 13px; font-weight: 600;">Thông Tin Liên Hệ:</label><textarea id="qtInfoKH" rows="4" placeholder="Địa chỉ, SĐT..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;"></textarea></div>
         <button onclick="themKhachHangNhanh()" style="width: 100%; background: #2563eb; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;">Lưu Khách Hàng Vào Firebase</button>
       </div>
 
       <!-- 3. THÊM NGÂN HÀNG THANH TOÁN -->
       <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
         <h3 style="color: #ea580c; margin-bottom: 15px;">🏦 Thêm Ngân Hàng T/T</h3>
-        <div style="margin-bottom: 8px;">
-          <label style="font-size: 12px; font-weight: 600;">Tên Ngân Hàng:</label>
-          <input type="text" id="qtBankName" placeholder="VD: VIETCOMBANK" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">
-        </div>
-        <div style="margin-bottom: 8px;">
-          <label style="font-size: 12px; font-weight: 600;">Tên Tài Khoản (Beneficiary):</label>
-          <input type="text" id="qtAccName" placeholder="CONG TY CO PHAN..." style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">
-        </div>
-        <div style="margin-bottom: 8px;">
-          <label style="font-size: 12px; font-weight: 600;">Số Tài Khoản (A/C No):</label>
-          <input type="text" id="qtAccNo" placeholder="Số tài khoản..." style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">
-        </div>
-        <div style="margin-bottom: 12px;">
-          <label style="font-size: 12px; font-weight: 600;">Swift Code:</label>
-          <input type="text" id="qtSwift" placeholder="Mã Swift..." style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">
-        </div>
+        <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Tên Ngân Hàng:</label><input type="text" id="qtBankName" placeholder="VIETCOMBANK" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
+        <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Tên Tài Khoản:</label><input type="text" id="qtAccName" placeholder="CONG TY..." style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
+        <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Số Tài Khoản:</label><input type="text" id="qtAccNo" placeholder="Số TK..." style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
+        <div style="margin-bottom: 12px;"><label style="font-size: 12px; font-weight: 600;">Swift Code:</label><input type="text" id="qtSwift" placeholder="Swift..." style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
         <button onclick="themBankNhanh()" style="width: 100%; background: #ea580c; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;">Lưu Ngân Hàng Vào Firebase</button>
       </div>
 
@@ -558,7 +514,7 @@
         dashScreen.style.display = 'block';
         document.getElementById('tabBtnDash')?.classList.add('active');
       } else if (tab === 'STUDIO' && studioScreen) {
-        studioScreen.style.display = 'flex'; // Khôi phục chế độ flex cho bố cục 2 cột
+        studioScreen.style.display = 'flex';
         document.getElementById('tabBtnStudio')?.classList.add('active');
       } else if (tab === 'MASTER' && masterScreen) {
         masterScreen.style.display = 'block';
