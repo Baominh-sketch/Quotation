@@ -605,40 +605,22 @@ function showToast(msg, type = 'success') {
 
   // 1. Tải toàn bộ Database sản phẩm & Khách hàng từ Firestore khi mở ứng dụng
   async function taiDuLieuMasterTuFirestore() {
-    try {
-      showLoading(true);
-      
-      // Lấy danh sách Sản phẩm
-      const spSnap = await db.collection("Database").get();
-      dbSP = [];
-      spSnap.forEach(doc => dbSP.push(doc.data()));
-      
-      // Lấy danh sách Khách hàng
-      const khSnap = await db.collection("KhachHang").get();
-      listKH = [];
-      khSnap.forEach(doc => listKH.push(doc.data()));
-
-      // Lấy danh sách Ngân hàng T/T
-      const bankSnap = await db.collection("DM_Bank").get();
-      listBank = [];
-      bankSnap.forEach(doc => listBank.push(doc.data()));
-
-      // Cập nhật lại giao diện chọn sản phẩm và khách hàng
-      renderDropdownSanPham();
-      renderDropdownKhachHang();
-      renderDropdownBank();
-      
-      // Tải luôn danh sách đơn hàng đã lưu
-      await taiDanhSachDonTuFirestore();
-
-      showLoading(false);
-      showToast("🔥 Đã đồng bộ dữ liệu từ Firebase thành công!");
-    } catch (error) {
-      showLoading(false);
-      console.error("Lỗi tải dữ liệu Firestore: ", error);
-      showToast("❌ Không thể kết nối Firestore!", "error");
+  try {
+    // 1. Tải danh sách sản phẩm từ collection "Database"
+    const snapshot = await db.collection("Database").get();
+    const spSelect = document.getElementById('spSelect');
+    if (spSelect) {
+      spSelect.innerHTML = '<option value="">-- Chọn sản phẩm từ Database --</option>';
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        spSelect.innerHTML += `<option value="${data.maSP}">${data.tenSP} (${data.gia}đ/${data.dvt})</option>`;
+      });
     }
+    console.log("✅ Đã kết nối Firestore và tải dữ liệu thành công!");
+  } catch (err) {
+    console.error("❌ Lỗi kết nối Firestore:", err);
   }
+}
 
   // 2. Lưu đơn hàng (Báo giá / PI / Xuất kho) lên Firestore
   async function luuVaoAppSheet() {
