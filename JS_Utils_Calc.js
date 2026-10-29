@@ -1,4 +1,4 @@
-<script>
+
   // CẦU NỐI API TỰ ĐỘNG KHI CHẠY TRÊN WEBSITE ĐỘC LẬP HOẶC ĐIỆN THOẠI
   const GAS_WEB_APP_URL = "";
   if (typeof google === "undefined" || !google.script) {
@@ -155,4 +155,3 @@
     updatePreview();
     showToast("⚡ Đã chèn nội dung mẫu!");
   }
-</script>

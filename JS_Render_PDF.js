@@ -1,4 +1,4 @@
-<script>
+
   const _el = id => document.getElementById(id);
   const _show = (id, disp = 'block') => { const e = _el(id); if (e) e.style.display = disp; };
   const _txt = (id, val) => { const e = _el(id); if (e) e.innerText = val; };
@@ -385,4 +385,3 @@ function doiMauChungTu(hexColor) {
     area.value = area.value.trim() ? (area.value.trim() + "\n" + line) : line;
     updatePreview();
   }
-</script>

@@ -1,4 +1,3 @@
-<style>
   :root {
     --argon-primary: #5e72e4;
     --argon-success: #2dce89;
@@ -445,4 +444,3 @@ body { flex-direction: column !important; overflow: hidden; }
 .kp-badge-vn { background: #e0e7ff; color: #4338ca; }
 .kp-badge-en { background: #dcfce7; color: #15803d; }
 .kp-badge-xk { background: #ffedd5; color: #c2410c; }
-</style>

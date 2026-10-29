@@ -1,4 +1,4 @@
-<script>
+
   let dbSP = [];
   let listKH = [];
   let gioHang = [];
@@ -853,4 +853,3 @@ function xoaSPTrongGio(index) {
     document.getElementById('inBankInfo').value = textBank;
     updatePreview();
   }
-</script>
