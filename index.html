@@ -833,7 +833,13 @@ function chenMauNhanh(elementId, text) {
   }
 }
 
-// 1. Thêm sản phẩm nhanh (Có bao gồm Mô tả)
+<script>
+// --- BIẾN TOÀN CỤC LƯU TRẠNG THÁI ĐANG SỬA ---
+let dangSuaSPId = null;
+let dangSuaKHId = null;
+let dangSuaBankId = null;
+
+// 1. Thêm / Cập nhật Sản Phẩm
 async function themSanPhamNhanh() {
   const maSP = document.getElementById('qtMaSP')?.value.trim();
   const tenSP = document.getElementById('qtTenSP')?.value.trim();
@@ -847,37 +853,57 @@ async function themSanPhamNhanh() {
   }
 
   try {
+    // Sử dụng doc(maSP) để nếu trùng mã thì cập nhật, nếu chưa có thì tạo mới
     await db.collection("Database").doc(maSP).set({
       maSP, tenSP, moTaSP, dvt, gia,
-      createdAt: new Date().toISOString()
-    });
-    alert("✅ Lưu sản phẩm thành công!");
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+
+    alert(dangSuaSPId ? "✅ Cập nhật sản phẩm thành công!" : "✅ Thêm sản phẩm thành công!");
+    
+    // Reset form & trạng thái sửa
     document.getElementById('qtMaSP').value = '';
     document.getElementById('qtTenSP').value = '';
     document.getElementById('qtMoTaSP').value = '';
     document.getElementById('qtGia').value = '0';
+    document.getElementById('qtMaSP').disabled = false; // Mở lại ô mã SP
+    dangSuaSPId = null;
+
     taiDuLieuMasterTuFirestore();
   } catch (err) {
     alert("❌ Lỗi: " + err.message);
   }
 }
 
-// 2. Thêm Khách hàng nhanh
+// 2. Thêm / Cập nhật Khách hàng
 async function themKhachHangNhanh() {
   const tenKH = document.getElementById('qtTenKH')?.value.trim();
   const infoKH = document.getElementById('qtInfoKH')?.value.trim();
   if (!tenKH) { alert("⚠️ Nhập tên khách hàng!"); return; }
 
   try {
-    await db.collection("KhachHang").add({ tenKH, infoKH, createdAt: new Date().toISOString() });
-    alert("✅ Lưu khách hàng thành công!");
+    if (dangSuaKHId) {
+      // Nếu đang ở chế độ sửa -> Cập nhật đúng docId cũ
+      await db.collection("KhachHang").doc(dangSuaKHId).update({
+        tenKH, infoKH, updatedAt: new Date().toISOString()
+      });
+      alert("✅ Cập nhật khách hàng thành công!");
+      dangSuaKHId = null;
+    } else {
+      // Nếu thêm mới -> Tạo document mới
+      await db.collection("KhachHang").add({
+        tenKH, infoKH, createdAt: new Date().toISOString()
+      });
+      alert("✅ Thêm khách hàng thành công!");
+    }
+
     document.getElementById('qtTenKH').value = '';
     document.getElementById('qtInfoKH').value = '';
     taiDuLieuMasterTuFirestore();
   } catch (err) { alert("❌ Lỗi: " + err.message); }
 }
 
-// 3. Thêm Ngân hàng nhanh
+// 3. Thêm / Cập nhật Ngân hàng
 async function themBankNhanh() {
   const bankName = document.getElementById('qtBankName')?.value.trim();
   const accName = document.getElementById('qtAccName')?.value.trim();
@@ -886,8 +912,21 @@ async function themBankNhanh() {
   if (!bankName || !accNo) { alert("⚠️ Nhập tên ngân hàng và số tài khoản!"); return; }
 
   try {
-    await db.collection("DM_Bank").add({ bankName, accName, accNo, swift, createdAt: new Date().toISOString() });
-    alert("✅ Lưu ngân hàng thành công!");
+    if (dangSuaBankId) {
+      // Cập nhật ngân hàng cũ
+      await db.collection("DM_Bank").doc(dangSuaBankId).update({
+        bankName, accName, accNo, swift, updatedAt: new Date().toISOString()
+      });
+      alert("✅ Cập nhật ngân hàng thành công!");
+      dangSuaBankId = null;
+    } else {
+      // Thêm ngân hàng mới
+      await db.collection("DM_Bank").add({
+        bankName, accName, accNo, swift, createdAt: new Date().toISOString()
+      });
+      alert("✅ Thêm ngân hàng thành công!");
+    }
+
     document.getElementById('qtBankName').value = '';
     document.getElementById('qtAccName').value = '';
     document.getElementById('qtAccNo').value = '';
@@ -896,11 +935,10 @@ async function themBankNhanh() {
   } catch (err) { alert("❌ Lỗi: " + err.message); }
 }
 
-/<script>
-// --- HÀM TẢI DỮ LIỆU VÀ HIỂN THỊ BẢNG LỊCH SỬ KÈM NÚT SỬA/XÓA ---
+// --- CẬP NHẬT HÀM ĐỔ DỮ LIỆU BẢNG LỊCH SỬ (TRUYỀN ĐÚNG DOC ID) ---
 async function taiDuLieuMasterTuFirestore() {
   try {
-    // 1. Sản phẩm (Collection: Database)
+    // 1. Sản phẩm
     const spSnap = await db.collection("Database").get();
     const spSelect = document.getElementById('spSelect');
     const tableSP = document.querySelector('#tableHistorySP tbody');
@@ -932,7 +970,7 @@ async function taiDuLieuMasterTuFirestore() {
       }
     });
 
-    // 2. Khách hàng (Collection: KhachHang)
+    // 2. Khách hàng
     const khSnap = await db.collection("KhachHang").get();
     const khSelect = document.getElementById('khSelect');
     const tableKH = document.querySelector('#tableHistoryKH tbody');
@@ -958,7 +996,7 @@ async function taiDuLieuMasterTuFirestore() {
       }
     });
 
-    // 3. Ngân hàng (Collection: DM_Bank)
+    // 3. Ngân hàng
     const bankSnap = await db.collection("DM_Bank").get();
     const bankSelect = document.getElementById('bankSelect');
     const tableBank = document.querySelector('#tableHistoryBank tbody');
@@ -991,7 +1029,7 @@ async function taiDuLieuMasterTuFirestore() {
   }
 }
 
-// --- HÀM XÓA CHUNG TRÊN FIRESTORE ---
+// --- HÀM XÓA CHUNG ---
 async function xoaFirestore(collectionName, docId, tenLoai) {
   if (confirm(`⚠️ Bạn có chắc chắn muốn xóa ${tenLoai} này không?`)) {
     try {
@@ -1004,30 +1042,40 @@ async function xoaFirestore(collectionName, docId, tenLoai) {
   }
 }
 
-// --- HÀM ĐỔ DỮ LIỆU LÊN FORM ĐỂ CHỈNH SỬA ---
+// --- HÀM ĐỔ DỮ LIỆU LÊN FORM VÀ GÁN ID ĐANG SỬA ---
 function suaSanPham(docId, ma, ten, moTa, dvt, gia) {
+  dangSuaSPId = docId;
   document.getElementById('qtMaSP').value = ma;
+  document.getElementById('qtMaSP').disabled = true; // Khóa mã SP khi sửa để tránh lệch ID
   document.getElementById('qtTenSP').value = ten;
   document.getElementById('qtMoTaSP').value = moTa;
   document.getElementById('qtDVT').value = dvt;
   document.getElementById('qtGia').value = gia;
-  // Cuộn màn hình lên đầu để chỉnh sửa
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function suaKhachHang(docId, ten, info) {
+  dangSuaKHId = docId;
   document.getElementById('qtTenKH').value = ten;
   document.getElementById('qtInfoKH').value = info;
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function suaBank(docId, bName, accName, accNo, swift) {
+  dangSuaBankId = docId;
   document.getElementById('qtBankName').value = bName;
   document.getElementById('qtAccName').value = accName;
   document.getElementById('qtAccNo').value = accNo;
   document.getElementById('qtSwift').value = swift;
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+// Tự động chạy khi mở trang
+window.addEventListener('DOMContentLoaded', () => {
+  if (typeof taiDuLieuMasterTuFirestore === 'function') {
+    taiDuLieuMasterTuFirestore();
+  }
+});
 </script>
 
 <script>
