@@ -492,30 +492,58 @@
 
   </div>
 
-  <!-- BẢNG HIỂN THỊ LỊCH SỬ ĐÃ TẠO (SẢN PHẨM, KHÁCH HÀNG, NGÂN HÀNG) -->
-  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px;">
-    <!-- Lịch sử SP -->
-    <div style="background:white; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05); max-height:300px; overflow-y:auto;">
-      <h4 style="color:#0d9488; margin-bottom:10px; font-size:14px;">📦 Lịch sử Sản phẩm</h4>
+ <!-- BẢNG HIỂN THỊ LỊCH SỬ ĐÃ TẠO (CÓ THANH CUỘN & NÚT SỬA/XÓA) -->
+<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; margin-top:20px;">
+  
+  <!-- Lịch sử Sản phẩm -->
+  <div style="background:white; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+    <h4 style="color:#0d9488; margin-bottom:10px; font-size:14px;">📦 Lịch sử Sản phẩm</h4>
+    <div style="max-height: 280px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 6px;">
       <table style="width:100%; font-size:12px; border-collapse:collapse;" id="tableHistorySP">
-        <tr style="border-bottom:1px solid #e2e8f0; text-align:left;"><th style="padding:4px;">Mã/Tên</th><th style="padding:4px;">Giá</th></tr>
-      </table>
-    </div>
-    <!-- Lịch sử KH -->
-    <div style="background:white; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05); max-height:300px; overflow-y:auto;">
-      <h4 style="color:#2563eb; margin-bottom:10px; font-size:14px;">👤 Lịch sử Khách hàng</h4>
-      <table style="width:100%; font-size:12px; border-collapse:collapse;" id="tableHistoryKH">
-        <tr style="border-bottom:1px solid #e2e8f0; text-align:left;"><th style="padding:4px;">Tên Khách Hàng</th></tr>
-      </table>
-    </div>
-    <!-- Lịch sử Bank -->
-    <div style="background:white; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05); max-height:300px; overflow-y:auto;">
-      <h4 style="color:#ea580c; margin-bottom:10px; font-size:14px;">🏦 Lịch sử Ngân hàng</h4>
-      <table style="width:100%; font-size:12px; border-collapse:collapse;" id="tableHistoryBank">
-        <tr style="border-bottom:1px solid #e2e8f0; text-align:left;"><th style="padding:4px;">Ngân hàng / Số TK</th></tr>
+        <thead>
+          <tr style="border-bottom:2px solid #e2e8f0; text-align:left; background:#f8fafc; position:sticky; top:0;">
+            <th style="padding:6px;">Mã/Tên</th>
+            <th style="padding:6px;">Giá</th>
+            <th style="padding:6px; text-align:right;">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
       </table>
     </div>
   </div>
+
+  <!-- Lịch sử Khách hàng -->
+  <div style="background:white; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+    <h4 style="color:#2563eb; margin-bottom:10px; font-size:14px;">👤 Lịch sử Khách hàng</h4>
+    <div style="max-height: 280px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 6px;">
+      <table style="width:100%; font-size:12px; border-collapse:collapse;" id="tableHistoryKH">
+        <thead>
+          <tr style="border-bottom:2px solid #e2e8f0; text-align:left; background:#f8fafc; position:sticky; top:0;">
+            <th style="padding:6px;">Tên Khách Hàng</th>
+            <th style="padding:6px; text-align:right;">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Lịch sử Ngân hàng -->
+  <div style="background:white; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+    <h4 style="color:#ea580c; margin-bottom:10px; font-size:14px;">🏦 Lịch sử Ngân hàng</h4>
+    <div style="max-height: 280px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 6px;">
+      <table style="width:100%; font-size:12px; border-collapse:collapse;" id="tableHistoryBank">
+        <thead>
+          <tr style="border-bottom:2px solid #e2e8f0; text-align:left; background:#f8fafc; position:sticky; top:0;">
+            <th style="padding:6px;">Ngân hàng / Số TK</th>
+            <th style="padding:6px; text-align:right;">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
 
   <!-- NAVIGATION MOBILE -->
@@ -661,55 +689,138 @@ async function themBankNhanh() {
 }
 </script>
 <script>
-// Hàm tải toàn bộ Master Data linh hoạt từ Firestore
+// --- HÀM TẢI DỮ LIỆU VÀ HIỂN THỊ BẢNG LỊCH SỬ KÈM NÚT SỬA/XÓA ---
 async function taiDuLieuMasterTuFirestore() {
   try {
-    // 1. Tải danh sách Sản Phẩm vào #spSelect
-    const spSnapshot = await db.collection("Database").get();
+    // 1. Sản phẩm (Collection: Database)
+    const spSnap = await db.collection("Database").get();
     const spSelect = document.getElementById('spSelect');
-    if (spSelect) {
-      spSelect.innerHTML = '<option value="">-- Chọn sản phẩm từ Database --</option>';
-      spSnapshot.forEach(doc => {
-        const d = doc.data();
-        const ma = d.maSP || d.id || doc.id;
-        const ten = d.tenSP || d.name || d.productName || 'Sản phẩm';
-        const gia = d.gia || d.price || 0;
-        const dvt = d.dvt || d.unit || '';
-        spSelect.innerHTML += `<option value="${ma}">${ten} - ${gia}đ (${dvt})</option>`;
-      });
-    }
+    const tableSP = document.querySelector('#tableHistorySP tbody');
+    if (spSelect) spSelect.innerHTML = '<option value="">-- Chọn sản phẩm từ Database --</option>';
+    if (tableSP) tableSP.innerHTML = '';
 
-    // 2. Tải danh sách Khách Hàng vào #khSelect (Hỗ trợ nhiều tên trường khác nhau)
-    const khSnapshot = await db.collection("KhachHang").get();
+    spSnap.forEach(doc => {
+      const d = doc.data();
+      const docId = doc.id;
+      const ma = d.maSP || docId;
+      const ten = d.tenSP || 'SP';
+      const gia = d.gia || 0;
+      const moTa = d.moTaSP || '';
+      const dvt = d.dvt || 'Kg';
+
+      if (spSelect) {
+        spSelect.innerHTML += `<option value="${ma}" data-mota="${moTa}" data-gia="${gia}" data-dvt="${dvt}">${ten} - ${gia}đ (${dvt})</option>`;
+      }
+      if (tableSP) {
+        tableSP.innerHTML += `
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:6px;"><b>${ma}</b><br>${ten}</td>
+            <td style="padding:6px;">${gia}đ</td>
+            <td style="padding:6px; text-align:right; white-space:nowrap;">
+              <button onclick="suaSanPham('${docId}', '${ma}', '${ten.replace(/'/g, "\\'")}', '${moTa.replace(/'/g, "\\'")}', '${dvt}', ${gia})" style="background:#f59e0b; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer; margin-right:4px;">Sửa</button>
+              <button onclick="xoaFirestore('Database', '${docId}', 'Sản phẩm')" style="background:#ef4444; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer;">Xóa</button>
+            </td>
+          </tr>`;
+      }
+    });
+
+    // 2. Khách hàng (Collection: KhachHang)
+    const khSnap = await db.collection("KhachHang").get();
     const khSelect = document.getElementById('khSelect');
-    if (khSelect) {
-      khSelect.innerHTML = '<option value="">-- Chọn khách hàng lưu sẵn --</option>';
-      khSnapshot.forEach(doc => {
-        const d = doc.data();
-        const tenKH = d.tenKH || d.tenKhachHang || d.customerName || d.name || doc.id;
-        khSelect.innerHTML += `<option value="${tenKH}">${tenKH}</option>`;
-      });
-    }
+    const tableKH = document.querySelector('#tableHistoryKH tbody');
+    if (khSelect) khSelect.innerHTML = '<option value="">-- Chọn khách hàng lưu sẵn --</option>';
+    if (tableKH) tableKH.innerHTML = '';
 
-    // 3. Tải danh sách Ngân Hàng vào #bankSelect (Hỗ trợ nhiều tên trường khác nhau)
-    const bankSnapshot = await db.collection("DM_Bank").get();
+    khSnap.forEach(doc => {
+      const d = doc.data();
+      const docId = doc.id;
+      const ten = d.tenKH || '';
+      const info = d.infoKH || '';
+
+      if (khSelect) khSelect.innerHTML += `<option value="${ten}">${ten}</option>`;
+      if (tableKH) {
+        tableKH.innerHTML += `
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:6px;"><b>${ten}</b><br><span style="color:#64748b; font-size:11px;">${info}</span></td>
+            <td style="padding:6px; text-align:right; white-space:nowrap;">
+              <button onclick="suaKhachHang('${docId}', '${ten.replace(/'/g, "\\'")}', '${info.replace(/'/g, "\\'")}')" style="background:#f59e0b; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer; margin-right:4px;">Sửa</button>
+              <button onclick="xoaFirestore('KhachHang', '${docId}', 'Khách hàng')" style="background:#ef4444; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer;">Xóa</button>
+            </td>
+          </tr>`;
+      }
+    });
+
+    // 3. Ngân hàng (Collection: DM_Bank)
+    const bankSnap = await db.collection("DM_Bank").get();
     const bankSelect = document.getElementById('bankSelect');
-    if (bankSelect) {
-      bankSelect.innerHTML = '<option value="">-- Chọn Bank từ Sheet --</option>';
-      bankSnapshot.forEach(doc => {
-        const d = doc.data();
-        const bankName = d.bankName || d.tenBank || d.nganHang || 'Ngân hàng';
-        const accNo = d.accNo || d.soTaiKhoan || d.accountNumber || '';
-        const accName = d.accName || d.tenTaiKhoan || '';
-        bankSelect.innerHTML += `<option value="${accNo}">${bankName} - A/C: ${accNo} (${accName})</option>`;
-      });
-    }
+    const tableBank = document.querySelector('#tableHistoryBank tbody');
+    if (bankSelect) bankSelect.innerHTML = '<option value="">-- Chọn Bank từ Sheet --</option>';
+    if (tableBank) tableBank.innerHTML = '';
 
-    console.log("✅ Đã tải và đồng bộ toàn bộ Master Data (SP, KH, Bank) thành công!");
-  } catch (error) {
-    console.error("❌ Lỗi tải dữ liệu Master từ Firestore:", error);
+    bankSnap.forEach(doc => {
+      const d = doc.data();
+      const docId = doc.id;
+      const bName = d.bankName || '';
+      const accNo = d.accNo || '';
+      const accName = d.accName || '';
+      const swift = d.swift || '';
+
+      if (bankSelect) bankSelect.innerHTML += `<option value="${accNo}">${bName} - A/C: ${accNo}</option>`;
+      if (tableBank) {
+        tableBank.innerHTML += `
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:6px;"><b>${bName}</b><br>STK: ${accNo}</td>
+            <td style="padding:6px; text-align:right; white-space:nowrap;">
+              <button onclick="suaBank('${docId}', '${bName.replace(/'/g, "\\'")}', '${accName.replace(/'/g, "\\'")}', '${accNo}', '${swift}')" style="background:#f59e0b; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer; margin-right:4px;">Sửa</button>
+              <button onclick="xoaFirestore('DM_Bank', '${docId}', 'Ngân hàng')" style="background:#ef4444; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer;">Xóa</button>
+            </td>
+          </tr>`;
+      }
+    });
+
+  } catch (err) {
+    console.error("Lỗi tải Master:", err);
   }
 }
+
+// --- HÀM XÓA CHUNG TRÊN FIRESTORE ---
+async function xoaFirestore(collectionName, docId, tenLoai) {
+  if (confirm(`⚠️ Bạn có chắc chắn muốn xóa ${tenLoai} này không?`)) {
+    try {
+      await db.collection(collectionName).doc(docId).delete();
+      alert(`✅ Đã xóa ${tenLoai} thành công!`);
+      taiDuLieuMasterTuFirestore();
+    } catch (err) {
+      alert("❌ Lỗi khi xóa: " + err.message);
+    }
+  }
+}
+
+// --- HÀM ĐỔ DỮ LIỆU LÊN FORM ĐỂ CHỈNH SỬA ---
+function suaSanPham(docId, ma, ten, moTa, dvt, gia) {
+  document.getElementById('qtMaSP').value = ma;
+  document.getElementById('qtTenSP').value = ten;
+  document.getElementById('qtMoTaSP').value = moTa;
+  document.getElementById('qtDVT').value = dvt;
+  document.getElementById('qtGia').value = gia;
+  // Cuộn màn hình lên đầu để chỉnh sửa
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function suaKhachHang(docId, ten, info) {
+  document.getElementById('qtTenKH').value = ten;
+  document.getElementById('qtInfoKH').value = info;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function suaBank(docId, bName, accName, accNo, swift) {
+  document.getElementById('qtBankName').value = bName;
+  document.getElementById('qtAccName').value = accName;
+  document.getElementById('qtAccNo').value = accNo;
+  document.getElementById('qtSwift').value = swift;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
 
 // Tự động chạy hàm tải dữ liệu ngay khi trang vừa mở xong
 window.addEventListener('DOMContentLoaded', () => {
