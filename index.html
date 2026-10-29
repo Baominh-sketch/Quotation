@@ -456,7 +456,7 @@
   <!-- ========================================================= -->
 <!-- MÀN HÌNH 3: QUẢN LÝ MASTER DATA & CRM & LỊCH SỬ TẠO          -->
 -- ========================================================= -->
-<div id="manHinhQuanLyMaster" class="main-content-tab" style="display:none; padding:25px; background:#f8fafc; min-height:80vh;">
+<div id="manHinhQuanLyMaster" class="main-content-tab" style="display:none; padding:25px; background:#f8fafc; height: 100vh; overflow-y: auto; box-sizing: border-box;">
   <h2 style="color: #1e293b; margin-bottom: 20px;">⚙️ Quản Lý Nhanh Dữ Liệu & Lịch Sử (Database, CRM, Bank)</h2>
   
   <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 30px;">
@@ -1034,6 +1034,14 @@ function suaBank(docId, bName, accName, accNo, swift) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 </script>
+
+<script>
+// Tự động chạy hàm tải dữ liệu ngay khi trang vừa mở xong
+window.addEventListener('DOMContentLoaded', () => {
+  if (typeof taiDuLieuMasterTuFirestore === 'function') {
+    taiDuLieuMasterTuFirestore();
+  }
+});
 
 // Tự động gán mô tả chi tiết vào ô Tên/Mô tả quy cách khi chọn sản phẩm ở Studio
 function chonSPDatabase() {
