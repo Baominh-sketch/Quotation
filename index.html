@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ARGON ERP — Hệ Thống Báo Giá & Xuất Kho</title>
 
   <!-- 1. THƯ VIỆN FIREBASE SDK (COMPAT) -->
@@ -20,9 +20,22 @@
       appId: "1:968467006611:web:28f4093633d265b442f966",
       measurementId: "G-M2WL4KK0P0"
     };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    console.log("🔥 Firebase Firestore đã sẵn sàng kết nối!");
+    // Cho phép các script nghiệp vụ dùng biến db ở phạm vi toàn trang.
+    var db = null;
+    try {
+      if (typeof firebase === "undefined") {
+        throw new Error("Firebase SDK chưa tải được. Kiểm tra kết nối mạng/CDN.");
+      }
+      if (!firebase.apps || firebase.apps.length === 0) {
+        firebase.initializeApp(firebaseConfig);
+      }
+      db = firebase.firestore();
+      window.db = db;
+      console.log("Firebase Firestore đã sẵn sàng kết nối.");
+    } catch (error) {
+      console.error("Không thể khởi tạo Firebase:", error);
+      window.db = null;
+    }
   </script>
 
   <!-- 3. CÁC LINK CSS & SCRIPT GIAO DIỆN -->
@@ -32,6 +45,32 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
   
   <link rel="stylesheet" href="UI_Styles.css">
+  <style>
+    /* Khung Studio: file nguồn chỉ có phần xem trước A4, chưa có form nhập liệu. */
+    .studio-layout-grid {
+      display: grid;
+      grid-template-columns: minmax(260px, 0.85fr) minmax(0, 1.4fr);
+      gap: 16px;
+      align-items: start;
+      padding: 16px;
+    }
+    .studio-missing-editor {
+      box-sizing: border-box;
+      padding: 18px;
+      border: 1px solid #f3c77b;
+      border-radius: 12px;
+      background: #fffaf0;
+      color: #713f12;
+      line-height: 1.55;
+    }
+    .studio-missing-editor h3 { margin: 0 0 10px; font-size: 16px; }
+    .studio-missing-editor p { margin: 8px 0; }
+    .studio-missing-editor code { overflow-wrap: anywhere; }
+    .studio-layout-grid .panel-right { min-width: 0; }
+    @media (max-width: 900px) {
+      .studio-layout-grid { grid-template-columns: minmax(0, 1fr); padding: 10px; }
+    }
+  </style>
 </head>
 <body>
 
@@ -124,10 +163,19 @@
   </div>
 
   <!-- ========================================================= -->
-  <!-- MÀN HÌNH 2: STUDIO SOẠN BÁO GIÁ & XEM TRƯỚC A4 (ĐỦ 2 CỘT)  -->
+  <!-- MÀN HÌNH 2: STUDIO SOẠN BÁO GIÁ & XEM TRƯỚC A4            -->
   <!-- ========================================================= -->
-  <!-- CỘT PHẢI: XEM TRƯỚC TỜ A4 -->
-    <div class="panel-right" id="panelRightScroll">
+  <div id="manHinhSoanBaoGia" class="main-content-tab" style="display:none;">
+    <div class="studio-layout-grid" id="studioLayout">
+      <!-- File gốc không có markup cột nhập liệu. Giữ placeholder thay vì tự tạo các trường giả. -->
+      <aside class="studio-missing-editor" id="panelLeftEditor">
+        <h3>⚠️ Thiếu cột nhập liệu báo giá</h3>
+        <p>Trong file HTML bạn gửi, phần cột trái để nhập khách hàng, sản phẩm, số lượng, đơn giá và điều khoản chưa xuất hiện.</p>
+        <p>Vì vậy hiện tại chỉ có thể khôi phục điều hướng và phần xem trước A4; chưa thể tạo/sửa đơn đầy đủ một cách an toàn.</p>
+        <p>Để hoàn thiện, cần bổ sung HTML của form soạn đơn từ bản gốc và kiểm tra các ID mà <code>JS_Utils_Calc.js</code> cùng <code>JS_State_CRUD.js</code> đang sử dụng.</p>
+      </aside>
+      <!-- CỘT PHẢI: XEM TRƯỚC TỜ A4 -->
+      <div class="panel-right" id="panelRightScroll">
       <div class="preview-toolbar">
         <div class="toolbar-item">
           <span>✨ Mẫu:</span>
@@ -152,11 +200,11 @@
       <div class="a4-wrapper" id="a4Wrapper">
         <div class="a4-paper theme-executive" id="a4Paper">
           <div class="a4-top-accent"></div>
-          <div class="watermark-overlay"><img id="watermarkImg" src="" alt="Watermark"></div>
+          <div class="watermark-overlay"><img id="watermarkImg" alt="Watermark"></div>
 
           <div class="a4-content-body">
             <div class="header-top">
-              <div><img id="sysLogo" src="" alt="Logo" class="company-logo"></div>
+              <div><img id="sysLogo" alt="Logo" class="company-logo"></div>
               <div class="company-info">
                 <div class="company-name" id="sysTen">CÔNG TY CỔ PHẦN GOODS LINK</div>
                 <div class="company-desc"><span id="sysDiaChi"></span><br><span id="sysLienHeCty"></span></div>
@@ -196,6 +244,8 @@
         </div>
       </div>
     </div>
+    </div>
+  </div>
 
   <!-- ========================================================= -->
   <!-- MÀN HÌNH 3: QUẢN LÝ MASTER DATA & CRM                      -->
@@ -279,11 +329,33 @@
       }
     };
 
+    // Fallback cho điều hướng mobile nếu các file JS nghiệp vụ chưa định nghĩa hàm này.
+    window.chuyenTabMobile = window.chuyenTabMobile || function(tab) {
+      const editorPanel = document.getElementById('panelLeftEditor');
+      const previewPanel = document.getElementById('panelRightScroll');
+      const formButton = document.getElementById('mobBtnForm');
+      const previewButton = document.getElementById('mobBtnPreview');
+      const showForm = tab === 'FORM';
+
+      if (editorPanel) editorPanel.style.display = showForm ? 'block' : 'none';
+      if (previewPanel) previewPanel.style.display = showForm ? 'none' : 'block';
+      if (formButton) formButton.classList.toggle('active', showForm);
+      if (previewButton) previewButton.classList.toggle('active', !showForm);
+    };
+
     window.addEventListener('DOMContentLoaded', () => {
       if (typeof taiDuLieuMasterTuFirestore === 'function') {
-        taiDuLieuMasterTuFirestore();
+        try {
+          taiDuLieuMasterTuFirestore();
+        } catch (error) {
+          console.error('Lỗi khi tải dữ liệu Master từ Firestore:', error);
+        }
       }
       window.chuyenManHinhKapella('STUDIO');
+      // Trên màn hình nhỏ, mặc định mở phần soạn đơn (placeholder cho đến khi form gốc được khôi phục).
+      if (window.matchMedia && window.matchMedia('(max-width: 900px)').matches) {
+        window.chuyenTabMobile('FORM');
+      }
     });
   </script>
 
