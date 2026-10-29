@@ -901,64 +901,139 @@ async function themBankNhanh() {
   } catch (err) { alert("❌ Lỗi: " + err.message); }
 }
 
-// Hàm tải dữ liệu đồng thời hiển thị vào các ô Select và Bảng Lịch Sử
+/<script>
+// --- HÀM TẢI DỮ LIỆU VÀ HIỂN THỊ BẢNG LỊCH SỬ KÈM NÚT SỬA/XÓA ---
 async function taiDuLieuMasterTuFirestore() {
   try {
-    // 1. Sản phẩm
+    // 1. Sản phẩm (Collection: Database)
     const spSnap = await db.collection("Database").get();
     const spSelect = document.getElementById('spSelect');
-    const tableSP = document.getElementById('tableHistorySP');
+    const tableSP = document.querySelector('#tableHistorySP tbody');
     if (spSelect) spSelect.innerHTML = '<option value="">-- Chọn sản phẩm từ Database --</option>';
-    if (tableSP) tableSP.innerHTML = '<tr style="border-bottom:1px solid #e2e8f0;"><th style="padding:4px;">Mã/Tên</th><th style="padding:4px;">Giá</th></tr>';
+    if (tableSP) tableSP.innerHTML = '';
 
     spSnap.forEach(doc => {
       const d = doc.data();
-      const ma = d.maSP || doc.id;
+      const docId = doc.id;
+      const ma = d.maSP || docId;
       const ten = d.tenSP || 'SP';
       const gia = d.gia || 0;
       const moTa = d.moTaSP || '';
+      const dvt = d.dvt || 'Kg';
 
       if (spSelect) {
-        spSelect.innerHTML += `<option value="${ma}" data-mota="${moTa}" data-gia="${gia}" data-dvt="${d.dvt || ''}">${ten} - ${gia}đ (${d.dvt || ''})</option>`;
+        spSelect.innerHTML += `<option value="${ma}" data-mota="${moTa}" data-gia="${gia}" data-dvt="${dvt}">${ten} - ${gia}đ (${dvt})</option>`;
       }
       if (tableSP) {
-        tableSP.innerHTML += `<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:4px;"><b>${ma}</b><br>${ten}</td><td style="padding:4px;">${gia}đ</td></tr>`;
+        tableSP.innerHTML += `
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:6px;"><b>${ma}</b><br>${ten}</td>
+            <td style="padding:6px;">${gia}đ</td>
+            <td style="padding:6px; text-align:right; white-space:nowrap;">
+              <button onclick="suaSanPham('${docId}', '${ma}', '${ten.replace(/'/g, "\\'")}', '${moTa.replace(/'/g, "\\'")}', '${dvt}', ${gia})" style="background:#f59e0b; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer; margin-right:4px;">Sửa</button>
+              <button onclick="xoaFirestore('Database', '${docId}', 'Sản phẩm')" style="background:#ef4444; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer;">Xóa</button>
+            </td>
+          </tr>`;
       }
     });
 
-    // 2. Khách hàng
+    // 2. Khách hàng (Collection: KhachHang)
     const khSnap = await db.collection("KhachHang").get();
     const khSelect = document.getElementById('khSelect');
-    const tableKH = document.getElementById('tableHistoryKH');
+    const tableKH = document.querySelector('#tableHistoryKH tbody');
     if (khSelect) khSelect.innerHTML = '<option value="">-- Chọn khách hàng lưu sẵn --</option>';
-    if (tableKH) tableKH.innerHTML = '<tr style="border-bottom:1px solid #e2e8f0;"><th style="padding:4px;">Tên Khách Hàng</th></tr>';
+    if (tableKH) tableKH.innerHTML = '';
 
     khSnap.forEach(doc => {
       const d = doc.data();
-      const ten = d.tenKH || doc.id;
+      const docId = doc.id;
+      const ten = d.tenKH || '';
+      const info = d.infoKH || '';
+
       if (khSelect) khSelect.innerHTML += `<option value="${ten}">${ten}</option>`;
-      if (tableKH) tableKH.innerHTML += `<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:4px;">${ten}</td></tr>`;
+      if (tableKH) {
+        tableKH.innerHTML += `
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:6px;"><b>${ten}</b><br><span style="color:#64748b; font-size:11px;">${info}</span></td>
+            <td style="padding:6px; text-align:right; white-space:nowrap;">
+              <button onclick="suaKhachHang('${docId}', '${ten.replace(/'/g, "\\'")}', '${info.replace(/'/g, "\\'")}')" style="background:#f59e0b; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer; margin-right:4px;">Sửa</button>
+              <button onclick="xoaFirestore('KhachHang', '${docId}', 'Khách hàng')" style="background:#ef4444; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer;">Xóa</button>
+            </td>
+          </tr>`;
+      }
     });
 
-    // 3. Ngân hàng
+    // 3. Ngân hàng (Collection: DM_Bank)
     const bankSnap = await db.collection("DM_Bank").get();
     const bankSelect = document.getElementById('bankSelect');
-    const tableBank = document.getElementById('tableHistoryBank');
+    const tableBank = document.querySelector('#tableHistoryBank tbody');
     if (bankSelect) bankSelect.innerHTML = '<option value="">-- Chọn Bank từ Sheet --</option>';
-    if (tableBank) tableBank.innerHTML = '<tr style="border-bottom:1px solid #e2e8f0;"><th style="padding:4px;">Ngân hàng / Số TK</th></tr>';
+    if (tableBank) tableBank.innerHTML = '';
 
     bankSnap.forEach(doc => {
       const d = doc.data();
-      const bName = d.bankName || 'Bank';
-      const aNo = d.accNo || '';
-      if (bankSelect) bankSelect.innerHTML += `<option value="${aNo}">${bName} - ${aNo}</option>`;
-      if (tableBank) tableBank.innerHTML += `<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:4px;"><b>${bName}</b><br>${aNo}</td></tr>`;
+      const docId = doc.id;
+      const bName = d.bankName || '';
+      const accNo = d.accNo || '';
+      const accName = d.accName || '';
+      const swift = d.swift || '';
+
+      if (bankSelect) bankSelect.innerHTML += `<option value="${accNo}">${bName} - A/C: ${accNo}</option>`;
+      if (tableBank) {
+        tableBank.innerHTML += `
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:6px;"><b>${bName}</b><br>STK: ${accNo}</td>
+            <td style="padding:6px; text-align:right; white-space:nowrap;">
+              <button onclick="suaBank('${docId}', '${bName.replace(/'/g, "\\'")}', '${accName.replace(/'/g, "\\'")}', '${accNo}', '${swift}')" style="background:#f59e0b; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer; margin-right:4px;">Sửa</button>
+              <button onclick="xoaFirestore('DM_Bank', '${docId}', 'Ngân hàng')" style="background:#ef4444; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer;">Xóa</button>
+            </td>
+          </tr>`;
+      }
     });
 
   } catch (err) {
     console.error("Lỗi tải Master:", err);
   }
 }
+
+// --- HÀM XÓA CHUNG TRÊN FIRESTORE ---
+async function xoaFirestore(collectionName, docId, tenLoai) {
+  if (confirm(`⚠️ Bạn có chắc chắn muốn xóa ${tenLoai} này không?`)) {
+    try {
+      await db.collection(collectionName).doc(docId).delete();
+      alert(`✅ Đã xóa ${tenLoai} thành công!`);
+      taiDuLieuMasterTuFirestore();
+    } catch (err) {
+      alert("❌ Lỗi khi xóa: " + err.message);
+    }
+  }
+}
+
+// --- HÀM ĐỔ DỮ LIỆU LÊN FORM ĐỂ CHỈNH SỬA ---
+function suaSanPham(docId, ma, ten, moTa, dvt, gia) {
+  document.getElementById('qtMaSP').value = ma;
+  document.getElementById('qtTenSP').value = ten;
+  document.getElementById('qtMoTaSP').value = moTa;
+  document.getElementById('qtDVT').value = dvt;
+  document.getElementById('qtGia').value = gia;
+  // Cuộn màn hình lên đầu để chỉnh sửa
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function suaKhachHang(docId, ten, info) {
+  document.getElementById('qtTenKH').value = ten;
+  document.getElementById('qtInfoKH').value = info;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function suaBank(docId, bName, accName, accNo, swift) {
+  document.getElementById('qtBankName').value = bName;
+  document.getElementById('qtAccName').value = accName;
+  document.getElementById('qtAccNo').value = accNo;
+  document.getElementById('qtSwift').value = swift;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
 
 // Tự động gán mô tả chi tiết vào ô Tên/Mô tả quy cách khi chọn sản phẩm ở Studio
 function chonSPDatabase() {
