@@ -476,13 +476,14 @@
   });
 </script>
 <script>
+<script>
 function chuyenManHinhKapella(tab) {
-  // 1. Lấy các khung màn hình chính
-  const dashScreen = document.getElementById('viewDashboard'); 
+  // Lấy các khung màn hình chính (Đảm bảo ID khớp với HTML của bạn)
+  const dashScreen = document.getElementById('manHinhDashboard'); 
   const studioScreen = document.getElementById('manHinhSoanBaoGia'); 
   const masterScreen = document.getElementById('manHinhQuanLyMaster'); 
 
-  // Ẩn tất cả đi
+  // 1. Ẩn tất cả các màn hình đi bằng cách ép kiểu display = 'none'
   if (dashScreen) dashScreen.style.display = 'none';
   if (studioScreen) studioScreen.style.display = 'none';
   if (masterScreen) masterScreen.style.display = 'none';
@@ -492,7 +493,7 @@ function chuyenManHinhKapella(tab) {
   document.getElementById('tabBtnStudio')?.classList.remove('active');
   document.getElementById('tabBtnMaster')?.classList.remove('active');
 
-  // 3. Hiển thị màn hình được chọn tương ứng
+  // 3. Hiển thị đúng màn hình được chọn và active nút tương ứng
   if (tab === 'DASH') {
     if (dashScreen) dashScreen.style.display = 'block';
     document.getElementById('tabBtnDash')?.classList.add('active');
@@ -506,15 +507,13 @@ function chuyenManHinhKapella(tab) {
     document.getElementById('tabBtnMaster')?.classList.add('active');
   }
 }
+
+// Khi vừa mở trang web lên, tự động ẩn hết và chỉ bật mặc định màn hình Soạn Báo Giá (STUDIO)
+window.addEventListener('DOMContentLoaded', () => {
+  chuyenManHinhKapella('STUDIO');
+});
 </script>
-<script>
-  // Tự động bật màn hình Soạn Báo Giá và ẩn các tab khác khi vừa mở trang
-  window.addEventListener('DOMContentLoaded', () => {
-    if (typeof chuyenManHinhKapella === 'function') {
-      chuyenManHinhKapella('STUDIO');
-    }
-  });
-</script>
+
 
 <div id="manHinhQuanLyMaster" class="main-content-tab" style="display: none; padding: 25px; background: #f8fafc; min-height: 80vh;">
   <h2 style="color: #1e293b; margin-bottom: 20px;">⚙️ Quản Lý Nhanh Dữ Liệu (Database, Khách Hàng, Ngân Hàng)</h2>
