@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ARGON ERP — Hệ Thống Báo Giá & Xuất Kho</title>
 
   <!-- 1. THƯ VIỆN FIREBASE SDK (COMPAT) -->
@@ -20,22 +20,9 @@
       appId: "1:968467006611:web:28f4093633d265b442f966",
       measurementId: "G-M2WL4KK0P0"
     };
-    // Cho phép các script nghiệp vụ dùng biến db ở phạm vi toàn trang.
-    var db = null;
-    try {
-      if (typeof firebase === "undefined") {
-        throw new Error("Firebase SDK chưa tải được. Kiểm tra kết nối mạng/CDN.");
-      }
-      if (!firebase.apps || firebase.apps.length === 0) {
-        firebase.initializeApp(firebaseConfig);
-      }
-      db = firebase.firestore();
-      window.db = db;
-      console.log("Firebase Firestore đã sẵn sàng kết nối.");
-    } catch (error) {
-      console.error("Không thể khởi tạo Firebase:", error);
-      window.db = null;
-    }
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    console.log("🔥 Firebase Firestore đã sẵn sàng kết nối!");
   </script>
 
   <!-- 3. CÁC LINK CSS & SCRIPT GIAO DIỆN -->
@@ -44,33 +31,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
   
+  <!-- Nếu chạy trên web thuần, đổi đoạn include này thành file CSS trực tiếp -->
   <link rel="stylesheet" href="UI_Styles.css">
-  <style>
-    /* Khung Studio: file nguồn chỉ có phần xem trước A4, chưa có form nhập liệu. */
-    .studio-layout-grid {
-      display: grid;
-      grid-template-columns: minmax(260px, 0.85fr) minmax(0, 1.4fr);
-      gap: 16px;
-      align-items: start;
-      padding: 16px;
-    }
-    .studio-missing-editor {
-      box-sizing: border-box;
-      padding: 18px;
-      border: 1px solid #f3c77b;
-      border-radius: 12px;
-      background: #fffaf0;
-      color: #713f12;
-      line-height: 1.55;
-    }
-    .studio-missing-editor h3 { margin: 0 0 10px; font-size: 16px; }
-    .studio-missing-editor p { margin: 8px 0; }
-    .studio-missing-editor code { overflow-wrap: anywhere; }
-    .studio-layout-grid .panel-right { min-width: 0; }
-    @media (max-width: 900px) {
-      .studio-layout-grid { grid-template-columns: minmax(0, 1fr); padding: 10px; }
-    }
-  </style>
 </head>
 <body>
 
@@ -88,8 +50,8 @@
         <i class="mdi mdi-file-document-edit-outline"></i> ⚡ Soạn Báo Giá / PI (Studio)
       </button>
       <button class="kapella-tab-btn" id="tabBtnMaster" onclick="chuyenManHinhKapella('MASTER')">
-        <i class="mdi mdi-database-cog-outline"></i> 📦 Quản Lý Database & CRM
-      </button>
+  <i class="mdi mdi-database-cog-outline"></i> 📦 Quản Lý Database & CRM
+</button>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
       <button onclick="taoDonMoi(); chuyenManHinhKapella('STUDIO');" style="background:#0ddbb9;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">
@@ -99,19 +61,20 @@
   </div>
 
   <!-- ========================================================= -->
-  <!-- MÀN HÌNH 1: KAPELLA DASHBOARD                              -->
+  <!-- MÀN HÌNH 1: KAPELLA DASHBOARD (THỐNG KÊ & QUẢN TRỊ ĐƠN) -->
   <!-- ========================================================= -->
-  <div id="manHinhDashboard" class="main-content-tab" style="display:none; padding:20px;">
+  <div id="viewDashboard" style="display:none;">
     <div class="kp-welcome-banner">
       <div>
         <h3 style="margin:0 0 4px 0;font-size:18px;font-weight:800;">Bảng Điều Khiển Quản Trị Báo Giá & Ngoại Thương</h3>
-        <div style="font-size:12px;opacity:0.9;">Dữ liệu đồng bộ thời gian thực từ Firebase Firestore</div>
+        <div style="font-size:12px;opacity:0.9;">Dữ liệu đồng bộ thời gian thực từ Google Sheets (Cloud Orders, CRM, Database & DM_Bank)</div>
       </div>
       <button onclick="taiDanhSachDonLuuApp()" style="background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.4);padding:7px 14px;border-radius:6px;cursor:pointer;font-weight:700;font-size:12px;">
         🔄 Làm mới dữ liệu
       </button>
     </div>
 
+    <!-- 4 THẺ KPI KAPELLA -->
     <div class="kp-grid-4">
       <div class="kp-card">
         <div class="kp-stat-title">☁️ Tổng Đơn Lưu Cloud</div>
@@ -135,6 +98,7 @@
       </div>
     </div>
 
+    <!-- BẢNG ĐƠN HÀNG GẦN ĐÂY & BIỂU ĐỒ KAPELLA -->
     <div class="kp-main-grid">
       <div class="kp-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -144,7 +108,13 @@
         <div style="max-height:360px;overflow-y:auto;">
           <table class="kp-table">
             <thead>
-              <tr><th>Mã chứng từ</th><th>Phân loại</th><th>Khách hàng / Đối tác</th><th>Ngày lập</th><th style="text-align:right;">Thao tác</th></tr>
+              <tr>
+                <th>Mã chứng từ</th>
+                <th>Phân loại</th>
+                <th>Khách hàng / Đối tác</th>
+                <th>Ngày lập</th>
+                <th style="text-align:right;">Thao tác</th>
+              </tr>
             </thead>
             <tbody id="kpRecentOrdersBody">
               <tr><td colspan="5" style="text-align:center;color:#94a3b8;">Đang tải dữ liệu...</td></tr>
@@ -163,19 +133,230 @@
   </div>
 
   <!-- ========================================================= -->
-  <!-- MÀN HÌNH 2: STUDIO SOẠN BÁO GIÁ & XEM TRƯỚC A4            -->
+  <!-- MÀN HÌNH 2: STUDIO SOẠN BÁO GIÁ & XEM TRƯỚC A4 (2 CỘT)    -->
   <!-- ========================================================= -->
-  <div id="manHinhSoanBaoGia" class="main-content-tab" style="display:none;">
-    <div class="studio-layout-grid" id="studioLayout">
-      <!-- File gốc không có markup cột nhập liệu. Giữ placeholder thay vì tự tạo các trường giả. -->
-      <aside class="studio-missing-editor" id="panelLeftEditor">
-        <h3>⚠️ Thiếu cột nhập liệu báo giá</h3>
-        <p>Trong file HTML bạn gửi, phần cột trái để nhập khách hàng, sản phẩm, số lượng, đơn giá và điều khoản chưa xuất hiện.</p>
-        <p>Vì vậy hiện tại chỉ có thể khôi phục điều hướng và phần xem trước A4; chưa thể tạo/sửa đơn đầy đủ một cách an toàn.</p>
-        <p>Để hoàn thiện, cần bổ sung HTML của form soạn đơn từ bản gốc và kiểm tra các ID mà <code>JS_Utils_Calc.js</code> cùng <code>JS_State_CRUD.js</code> đang sử dụng.</p>
-      </aside>
-      <!-- CỘT PHẢI: XEM TRƯỚC TỜ A4 -->
-      <div class="panel-right" id="panelRightScroll">
+  <div class="app-workspace" id="viewStudio">
+
+    <!-- CỘT TRÁI: FORM NHẬP LIỆU -->
+    <div class="panel-left">
+      <div class="argon-hero-header">
+        <div class="brand-bar">
+          <h2 class="brand-title">⚡ ARGON STUDIO <span class="badge-argon">MODULAR v5.0</span></h2>
+          <button onclick="taoDonMoi()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">+ Đơn mới</button>
+        </div>
+        <div class="mode-switch">
+          <button class="mode-btn active" id="btnBG_VN" onclick="doiCheDo('BG_VN')">🇻🇳 Báo Giá (VN)</button>
+          <button class="mode-btn" id="btnBG_EN" onclick="doiCheDo('BG_EN')">🌐 Quote / PI (EN)</button>
+          <button class="mode-btn" id="btnXK" onclick="doiCheDo('XK')">📦 Xuất Kho</button>
+        </div>
+      </div>
+
+      <div class="panel-scroll-body">
+        <!-- KHO CLOUD -->
+        <div class="argon-card">
+          <div class="argon-card-header"><div class="argon-card-title" style="color:var(--argon-primary);">☁️ Kho Đơn Hàng Lưu (Cloud)</div></div>
+          <div class="form-group"><select id="savedOrdersSelect"><option value="">-- Đang tải... --</option></select></div>
+          <div class="row">
+            <button class="btn-argon btn-primary-argon" onclick="taiDonTuApp()">📂 Mở đơn</button>
+            <button class="btn-argon btn-danger-argon" onclick="xoaDonTrongApp()" style="width:90px;">🗑️ Xóa</button>
+          </div>
+        </div>
+
+        <!-- 1. KHÁCH HÀNG & CHỨNG TỪ -->
+        <div class="argon-card">
+          <div class="argon-card-header">
+            <div class="argon-card-title">👤 1. Thông Tin Khách Hàng & Đơn</div>
+            <button class="btn-mini-save" onclick="luuKhachHangMoi()">➕ Lưu KH vào Sheet</button>
+          </div>
+
+          <div id="divTitleENSelect" style="display:none;">
+            <div class="pi-switch-banner">
+              <div>
+                <div style="font-size:12px;font-weight:800;color:#d9460f;">⚡ Chế độ Proforma Invoice (PI)</div>
+                <div style="font-size:10.5px;color:#64748b;">Mở cột Amount, đọc số & Bank T/T</div>
+              </div>
+              <input type="checkbox" id="chkIsPI" onchange="batTatCheDoPI()" style="width:18px;height:18px;cursor:pointer;">
+            </div>
+            <div class="form-group" id="divQuoteTitleDropdown">
+              <label>Tiêu đề báo giá tiếng Anh</label>
+              <select id="inTitleEN" onchange="updatePreview()">
+                <option value="COCONUT QUOTATION">COCONUT QUOTATION</option>
+                <option value="QUOTATION">QUOTATION</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group"><select id="khSelect" onchange="chonKhachHangCRM()"><option value="">-- Chọn khách hàng lưu sẵn --</option></select></div>
+          <div class="form-group"><label id="lblTenKhachInput">Tên khách hàng / Đối tác</label><input type="text" id="inKhach" placeholder="Nhập tên công ty / đối tác..." oninput="updatePreview()"></div>
+          <div class="form-group"><label id="lblLienHeInput">Người liên hệ / Phone / Attn</label><input type="text" id="inLienHe" placeholder="SĐT, Email, Người nhận..." oninput="updatePreview()"></div>
+
+          <div id="rowXkExtraFields" style="display:none;">
+            <div class="row">
+              <div class="form-group col"><label>Địa điểm xuất kho</label><input type="text" id="inDiaDiemXK" oninput="updatePreview()"></div>
+              <div class="form-group col"><label>Biển số xe</label><input type="text" id="inBienSoXe" oninput="updatePreview()"></div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="form-group col"><label id="lblMaInput">Số chứng từ</label><input type="text" id="inMa" value="QUO-2026-001" oninput="updatePreview()"></div>
+            <div class="form-group col"><label id="lblNgayInput">Ngày lập</label><input type="text" id="inNgay" oninput="updatePreview()"></div>
+          </div>
+
+          <div class="row" id="rowEnExtra" style="display:none;">
+            <div class="form-group col"><label>Prepared by</label><input type="text" id="inPreparedBy" oninput="updatePreview()"></div>
+            <div class="form-group col"><label>Valid until</label><input type="text" id="inValidUntil" oninput="updatePreview()"></div>
+          </div>
+
+          <!-- BỘ CHỌN INCOTERMS & LOGISTICS THÔNG MINH -->
+          <div id="divIncotermBuilder" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;padding:8px;border-radius:6px;margin-bottom:10px;">
+            <label style="color:#15803d;font-weight:800;font-size:11px;margin-bottom:6px;display:block;">🚢 Tạo nhanh Incoterms & Logistics</label>
+            <div class="row" style="gap:6px;margin-bottom:6px;">
+              <select id="selIncoterm" style="width:32%;font-size:11px;padding:4px;"><option value="EXW">EXW</option><option value="FOB">FOB</option><option value="CNF">CFR</option><option value="CIF">CIF</option><option value="DDP">DDP</option></select>
+              <input type="text" id="inPortName" placeholder="Cảng (VD: SHANGHAI)" style="width:68%;font-size:11px;padding:4px 6px;">
+            </div>
+            <div class="row" style="gap:6px;">
+              <input type="text" id="inLeadTime" placeholder="Lead time (VD: 7 days)" style="width:72%;font-size:11px;padding:4px 6px;">
+              <button type="button" onclick="chenIncotermThongMinh()" style="width:28%;background:#16a34a;color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;">+ Chèn</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Ghi chú & Điều khoản</label>
+            <div class="preset-bar">
+              <span class="preset-chip" onclick="chenMauNhanh('inDieuKhoan', 'The above rates are CNF SHANGHAI')">+ CNF SHANGHAI</span>
+              <span class="preset-chip" onclick="chenMauNhanh('inDieuKhoan', 'The above rates are FOB HO CHI MINH CITY')">+ FOB HCMC</span>
+              <span class="preset-chip" onclick="chenMauNhanh('inDieuKhoan', 'Giao hàng trong vòng 3 ngày.')">+ Giao nhanh</span>
+            </div>
+            <textarea id="inDieuKhoan" rows="2" placeholder="Nhập ghi chú hoặc điều khoản..." oninput="updatePreview()"></textarea>
+          </div>
+
+          <div class="form-group" id="divEnNoteGroup" style="display:none;">
+            <label style="color:var(--argon-primary);">🌐 Câu Note Liên Hệ (PDF Tiếng Anh)</label>
+            <textarea id="inEnNote" rows="2" placeholder="Please contact us via information..." oninput="updatePreview()"></textarea>
+          </div>
+
+          <!-- PHƯƠNG THỨC THANH TOÁN (VN & EN) -->
+          <div class="form-group" id="divPaymentTermInput">
+            <label id="lblPaymentTermInput">Phương thức thanh toán</label>
+            <div class="preset-bar">
+              <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'Thanh toán 100% bằng chuyển khoản hoặc tiền mặt ngay khi nhận hàng.', true)">+ TT 100% (VN)</span>
+              <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'Đặt cọc 50% ngay sau khi xác nhận đơn hàng, 50% còn lại thanh toán trước khi giao hàng.', true)">+ Cọc 50-50 (VN)</span>
+              <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'The buyer shall deposit 30% of the total contract value upon signing the contract. The remaining 70% shall be paid within 3 days upon receipt of the copy documents via email.', true)">+ Cọc 30-70 (EN)</span>
+            </div>
+            <textarea id="inPaymentTerm" rows="2" placeholder="Nhập điều khoản / phương thức thanh toán..." oninput="updatePreview()"></textarea>
+          </div>
+
+          <!-- NGÂN HÀNG T/T CHỌN TỪ SHEET -->
+          <div class="form-group" id="divBankInfoInput" style="display:none;">
+            <label style="color:var(--argon-primary);">🏦 Thông tin Ngân hàng Quốc tế (PI)</label>
+            <select id="bankSelect" onchange="chonBankTuSheet()" style="margin-bottom:6px;"><option value="">-- Chọn Bank từ Sheet --</option></select>
+            <textarea id="inBankInfo" rows="3" placeholder="Chọn ngân hàng ở trên hoặc tự nhập..." oninput="updatePreview()"></textarea>
+          </div>
+        </div>
+
+        <!-- 2. HÀNG HÓA -->
+        <div class="argon-card">
+          <div class="argon-card-header">
+            <div class="argon-card-title">📦 2. Chi Tiết Hàng Hóa</div>
+            <button class="btn-mini-save" onclick="luuSanPhamMoi()">➕ Lưu SP vào Database</button>
+          </div>
+
+          <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;background:#f8fafc;padding:8px;border-radius:6px;">
+            <label id="lblToggleTotal" style="display:flex;align-items:center;gap:4px;margin:0;font-size:11px;color:#059669;cursor:pointer;"><input type="checkbox" id="chkShowTotal" checked onchange="renderTable()"> Hiện Tổng cộng</label>
+            <label id="lblToggleWords" style="display:flex;align-items:center;gap:4px;margin:0;font-size:11px;color:#d9460f;cursor:pointer;"><input type="checkbox" id="chkShowWords" checked onchange="renderTable()"> Đọc số thành chữ</label>
+            <label style="display:flex;align-items:center;gap:4px;margin:0;font-size:11px;color:var(--argon-primary);cursor:pointer;"><input type="checkbox" id="chkShowImage" checked onchange="renderTable()"> Hiện cột Ảnh</label>
+          </div>
+
+          <div class="row" id="rowEnOptions" style="display:none;margin-bottom:10px;">
+            <div class="form-group col">
+              <label>Loại Volume</label>
+              <select id="inVolumeType" onchange="renderTable()"><option value="(CTNS/40RF)">(CTNS/40RF)</option><option value="(CTNS/20RF)">(CTNS/20RF)</option></select>
+            </div>
+            <div class="form-group col">
+              <label>Tiền tệ</label>
+              <select id="inCurrency" onchange="renderTable()">
+                <option value="USD">USD ($)</option><option value="EUR">EUR (€)</option><option value="GBP">GBP (£)</option><option value="CNY">CNY (¥)</option><option value="VND">VNĐ</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group"><select id="spSelect" onchange="chonSPDatabase()"></select></div>
+          <div class="form-group"><label>Tên / Mô tả quy cách</label><textarea id="inTenSP" rows="2"></textarea></div>
+
+          <div class="row">
+            <div class="form-group col"><label>Mã SP</label><input type="text" id="inMaSPMoi" placeholder="Tự động"></div>
+            <div class="form-group col"><label>ĐVT</label><input type="text" id="inDVT" value="Trái" oninput="renderTable()"></div>
+            <div class="form-group col"><label>Số lượng</label><input type="number" id="inSL" value="1" min="0" step="any"></div>
+          </div>
+
+          <div class="row" id="rowPriceAndVat">
+            <div class="form-group col" id="divGiaGroup"><label>Đơn giá</label><input type="number" id="inGia" value="0" step="any"></div>
+            <div class="form-group col" id="divVATGroup">
+              <label>Thuế VAT</label>
+              <select id="inVAT"><option value="8" selected>8%</option><option value="10">10%</option><option value="5">5%</option><option value="0">0%</option><option value="KKKNT">KKKNT</option></select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Ảnh sản phẩm (HD)</label>
+            <input type="file" id="inSpFile" accept="image/png, image/jpeg" onchange="loadSpImage(this)">
+            <img id="spPreviewLeft" style="max-height:48px;margin-top:6px;display:none;border-radius:6px;">
+          </div>
+
+          <button class="btn-argon btn-primary-argon" onclick="themVaoGio()">+ Thêm Sản Phẩm Vào Đơn</button>
+
+          <div style="margin-top:12px;max-height:160px;overflow-y:auto;">
+            <table class="cart-mini-table">
+              <thead><tr><th>Sản phẩm</th><th width="50">SL</th><th width="50">VAT</th><th width="95">Thao tác</th></tr></thead>
+              <tbody id="cartMiniBody"><tr><td colspan="4" style="text-align:center;color:var(--argon-muted);">Chưa có sản phẩm</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 3. LOGO & WATERMARK -->
+        <div class="argon-card">
+          <div class="argon-card-header"><div class="argon-card-title">🎨 3. Logo & Watermark</div></div>
+          <div class="row">
+            <div class="form-group col"><label>Logo Công ty</label><input type="file" accept="image/png, image/jpeg" onchange="loadLogo(this)"></div>
+            <div class="form-group col">
+              <label>Watermark chìm</label>
+              <input type="file" accept="image/png, image/jpeg" onchange="loadWatermark(this)">
+              <button onclick="xoaWatermark()" id="btnXoaWm" style="display:none;margin-top:5px;background:var(--argon-danger);color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;">Xóa</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. CẤU HÌNH GỬI MAIL -->
+        <div class="argon-card" style="border:1.5px solid var(--argon-primary);">
+          <div class="argon-card-header">
+            <div class="argon-card-title" style="color:var(--argon-primary);">📧 4. Cấu Hình Gửi Mail Khách Hàng</div>
+            <button class="btn-mini-save" onclick="datLaiNoiDungMacDinh()">🔄 Tạo mẫu</button>
+          </div>
+          <div class="form-group"><label>Email khách hàng nhận file PDF</label><input type="text" id="inEmailKhach" placeholder="VD: contact@customer.com"></div>
+          <div class="form-group"><label>Thông tin liên hệ của bạn (Hiển thị trong email)</label><input type="text" id="inThongTinLienHeMail" placeholder="VD: Mr. Minh - SĐT/Zalo: 0909.xxx.xxx" oninput="capNhatLienHeVaoA4()"></div>
+          <div class="form-group"><label>Tiêu đề thư (Subject)</label><input type="text" id="inEmailSubject" placeholder="Tiêu đề email..."></div>
+          <div class="form-group"><label>Nội dung lời nhắn</label><textarea id="inEmailBody" rows="4" placeholder="Nội dung email..."></textarea></div>
+        </div>
+
+        <!-- THAO TÁC HỆ THỐNG -->
+        <div class="argon-card" style="background:#f1f5f9;">
+          <div class="argon-card-header"><div class="argon-card-title">⚡ Thao Tác Hệ Thống</div></div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div class="row">
+              <button class="btn-argon btn-neutral-argon" onclick="luuDonNháp()">💾 Lưu Nháp</button>
+              <button class="btn-argon btn-success-argon" onclick="luuVaoAppSheet()">☁️ Lưu Cloud</button>
+            </div>
+            <div class="row">
+              <button class="btn-argon btn-primary-argon" onclick="xuatPDF()" style="flex:1;">🖨️ Tải PDF</button>
+              <button class="btn-argon" onclick="guiEmailChoKhachHang()" style="flex:1;background:linear-gradient(87deg,#fb6340 0,#fbb140 100%);color:#fff;">📧 Gửi Mail</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CỘT PHẢI: XEM TRƯỚC TỜ A4 -->
+    <div class="panel-right" id="panelRightScroll">
       <div class="preview-toolbar">
         <div class="toolbar-item">
           <span>✨ Mẫu:</span>
@@ -194,17 +375,21 @@
             <option value="1">100%</option><option value="0.85">85%</option><option value="0.5">50% (Mobile)</option>
           </select>
         </div>
+        <div class="toolbar-item" style="display:flex;align-items:center;gap:4px;">
+          <input type="color" id="liveColorPicker" value="#007a3d" oninput="dongBoMauTuPicker(this.value)" class="color-dot" title="Chọn màu trực quan">
+          <input type="text" id="liveColorHex" value="#007A3D" maxlength="7" placeholder="#000000" oninput="dongBoMauTuText(this.value)" style="width:68px;padding:3px 5px;font-size:11px;font-weight:700;font-family:monospace;text-transform:uppercase;border:1px solid #cbd5e1;border-radius:4px;text-align:center;">
+        </div>
         <button onclick="xuatPDF()" style="background:var(--argon-primary);color:#fff;border:none;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;">🖨️ Tải PDF</button>
       </div>
 
       <div class="a4-wrapper" id="a4Wrapper">
         <div class="a4-paper theme-executive" id="a4Paper">
           <div class="a4-top-accent"></div>
-          <div class="watermark-overlay"><img id="watermarkImg" alt="Watermark"></div>
+          <div class="watermark-overlay"><img id="watermarkImg" src="" alt="Watermark"></div>
 
           <div class="a4-content-body">
             <div class="header-top">
-              <div><img id="sysLogo" alt="Logo" class="company-logo"></div>
+              <div><img id="sysLogo" src="" alt="Logo" class="company-logo"></div>
               <div class="company-info">
                 <div class="company-name" id="sysTen">CÔNG TY CỔ PHẦN GOODS LINK</div>
                 <div class="company-desc"><span id="sysDiaChi"></span><br><span id="sysLienHeCty"></span></div>
@@ -216,13 +401,20 @@
                 <div class="info-label" id="lblKhachTitle">KÍNH GỬI KHÁCH HÀNG:</div>
                 <div class="info-client-name" id="preKhach">...</div>
                 <div class="info-client-contact" id="boxClientTel" style="display:none;"><span id="lblTelPrefix" style="color:#475569;font-weight:700;">LIÊN HỆ: </span><span id="preLienHe"></span></div>
+                <div id="boxXkDetails" style="display:none;font-size:12px;margin-top:5px;">
+                  <div id="boxDiaDiemXK" style="display:none;"><b>Địa điểm xuất kho: </b><span id="preDiaDiemXK"></span></div>
+                  <div id="boxBienSoXe" style="display:none;"><b>Biển số xe: </b><span id="preBienSoXe"></span></div>
+                </div>
+                <div class="info-sub-greeting" id="preGreeting" style="display:none;">We are pleased to quote as follows:</div>
               </div>
 
               <div class="doc-badge-card">
                 <h1 class="doc-title" id="docTitleMain">BẢNG BÁO GIÁ</h1>
                 <table class="meta-table">
-                  <tr><td class="meta-label">Mã số:</td><td class="meta-value" id="preMa">QUO-2026-001</td></tr>
-                  <tr><td class="meta-label">Ngày lập:</td><td class="meta-value" id="preNgay"></td></tr>
+                  <tr><td class="meta-label" id="lblMaType">Mã số:</td><td class="meta-value" id="preMa">QUO-2026-001</td></tr>
+                  <tr><td class="meta-label" id="lblNgayType">Ngày lập:</td><td class="meta-value" id="preNgay"></td></tr>
+                  <tr id="boxValidUntil" style="display:none;"><td class="meta-label">Valid until:</td><td class="meta-value" id="preValidUntil"></td></tr>
+                  <tr id="boxPreparedBy" style="display:none;"><td class="meta-label">Prepared by:</td><td class="meta-value" id="prePreparedBy"></td></tr>
                 </table>
               </div>
             </div>
@@ -230,61 +422,40 @@
             <table class="modern-table"><thead><tr id="tableHeaderRow"></tr></thead><tbody id="preTable"></tbody></table>
 
             <div class="amount-in-words-box" id="boxAmountInWords">
-              <span style="font-weight:800;color:var(--doc-primary);">Số tiền bằng chữ: </span>
+              <span id="lblAmountInWordsPrefix" style="font-weight:800;color:var(--doc-primary);">Số tiền bằng chữ: </span>
               <span id="preAmountInWords" style="font-weight:700;font-style:italic;"></span>
+            </div>
+
+            <!-- KHUNG CHÍNH: TERMS & NOTES, PAYMENT TERM, BANK INFO -->
+            <div class="terms-section" id="termsSectionBox" style="display:none;">
+              <div class="terms-block" id="boxNotesSection" style="display:none;"><div class="terms-title" id="lblNotesHeader">ĐIỀU KHOẢN & GHI CHÚ:</div><div class="terms-content" id="preDieuKhoan"></div></div>
+              <div class="terms-block" id="boxPaymentTermPre" style="display:none;"><div class="terms-title" id="lblPaymentHeader">PHƯƠNG THỨC THANH TOÁN:</div><div class="terms-content" id="prePaymentTerm"></div></div>
+              <div class="terms-block" id="boxBankInfoPre" style="display:none;border-top:1px dashed #cbd5e1;padding-top:8px;"><div class="terms-title">BANKING INFORMATION FOR T/T:</div><div class="terms-content" id="preBankInfo" style="font-weight:700;"></div></div>
+            </div>
+
+            <!-- CÂU NOTE LIÊN HỆ NẰM NGOÀI KHUNG -->
+            <div id="boxEnNotePre" style="display:none;margin-top:12px;font-size:11.5px;font-style:italic;color:#334155;line-height:1.5;"><span id="preEnNote"></span></div>
+
+            <div class="signatures-xk-container" id="sigXKContainer">
+              <div class="sig-col"><div class="sig-title-xk">Thủ Trưởng Đơn Vị</div><div class="sig-sub-xk">(Ký và ghi rõ họ tên)</div></div>
+              <div class="sig-col"><div class="sig-title-xk">Thủ Kho / Quản Đốc</div><div class="sig-sub-xk">(Ký và ghi rõ họ tên)</div></div>
+              <div class="sig-col"><div class="sig-title-xk">Người Giao Hàng</div><div class="sig-sub-xk">(Ký và ghi rõ họ tên)</div></div>
+              <div class="sig-col"><div class="sig-title-xk">Người Lập Phiếu</div><div class="sig-sub-xk">(Ký và ghi rõ họ tên)</div></div>
+              <div class="sig-col"><div class="sig-title-xk">Người Nhận Hàng</div><div class="sig-sub-xk">(Ký và ghi rõ họ tên)</div></div>
             </div>
 
             <div class="signatures-single-container" id="sigSingleContainer">
               <div style="width:240px;">
                 <div class="sign-title" id="signTitleName">ĐẠI DIỆN CÔNG TY</div>
-                <div style="color:#475569;font-size:11px;margin-bottom:55px;font-style:italic;">(Ký, đóng dấu & ghi rõ họ tên)</div>
+                <div style="color:#475569;font-size:11px;margin-bottom:55px;font-style:italic;" id="signSubText">(Ký, đóng dấu & ghi rõ họ tên)</div>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-    </div>
-  </div>
 
-  <!-- ========================================================= -->
-  <!-- MÀN HÌNH 3: QUẢN LÝ MASTER DATA & CRM                      -->
-  <!-- ========================================================= -->
-  <div id="manHinhQuanLyMaster" class="main-content-tab" style="display:none; padding:25px; background:#f8fafc; min-height:80vh;">
-    <h2 style="color: #1e293b; margin-bottom: 20px;">⚙️ Quản Lý Nhanh Dữ Liệu (Database, Khách Hàng, Ngân Hàng)</h2>
-    
-    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
-      
-      <!-- 1. THÊM SẢN PHẨM MỚI -->
-      <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
-        <h3 style="color: #0d9488; margin-bottom: 15px;">➕ Thêm Sản Phẩm Mới</h3>
-        <div style="margin-bottom: 10px;"><label style="font-size: 13px; font-weight: 600;">Mã SP:</label><input type="text" id="qtMaSP" placeholder="VD: GACAP" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
-        <div style="margin-bottom: 10px;"><label style="font-size: 13px; font-weight: 600;">Tên Sản Phẩm:</label><input type="text" id="qtTenSP" placeholder="Nhập tên sản phẩm..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
-        <div style="margin-bottom: 10px;"><label style="font-size: 13px; font-weight: 600;">Đơn Vị Tính (ĐVT):</label><input type="text" id="qtDVT" value="Kg" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
-        <div style="margin-bottom: 15px;"><label style="font-size: 13px; font-weight: 600;">Đơn Giá:</label><input type="number" id="qtGia" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
-        <button onclick="themSanPhamNhanh()" style="width: 100%; background: #0d9488; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;">Lưu Sản Phẩm Vào Firebase</button>
-      </div>
-
-      <!-- 2. THÊM KHÁCH HÀNG MỚI -->
-      <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
-        <h3 style="color: #2563eb; margin-bottom: 15px;">👤 Thêm Khách Hàng (CRM)</h3>
-        <div style="margin-bottom: 10px;"><label style="font-size: 13px; font-weight: 600;">Tên Công Ty / Đối Tác:</label><input type="text" id="qtTenKH" placeholder="Nhập tên khách hàng..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
-        <div style="margin-bottom: 15px;"><label style="font-size: 13px; font-weight: 600;">Thông Tin Liên Hệ:</label><textarea id="qtInfoKH" rows="4" placeholder="Địa chỉ, SĐT..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;"></textarea></div>
-        <button onclick="themKhachHangNhanh()" style="width: 100%; background: #2563eb; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;">Lưu Khách Hàng Vào Firebase</button>
-      </div>
-
-      <!-- 3. THÊM NGÂN HÀNG THANH TOÁN -->
-      <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
-        <h3 style="color: #ea580c; margin-bottom: 15px;">🏦 Thêm Ngân Hàng T/T</h3>
-        <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Tên Ngân Hàng:</label><input type="text" id="qtBankName" placeholder="VIETCOMBANK" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
-        <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Tên Tài Khoản:</label><input type="text" id="qtAccName" placeholder="CONG TY..." style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
-        <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Số Tài Khoản:</label><input type="text" id="qtAccNo" placeholder="Số TK..." style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
-        <div style="margin-bottom: 12px;"><label style="font-size: 12px; font-weight: 600;">Swift Code:</label><input type="text" id="qtSwift" placeholder="Swift..." style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
-        <button onclick="themBankNhanh()" style="width: 100%; background: #ea580c; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;">Lưu Ngân Hàng Vào Firebase</button>
-      </div>
-
-    </div>
-  </div>
+  </div><!-- ĐÓNG #viewStudio -->
 
   <!-- NAVIGATION MOBILE -->
   <div class="mobile-bottom-nav">
@@ -294,70 +465,111 @@
 
   <div id="loading-overlay"><div class="spinner"></div><div class="loading-text">Đang xử lý...</div></div>
   <div id="custom-toast"></div>
+<script src="JS_Utils_Calc.js"></script>
+<script src="JS_State_CRUD.js"></script>
+<script src="JS_Render_PDF.js"></script>
+<script>
+// Điều hướng giữa Dashboard, Studio và Master theo đúng ID trong HTML.
+window.chuyenManHinhKapella = function(tab) {
+  const dashScreen = document.getElementById('viewDashboard');
+  const studioScreen = document.getElementById('viewStudio');
+  const masterScreen = document.getElementById('manHinhQuanLyMaster');
 
-  <!-- CÁC FILE SCRIPT NGHIỆP VỤ -->
-  <script src="JS_Utils_Calc.js"></script>
-  <script src="JS_State_CRUD.js"></script>
-  <script src="JS_Render_PDF.js"></script>
+  // Ẩn toàn bộ màn hình trước khi mở màn hình được chọn.
+  [dashScreen, studioScreen, masterScreen].forEach((screen) => {
+    if (screen) screen.style.display = 'none';
+  });
 
-  <!-- SCRIPT ĐIỀU HƯỚNG TAB & TẢI DỮ LIỆU -->
-  <script>
-    window.chuyenManHinhKapella = function(tab) {
-      const dashScreen = document.getElementById('manHinhDashboard'); 
-      const studioScreen = document.getElementById('manHinhSoanBaoGia'); 
-      const masterScreen = document.getElementById('manHinhQuanLyMaster'); 
+  // Cập nhật trạng thái tab đang chọn.
+  ['tabBtnDash', 'tabBtnStudio', 'tabBtnMaster'].forEach((id) => {
+    document.getElementById(id)?.classList.remove('active');
+  });
 
-      if (dashScreen) dashScreen.style.display = 'none';
-      if (studioScreen) studioScreen.style.display = 'none';
-      if (masterScreen) masterScreen.style.display = 'none';
+  if (tab === 'DASH' && dashScreen) {
+    dashScreen.style.display = '';
+    document.getElementById('tabBtnDash')?.classList.add('active');
+  } else if (tab === 'STUDIO' && studioScreen) {
+    // Xóa inline display để CSS .app-workspace giữ nguyên bố cục 2 cột.
+    studioScreen.style.display = '';
+    document.getElementById('tabBtnStudio')?.classList.add('active');
+  } else if (tab === 'MASTER' && masterScreen) {
+    masterScreen.style.display = '';
+    document.getElementById('tabBtnMaster')?.classList.add('active');
+  }
+};
 
-      document.getElementById('tabBtnDash')?.classList.remove('active');
-      document.getElementById('tabBtnStudio')?.classList.remove('active');
-      document.getElementById('tabBtnMaster')?.classList.remove('active');
+window.addEventListener('DOMContentLoaded', () => {
+  if (typeof taiDuLieuMasterTuFirestore === 'function') {
+    taiDuLieuMasterTuFirestore();
+  }
+  window.chuyenManHinhKapella('STUDIO');
+});
+</script>
 
-      if (tab === 'DASH') {
-        if (dashScreen) dashScreen.style.display = 'block';
-        document.getElementById('tabBtnDash')?.classList.add('active');
-      } 
-      else if (tab === 'STUDIO') {
-        if (studioScreen) studioScreen.style.display = 'block';
-        document.getElementById('tabBtnStudio')?.classList.add('active');
-      } 
-      else if (tab === 'MASTER') {
-        if (masterScreen) masterScreen.style.display = 'block';
-        document.getElementById('tabBtnMaster')?.classList.add('active');
-      }
-    };
+<div id="manHinhQuanLyMaster" class="main-content-tab" style="display: none; padding: 25px;">
+  <h2 style="color: #1e293b; margin-bottom: 20px;">⚙️ Quản Lý Nhanh Dữ Liệu (Database, Khách Hàng, Ngân Hàng)</h2>
+  
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+    
+    <!-- 1. THÊM SẢN PHẨM MỚI -->
+    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+      <h3 style="color: #0d9488; margin-bottom: 15px;">➕ Thêm Sản Phẩm Mới</h3>
+      <div style="margin-bottom: 10px;">
+        <label style="font-size: 13px; font-weight: 600;">Mã SP:</label>
+        <input type="text" id="qtMaSP" placeholder="VD: GACAP" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+      </div>
+      <div style="margin-bottom: 10px;">
+        <label style="font-size: 13px; font-weight: 600;">Tên Sản Phẩm:</label>
+        <input type="text" id="qtTenSP" placeholder="Nhập tên sản phẩm..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+      </div>
+      <div style="margin-bottom: 10px;">
+        <label style="font-size: 13px; font-weight: 600;">Đơn Vị Tính (ĐVT):</label>
+        <input type="text" id="qtDVT" value="Kg" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+      </div>
+      <div style="margin-bottom: 15px;">
+        <label style="font-size: 13px; font-weight: 600;">Đơn Giá (VND/USD):</label>
+        <input type="number" id="qtGia" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+      </div>
+      <button onclick="themSanPhamNhanh()" style="width: 100%; background: #0d9488; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;">Lưu Sản Phẩm Vào Firebase</button>
+    </div>
 
-    // Fallback cho điều hướng mobile nếu các file JS nghiệp vụ chưa định nghĩa hàm này.
-    window.chuyenTabMobile = window.chuyenTabMobile || function(tab) {
-      const editorPanel = document.getElementById('panelLeftEditor');
-      const previewPanel = document.getElementById('panelRightScroll');
-      const formButton = document.getElementById('mobBtnForm');
-      const previewButton = document.getElementById('mobBtnPreview');
-      const showForm = tab === 'FORM';
+    <!-- 2. THÊM KHÁCH HÀNG MỚI -->
+    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+      <h3 style="color: #2563eb; margin-bottom: 15px;">👤 Thêm Khách Hàng (CRM)</h3>
+      <div style="margin-bottom: 10px;">
+        <label style="font-size: 13px; font-weight: 600;">Tên Công Ty / Đối Tác:</label>
+        <input type="text" id="qtTenKH" placeholder="Nhập tên khách hàng..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+      </div>
+      <div style="margin-bottom: 15px;">
+        <label style="font-size: 13px; font-weight: 600;">Thông Tin Liên Hệ (SĐT, Địa chỉ):</label>
+        <textarea id="qtInfoKH" rows="4" placeholder="Địa chỉ, SĐT, Email..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;"></textarea>
+      </div>
+      <button onclick="themKhachHangNhanh()" style="width: 100%; background: #2563eb; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;">Lưu Khách Hàng Vào Firebase</button>
+    </div>
 
-      if (editorPanel) editorPanel.style.display = showForm ? 'block' : 'none';
-      if (previewPanel) previewPanel.style.display = showForm ? 'none' : 'block';
-      if (formButton) formButton.classList.toggle('active', showForm);
-      if (previewButton) previewButton.classList.toggle('active', !showForm);
-    };
+    <!-- 3. THÊM NGÂN HÀNG THANH TOÁN -->
+    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+      <h3 style="color: #ea580c; margin-bottom: 15px;">🏦 Thêm Ngân Hàng T/T</h3>
+      <div style="margin-bottom: 8px;">
+        <label style="font-size: 12px; font-weight: 600;">Tên Ngân Hàng:</label>
+        <input type="text" id="qtBankName" placeholder="VD: VIETCOMBANK" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">
+      </div>
+      <div style="margin-bottom: 8px;">
+        <label style="font-size: 12px; font-weight: 600;">Tên Tài Khoản (Beneficiary):</label>
+        <input type="text" id="qtAccName" placeholder="CONG TY CO PHAN..." style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">
+      </div>
+      <div style="margin-bottom: 8px;">
+        <label style="font-size: 12px; font-weight: 600;">Số Tài Khoản (A/C No):</label>
+        <input type="text" id="qtAccNo" placeholder="Số tài khoản..." style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">
+      </div>
+      <div style="margin-bottom: 12px;">
+        <label style="font-size: 12px; font-weight: 600;">Swift Code:</label>
+        <input type="text" id="qtSwift" placeholder="Mã Swift..." style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">
+      </div>
+      <button onclick="themBankNhanh()" style="width: 100%; background: #ea580c; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;">Lưu Ngân Hàng Vào Firebase</button>
+    </div>
 
-    window.addEventListener('DOMContentLoaded', () => {
-      if (typeof taiDuLieuMasterTuFirestore === 'function') {
-        try {
-          taiDuLieuMasterTuFirestore();
-        } catch (error) {
-          console.error('Lỗi khi tải dữ liệu Master từ Firestore:', error);
-        }
-      }
-      window.chuyenManHinhKapella('STUDIO');
-      // Trên màn hình nhỏ, mặc định mở phần soạn đơn (placeholder cho đến khi form gốc được khôi phục).
-      if (window.matchMedia && window.matchMedia('(max-width: 900px)').matches) {
-        window.chuyenTabMobile('FORM');
-      }
-    });
-  </script>
-
+  </div>
+</div>
 </body>
 </html>
