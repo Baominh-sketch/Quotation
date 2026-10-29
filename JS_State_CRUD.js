@@ -13,36 +13,7 @@
     document.getElementById('inNgay').value = today;
     document.getElementById('preNgay').innerText = today;
 
-    google.script.run.withSuccessHandler(data => {
-      if(!data) return; 
-      configGoc = data.config || {};
-      if (configGoc.mau) {
-        document.documentElement.style.setProperty('--doc-primary', configGoc.mau);
-        document.getElementById('liveColorPicker').value = configGoc.mau;
-        if (document.getElementById('liveColorHex')) {
-          document.getElementById('liveColorHex').value = configGoc.mau.toUpperCase();
-        }
-      }
-      if (configGoc.logo && configGoc.logo.trim() !== "") {
-        const logoImg = document.getElementById('sysLogo');
-        logoImg.src = configGoc.logo;
-        logoImg.style.display = "block";
-      }
-
-      capNhatDropdownSP(data.db || []);
-      capNhatDropdownKH(data.khachHang || []);
-      
-      // Nạp luôn danh sách Bank từ gói dữ liệu tổng hợp (hoặc gọi dự phòng)
-      if (data.banks && data.banks.length > 0) {
-        capNhatDropdownBank(data.banks);
-      } else {
-        taiDanhSachBankTuSheet();
-      }
-
-      doiCheDo('BG_VN');
-      taiDonNháp();
-      taiDanhSachDonLuuApp();
-    }).layDuLieuTongHop();
+    
   };
   function capNhatDropdownSP(list) {
     dbSP = list;
@@ -868,3 +839,88 @@ function showToast(msg, type = 'success') {
     document.getElementById('inBankInfo').value = textBank;
     updatePreview();
   }
+  // Hàm chuyển đổi giữa các tab màn hình chính
+function chuyenTabManHinh(tabName) {
+  const formTab = document.getElementById('manHinhSoanBaoGia'); // Đặt ID khung soạn báo giá của bạn ở đây nếu khác
+  const masterTab = document.getElementById('manHinhQuanLyMaster');
+  
+  if (tabName === 'quanLyMaster') {
+    if(masterTab) masterTab.style.display = 'block';
+  } else {
+    if(masterTab) masterTab.style.display = 'none';
+  }
+}
+
+// 1. Thêm sản phẩm nhanh
+async function themSanPhamNhanh() {
+  const maSP = document.getElementById('qtMaSP').value.trim() || 'SP_' + Date.now();
+  const tenSP = document.getElementById('qtTenSP').value.trim();
+  const dvt = document.getElementById('qtDVT').value.trim() || 'Kg';
+  const gia = parseFloat(document.getElementById('qtGia').value) || 0;
+
+  if (!tenSP) {
+    alert("⚠️ Vui lòng nhập tên sản phẩm!");
+    return;
+  }
+
+  try {
+    await db.collection("Database").doc(maSP).set({ maSP, tenSP, dvt, gia });
+    alert("✅ Đã thêm sản phẩm thành công vào Firebase!");
+    document.getElementById('qtTenSP').value = '';
+    document.getElementById('qtGia').value = '0';
+    taiDuLieuMasterTuFirestore(); // Tự động nạp lại dữ liệu cho trang báo giá
+  } catch (err) {
+    console.error(err);
+    alert("❌ Thêm sản phẩm thất bại!");
+  }
+}
+
+// 2. Thêm khách hàng nhanh
+async function themKhachHangNhanh() {
+  const tenKhach = document.getElementById('qtTenKH').value.trim();
+  const thongTin = document.getElementById('qtInfoKH').value.trim();
+
+  if (!tenKhach) {
+    alert("⚠️ Vui lòng nhập tên khách hàng!");
+    return;
+  }
+
+  try {
+    const khId = 'KH_' + Date.now();
+    await db.collection("KhachHang").doc(khId).set({ tenKhach, thongTin });
+    alert("✅ Đã thêm khách hàng thành công vào Firebase!");
+    document.getElementById('qtTenKH').value = '';
+    document.getElementById('qtInfoKH').value = '';
+    taiDuLieuMasterTuFirestore();
+  } catch (err) {
+    console.error(err);
+    alert("❌ Thêm khách hàng thất bại!");
+  }
+}
+
+// 3. Thêm ngân hàng nhanh
+async function themBankNhanh() {
+  const tenBank = document.getElementById('qtBankName').value.trim();
+  const accName = document.getElementById('qtAccName').value.trim();
+  const accNo = document.getElementById('qtAccNo').value.trim();
+  const swift = document.getElementById('qtSwift').value.trim();
+
+  if (!tenBank || !accNo) {
+    alert("⚠️ Vui lòng nhập Tên ngân hàng và Số tài khoản!");
+    return;
+  }
+
+  try {
+    const bankId = 'BANK_' + Date.now();
+    await db.collection("DM_Bank").doc(bankId).set({ tenBank, accName, accNo, swift });
+    alert("✅ Đã thêm ngân hàng thành công vào Firebase!");
+    document.getElementById('qtBankName').value = '';
+    document.getElementById('qtAccName').value = '';
+    document.getElementById('qtAccNo').value = '';
+    document.getElementById('qtSwift').value = '';
+    taiDuLieuMasterTuFirestore();
+  } catch (err) {
+    console.error(err);
+    alert("❌ Thêm ngân hàng thất bại!");
+  }
+}

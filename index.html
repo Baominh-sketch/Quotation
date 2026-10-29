@@ -49,6 +49,9 @@
       <button class="kapella-tab-btn active" id="tabBtnStudio" onclick="chuyenManHinhKapella('STUDIO')">
         <i class="mdi mdi-file-document-edit-outline"></i> ⚡ Soạn Báo Giá / PI (Studio)
       </button>
+      <button class="kapella-tab-btn" id="tabBtnMaster" onclick="chuyenManHinhKapella('MASTER')">
+  <i class="mdi mdi-database-cog-outline"></i> 📦 Quản Lý Database & CRM
+</button>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
       <button onclick="taoDonMoi(); chuyenManHinhKapella('STUDIO');" style="background:#0ddbb9;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">
@@ -472,5 +475,103 @@
     }
   });
 </script>
+<script>
+function chuyenManHinhKapella(tab) {
+  // 1. Lấy các khung màn hình chính
+  const dashScreen = document.getElementById('manHinhDashboard'); 
+  const studioScreen = document.getElementById('manHinhSoanBaoGia'); 
+  const masterScreen = document.getElementById('manHinhQuanLyMaster'); 
+
+  // Ẩn tất cả đi
+  if (dashScreen) dashScreen.style.display = 'none';
+  if (studioScreen) studioScreen.style.display = 'none';
+  if (masterScreen) masterScreen.style.display = 'none';
+
+  // 2. Xóa trạng thái active của các nút menu
+  document.getElementById('tabBtnDash')?.classList.remove('active');
+  document.getElementById('tabBtnStudio')?.classList.remove('active');
+  document.getElementById('tabBtnMaster')?.classList.remove('active');
+
+  // 3. Hiển thị màn hình được chọn tương ứng
+  if (tab === 'DASH') {
+    if (dashScreen) dashScreen.style.display = 'block';
+    document.getElementById('tabBtnDash')?.classList.add('active');
+  } 
+  else if (tab === 'STUDIO') {
+    if (studioScreen) studioScreen.style.display = 'block';
+    document.getElementById('tabBtnStudio')?.classList.add('active');
+  } 
+  else if (tab === 'MASTER') {
+    if (masterScreen) masterScreen.style.display = 'block';
+    document.getElementById('tabBtnMaster')?.classList.add('active');
+  }
+}
+</script>
+
+<div id="manHinhQuanLyMaster" class="main-content-tab" style="display: none; padding: 25px; background: #f8fafc; min-height: 80vh;">
+  <h2 style="color: #1e293b; margin-bottom: 20px;">⚙️ Quản Lý Nhanh Dữ Liệu (Database, Khách Hàng, Ngân Hàng)</h2>
+  
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+    
+    <!-- 1. THÊM SẢN PHẨM MỚI -->
+    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+      <h3 style="color: #0d9488; margin-bottom: 15px;">➕ Thêm Sản Phẩm Mới</h3>
+      <div style="margin-bottom: 10px;">
+        <label style="font-size: 13px; font-weight: 600;">Mã SP:</label>
+        <input type="text" id="qtMaSP" placeholder="VD: GACAP" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+      </div>
+      <div style="margin-bottom: 10px;">
+        <label style="font-size: 13px; font-weight: 600;">Tên Sản Phẩm:</label>
+        <input type="text" id="qtTenSP" placeholder="Nhập tên sản phẩm..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+      </div>
+      <div style="margin-bottom: 10px;">
+        <label style="font-size: 13px; font-weight: 600;">Đơn Vị Tính (ĐVT):</label>
+        <input type="text" id="qtDVT" value="Kg" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+      </div>
+      <div style="margin-bottom: 15px;">
+        <label style="font-size: 13px; font-weight: 600;">Đơn Giá (VNK/USD):</label>
+        <input type="number" id="qtGia" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+      </div>
+      <button onclick="themSanPhamNhanh()" style="width: 100%; background: #0d9488; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;">Lưu Sản Phẩm Vào Firebase</button>
+    </div>
+
+    <!-- 2. THÊM KHÁCH HÀNG MỚI -->
+    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+      <h3 style="color: #2563eb; margin-bottom: 15px;">👤 Thêm Khách Hàng (CRM)</h3>
+      <div style="margin-bottom: 10px;">
+        <label style="font-size: 13px; font-weight: 600;">Tên Công Ty / Đối Tác:</label>
+        <input type="text" id="qtTenKH" placeholder="Nhập tên khách hàng..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+      </div>
+      <div style="margin-bottom: 15px;">
+        <label style="font-size: 13px; font-weight: 600;">Thông Tin Liên Hệ (SĐT, Địa chỉ):</label>
+        <textarea id="qtInfoKH" rows="4" placeholder="Địa chỉ, SĐT, Email..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;"></textarea>
+      </div>
+      <button onclick="themKhachHangNhanh()" style="width: 100%; background: #2563eb; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;">Lưu Khách Hàng Vào Firebase</button>
+    </div>
+
+    <!-- 3. THÊM NGÂN HÀNG THANH TOÁN -->
+    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+      <h3 style="color: #ea580c; margin-bottom: 15px;">🏦 Thêm Ngân Hàng T/T</h3>
+      <div style="margin-bottom: 8px;">
+        <label style="font-size: 12px; font-weight: 600;">Tên Ngân Hàng:</label>
+        <input type="text" id="qtBankName" placeholder="VD: VIETCOMBANK" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">
+      </div>
+      <div style="margin-bottom: 8px;">
+        <label style="font-size: 12px; font-weight: 600;">Tên Tài Khoản (Beneficiary):</label>
+        <input type="text" id="qtAccName" placeholder="CONG TY CO PHAN..." style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">
+      </div>
+      <div style="margin-bottom: 8px;">
+        <label style="font-size: 12px; font-weight: 600;">Số Tài Khoản (A/C No):</label>
+        <input type="text" id="qtAccNo" placeholder="Số tài khoản..." style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">
+      </div>
+      <div style="margin-bottom: 12px;">
+        <label style="font-size: 12px; font-weight: 600;">Swift Code:</label>
+        <input type="text" id="qtSwift" placeholder="Mã Swift..." style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">
+      </div>
+      <button onclick="themBankNhanh()" style="width: 100%; background: #ea580c; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;">Lưu Ngân Hàng Vào Firebase</button>
+    </div>
+
+  </div>
+</div>
 </body>
 </html>
