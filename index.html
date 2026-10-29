@@ -476,23 +476,23 @@
   });
 </script>
 <script>
-function chuyenManHinhKapella(tab) {
-  // Lấy các khung màn hình chính (Đảm bảo ID khớp với HTML của bạn)
+// Khai báo gắn hàm ra window để các thẻ HTML gọi được trực tiếp
+window.chuyenManHinhKapella = function(tab) {
   const dashScreen = document.getElementById('manHinhDashboard'); 
   const studioScreen = document.getElementById('manHinhSoanBaoGia'); 
   const masterScreen = document.getElementById('manHinhQuanLyMaster'); 
 
-  // 1. Ẩn tất cả các màn hình đi bằng cách ép kiểu display = 'none'
+  // 1. Ẩn tất cả các màn hình
   if (dashScreen) dashScreen.style.display = 'none';
   if (studioScreen) studioScreen.style.display = 'none';
   if (masterScreen) masterScreen.style.display = 'none';
 
-  // 2. Xóa trạng thái active của các nút menu
+  // 2. Xóa class active của các nút menu
   document.getElementById('tabBtnDash')?.classList.remove('active');
   document.getElementById('tabBtnStudio')?.classList.remove('active');
   document.getElementById('tabBtnMaster')?.classList.remove('active');
 
-  // 3. Hiển thị đúng màn hình được chọn và active nút tương ứng
+  // 3. Hiển thị màn hình tương ứng
   if (tab === 'DASH') {
     if (dashScreen) dashScreen.style.display = 'block';
     document.getElementById('tabBtnDash')?.classList.add('active');
@@ -505,15 +505,15 @@ function chuyenManHinhKapella(tab) {
     if (masterScreen) masterScreen.style.display = 'block';
     document.getElementById('tabBtnMaster')?.classList.add('active');
   }
-}
+};
 
-// Khi vừa mở trang web lên, tự động ẩn hết và chỉ bật mặc định màn hình Soạn Báo Giá (STUDIO)
+// Mặc định khi vừa mở trang lên sẽ hiển thị tab Soạn Báo Giá
 window.addEventListener('DOMContentLoaded', () => {
-  chuyenManHinhKapella('STUDIO');
+  window.chuyenManHinhKapella('STUDIO');
 });
 </script>
 
-<div id="manHinhQuanLyMaster" class="main-content-tab" style="display: none; padding: 25px; background: #f8fafc; min-height: 80vh;">
+<div id="manHinhQuanLyMaster" class="main-content-tab" style="display: none; padding: 25px;">
   <h2 style="color: #1e293b; margin-bottom: 20px;">⚙️ Quản Lý Nhanh Dữ Liệu (Database, Khách Hàng, Ngân Hàng)</h2>
   
   <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
