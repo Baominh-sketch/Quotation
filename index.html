@@ -463,5 +463,15 @@
   <div id="loading-overlay"><div class="spinner"></div><div class="loading-text">Đang xử lý...</div></div>
   <div id="custom-toast"></div>
 <script src="JS_State_CRUD.js"></script>
+<script src="JS_Render_PDF.js"></script>
+<script src="JS_Utils_Calc.js"></script>
+<script src="JS.Firebase.js"></script>
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    if (typeof taiDuLieuMasterTuFirestore === 'function') {
+      taiDuLieuMasterTuFirestore();
+    }
+  });
+</script>
 </body>
 </html>
