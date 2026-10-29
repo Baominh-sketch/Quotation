@@ -239,7 +239,7 @@ function taiDanhSachBankTuSheet() {
   try {
     google.script.run
       .withSuccessHandler(list => capNhatDropdownBank(list))
-      .withFailureHandler(err => console.warn("Lỗi tải Bank:", err))
+      //.withFailureHandler(err => console.warn("Lỗi tải Bank:", err))
       .layDanhSachBank();
   } catch (e) {
     console.warn("Bỏ qua gọi lẻ layDanhSachBank:", e);
@@ -613,6 +613,21 @@ function xoaSPTrongGio(index) {
       chuyenManHinhKapella('STUDIO');
     }
   }
+  // Hàm bật/tắt màn hình Loading và thông báo Toast
+function showLoading(isShow) {
+  const el = document.getElementById('loading-overlay');
+  if (el) el.style.display = isShow ? 'flex' : 'none';
+}
+
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('custom-toast');
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.style.background = type === 'error' ? '#ef4444' : '#10b981';
+  toast.style.display = 'block';
+  toast.style.opacity = '1';
+  setTimeout(() => { toast.style.display = 'none'; }, 3000);
+}
   // =========================================================================
   // BỘ HÀM GIAO TIẾP FIREBASE FIRESTORE (THAY THẾ GOOGLE SHEETS)
   // =========================================================================

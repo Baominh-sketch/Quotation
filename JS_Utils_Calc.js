@@ -8,7 +8,7 @@
           if (prop === "withSuccessHandler") return (fn) => createGasBridge(fn, onFailure);
           if (prop === "withFailureHandler") return (fn) => createGasBridge(onSuccess, fn);
           return (...args) => {
-            fetch(GAS_WEB_APP_URL, {
+            //fetch(GAS_WEB_APP_URL, {
               method: "POST",
               headers: { "Content-Type": "text/plain;charset=utf-8" },
               body: JSON.stringify({ action: prop, args: args })
