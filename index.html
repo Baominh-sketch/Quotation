@@ -1342,6 +1342,691 @@
       window.chuyenManHinhKapella('STUDIO');
     });
   </script>
+<!-- CÁC FILE SCRIPT NGHIỆP VỤ -->
+  <script src="JS_Utils_Calc.js"></script>
+  <script src="JS_State_CRUD.js"></script>
+  <script src="JS_Render_PDF.js"></script>
 
+  <!-- SCRIPT TÍCH HỢP HOÀN CHỈNH GIỎ HÀNG, XEM TRƯỚC A4, GỬI MAIL & MASTER DATA -->
+  <script>
+    window.masterCache = { sp: {}, kh: {}, bank: {} };
+    window.gioHang = window.gioHang || []; // Biến mảng giỏ hàng toàn cục
+
+    let dangSuaSPId = null;
+    let dangSuaKHId = null;
+    let dangSuaBankId = null;
+    let currentMainTab = 'STUDIO';
+    let currentMobileSubTab = 'FORM';
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Điều hướng chuyển tab Mobile (Form / Xem trước A4)
+    window.chuyenTabMobile = function(subTab) {
+      currentMobileSubTab = subTab;
+      const panelLeft = document.querySelector('#viewStudio .panel-left');
+      const panelRight = document.querySelector('#viewStudio .panel-right');
+      const btnForm = document.getElementById('mobBtnForm');
+      const btnPreview = document.getElementById('mobBtnPreview');
+      const isMobile = window.innerWidth <= 768;
+
+      if (!panelLeft || !panelRight) return;
+
+      if (!isMobile) {
+        panelLeft.style.display = '';
+        panelRight.style.display = '';
+        return;
+      }
+
+      if (subTab === 'PREVIEW') {
+        panelLeft.style.display = 'none';
+        panelRight.style.display = 'block';
+        btnForm?.classList.remove('active');
+        btnPreview?.classList.add('active');
+        tuDongZoomA4TrenMobile();
+      } else {
+        panelLeft.style.display = 'block';
+        panelRight.style.display = 'none';
+        btnForm?.classList.add('active');
+        btnPreview?.classList.remove('active');
+      }
+    };
+
+    function tuDongZoomA4TrenMobile() {
+      const wrapper = document.getElementById('a4Wrapper');
+      if (!wrapper) return;
+      if (window.innerWidth <= 768) {
+        const scale = Math.min(1, (window.innerWidth - 20) / 794);
+        wrapper.style.transform = `scale(${scale.toFixed(2)})`;
+        wrapper.style.transformOrigin = 'top center';
+      }
+    }
+
+    window.chuyenManHinhKapella = function(tab) {
+      currentMainTab = tab;
+      const dashScreen = document.getElementById('viewDashboard');
+      const studioScreen = document.getElementById('viewStudio');
+      const masterScreen = document.getElementById('manHinhQuanLyMaster');
+      const mobNav = document.getElementById('mobileBottomNav');
+
+      [dashScreen, studioScreen, masterScreen].forEach((screen) => {
+        if (screen) screen.style.display = 'none';
+      });
+
+      ['tabBtnDash', 'tabBtnStudio', 'tabBtnMaster'].forEach((id) => {
+        document.getElementById(id)?.classList.remove('active');
+      });
+
+      if (tab === 'DASH' && dashScreen) {
+        dashScreen.style.display = 'block';
+        document.getElementById('tabBtnDash')?.classList.add('active');
+        if (mobNav) mobNav.style.setProperty('display', 'none', 'important');
+        if (typeof renderKapellaDashboard === 'function') renderKapellaDashboard();
+      } else if (tab === 'STUDIO' && studioScreen) {
+        studioScreen.style.display = 'flex';
+        document.getElementById('tabBtnStudio')?.classList.add('active');
+        if (mobNav) mobNav.style.display = '';
+        window.chuyenTabMobile(currentMobileSubTab);
+      } else if (tab === 'MASTER' && masterScreen) {
+        masterScreen.style.display = 'block';
+        document.getElementById('tabBtnMaster')?.classList.add('active');
+        if (mobNav) mobNav.style.setProperty('display', 'none', 'important');
+      }
+    };
+
+    // =====================================================
+    // 1. QUẢN LÝ GIỎ HÀNG & RENDER BẢNG A4
+    // =====================================================
+    window.themVaoGio = function() {
+      const maSP = document.getElementById('inMaSPMoi')?.value.trim() || 'SP01';
+      const tenSP = document.getElementById('inTenSP')?.value.trim();
+      const dvt = document.getElementById('inDVT')?.value.trim() || 'Kg';
+      const sl = parseFloat(document.getElementById('inSL')?.value) || 1;
+      const gia = parseFloat(document.getElementById('inGia')?.value) || 0;
+      const vat = document.getElementById('inVAT')?.value || '8';
+      const imgEl = document.getElementById('spPreviewLeft');
+      const anh = (imgEl && imgEl.style.display !== 'none') ? imgEl.src : '';
+
+      if (!tenSP) {
+        alert("⚠️ Vui lòng chọn hoặc nhập tên sản phẩm!");
+        return;
+      }
+
+      window.gioHang.push({
+        id: Date.now(),
+        maSP,
+        tenSP,
+        dvt,
+        sl,
+        gia,
+        vat,
+        anh
+      });
+
+      // Reset form nhập SP nhẹ nhàng
+      document.getElementById('inTenSP').value = '';
+      document.getElementById('inSL').value = '1';
+      
+      renderTable();
+      updatePreview();
+      
+      // Toast thông báo thành công
+      const toast = document.getElementById('custom-toast');
+      if (toast) {
+        toast.innerText = "✅ Đã thêm sản phẩm vào đơn!";
+        toast.className = "show";
+        setTimeout(() => { toast.className = ""; }, 2500);
+      }
+    };
+
+    window.xoaKhoiGio = function(index) {
+      window.gioHang.splice(index, 1);
+      renderTable();
+      updatePreview();
+    };
+
+    window.renderTable = function() {
+      const miniBody = document.getElementById('cartMiniBody');
+      const preTable = document.getElementById('preTable');
+      const headerRow = document.getElementById('tableHeaderRow');
+      
+      if (!miniBody || !preTable) return;
+
+      // 1. Render bảng mini bên trái
+      if (window.gioHang.length === 0) {
+        miniBody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--argon-muted);">Chưa có sản phẩm</td></tr>';
+      } else {
+        miniBody.innerHTML = '';
+        window.gioHang.forEach((item, idx) => {
+          miniBody.innerHTML += `
+            <tr>
+              <td><b>${escapeHtml(item.maSP)}</b><br><span style="font-size:11px; color:#475569;">${escapeHtml(item.tenSP.split('\n')[0])}</span></td>
+              <td>${item.sl} ${escapeHtml(item.dvt)}</td>
+              <td>${item.vat}%</td>
+              <td><button onclick="xoaKhoiGio(${idx})" style="background:#ef4444; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer;">Xóa</button></td>
+            </tr>`;
+        });
+      }
+
+      // 2. Render bảng A4 xem trước bên phải
+      const showImage = document.getElementById('chkShowImage')?.checked ?? true;
+      const showTotal = document.getElementById('chkShowTotal')?.checked ?? true;
+      const currency = document.getElementById('inCurrency')?.value || 'VND';
+
+      if (headerRow) {
+        headerRow.innerHTML = `
+          <th width="40">STT</th>
+          <th>MÔ TẢ SẢN PHẨM / QUY CÁCH</th>
+          <th width="75">SL</th>
+          <th width="90">ĐƠN GIÁ (${currency})</th>
+          <th width="95">THÀNH TIỀN</th>
+          ${showImage ? '<th width="65">ẢNH</th>' : ''}
+        `;
+      }
+
+      preTable.innerHTML = '';
+      let tongTien = 0;
+
+      if (window.gioHang.length === 0) {
+        preTable.innerHTML = `<tr><td colspan="${showImage ? 6 : 5}" style="text-align:center;color:#94a3b8;padding:20px;font-style:italic;">Chưa có sản phẩm trong đơn báo giá</td></tr>`;
+      } else {
+        window.gioHang.forEach((item, idx) => {
+          const thanhTien = item.sl * item.gia;
+          tongTien += thanhTien;
+          preTable.innerHTML += `
+            <tr>
+              <td style="text-align:center;font-weight:700;">${idx + 1}</td>
+              <td style="white-space:pre-line;font-weight:600;color:#0f172a;">${escapeHtml(item.tenSP)}</td>
+              <td style="text-align:center;">${item.sl} ${escapeHtml(item.dvt)}</td>
+              <td style="text-align:right;">${item.gia.toLocaleString('vi-VN')}</td>
+              <td style="text-align:right;font-weight:700;">${thanhTien.toLocaleString('vi-VN')}</td>
+              ${showImage ? `<td style="text-align:center;">${item.anh ? `<img src="${item.anh}" style="max-height:40px;border-radius:4px;object-fit:cover;">` : ''}</td>` : ''}
+            </tr>`;
+        });
+
+        if (showTotal) {
+          preTable.innerHTML += `
+            <tr style="background:#f8fafc; font-weight:800;">
+              <td colspan="${showImage ? 4 : 3}" style="text-align:right; padding-right:12px;">TỔNG CỘNG (TOTAL):</td>
+              <td colspan="2" style="text-align:right; color:var(--doc-primary); font-size:14px;">${tongTien.toLocaleString('vi-VN')} ${currency}</td>
+            </tr>`;
+        }
+      }
+
+      // Đọc số thành chữ
+      const preWords = document.getElementById('preAmountInWords');
+      if (preWords && typeof docSoThanhChu === 'function') {
+        preWords.innerText = docSoThanhChu(tongTien) + (currency === 'USD' đô la Mỹ : ' đồng chẵn.');
+      }
+    };
+
+    window.updatePreview = function() {
+      const preKhach = document.getElementById('preKhach');
+      const preLienHe = document.getElementById('preLienHe');
+      const boxTel = document.getElementById('boxClientTel');
+      const preMa = document.getElementById('preMa');
+      const preNgay = document.getElementById('preNgay');
+      const preDieuKhoan = document.getElementById('preDieuKhoan');
+      const termsBox = document.getElementById('termsSectionBox');
+      const notesSec = document.getElementById('boxNotesSection');
+      const payPre = document.getElementById('boxPaymentTermPre');
+      const prePayment = document.getElementById('prePaymentTerm');
+
+      if (preKhach) preKhach.innerText = document.getElementById('inKhach')?.value || '...';
+      const lienHeVal = document.getElementById('inLienHe')?.value || '';
+      if (boxTel) {
+        if (lienHeVal) {
+          boxTel.style.display = 'block';
+          if (preLienHe) preLienHe.innerText = lienHeVal;
+        } else {
+          boxTel.style.display = 'none';
+        }
+      }
+
+      if (preMa) preMa.innerText = document.getElementById('inMa')?.value || 'QUO-2026-001';
+      if (preNgay) preNgay.innerText = document.getElementById('inNgay')?.value || new Date().toLocaleDateString('vi-VN');
+
+      const dieuKhoanVal = document.getElementById('inDieuKhoan')?.value || '';
+      const payVal = document.getElementById('inPaymentTerm')?.value || '';
+
+      if (termsBox) {
+        if (dieuKhoanVal || payVal) {
+          termsBox.style.display = 'block';
+          if (notesSec) {
+            notesSec.style.display = dieuKhoanVal ? 'block' : 'none';
+            if (preDieuKhoan) preDieuKhoan.innerText = dieuKhoanVal;
+          }
+          if (payPre) {
+            payPre.style.display = payVal ? 'block' : 'none';
+            if (prePayment) prePayment.innerText = payVal;
+          }
+        } else {
+          termsBox.style.display = 'none';
+        }
+      }
+    };
+
+    // =====================================================
+    // 2. GỬI MAIL LIÊN KẾT QUA GMAIL WEB
+    // =====================================================
+    window.guiEmailChoKhachHang = function() {
+      const email = document.getElementById('inEmailKhach')?.value.trim();
+      const subject = document.getElementById('inEmailSubject')?.value.trim() || 'Báo giá từ Goods Link JSC';
+      const bodyMsg = document.getElementById('inEmailBody')?.value.trim() || 'Kính gửi Quý khách, chúng tôi xin gửi bảng báo giá chi tiết trong tệp đính kèm.';
+      const lienHeCty = document.getElementById('inThongTinLienHeMail')?.value.trim() || '';
+
+      if (!email) {
+        alert("⚠️ Vui lòng nhập địa chỉ Email của khách hàng ở mục số 4!");
+        return;
+      }
+
+      const fullBody = `${bodyMsg}\n\n-----------------------------------\n${lienHeCty}\n(Lưu ý: Quý khách vui lòng tải file PDF từ ứng dụng và đính kèm vào email trước khi bấm gửi).`;
+      
+      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(fullBody)}`;
+      
+      window.open(gmailUrl, '_blank');
+    };
+
+    // =====================================================
+    // 3. QUẢN LÝ MASTER DATA (THÊM, SỬA, XÓA, LỊCH SỬ)
+    // =====================================================
+    async function themSanPhamNhanh() {
+      const maSP = document.getElementById('qtMaSP')?.value.trim();
+      const tenSP = document.getElementById('qtTenSP')?.value.trim();
+      const moTaSP = document.getElementById('qtMoTaSP')?.value.trim() || '';
+      const dvt = document.getElementById('qtDVT')?.value.trim() || 'Kg';
+      const gia = parseFloat(document.getElementById('qtGia')?.value) || 0;
+
+      if (!maSP || !tenSP) {
+        alert("⚠️ Vui lòng nhập đầy đủ Mã SP và Tên Sản Phẩm!");
+        return;
+      }
+
+      try {
+        if (dangSuaSPId && dangSuaSPId !== maSP) {
+          await db.collection("Database").doc(dangSuaSPId).delete();
+        }
+
+        await db.collection("Database").doc(maSP).set({
+          maSP, tenSP, moTaSP, dvt, gia,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+
+        alert(dangSuaSPId ? "✅ Đã cập nhật sản phẩm thành công!" : "✅ Đã thêm sản phẩm thành công!");
+        huySuaSP();
+        await taiDuLieuMasterTuFirestore();
+      } catch (err) {
+        alert("❌ Lỗi: " + err.message);
+      }
+    }
+
+    function suaSanPham(docId) {
+      const d = window.masterCache.sp[docId];
+      if (!d) return;
+      dangSuaSPId = docId;
+      document.getElementById('qtMaSP').value = d.maSP || docId;
+      document.getElementById('qtTenSP').value = d.tenSP || '';
+      document.getElementById('qtMoTaSP').value = d.moTaSP || '';
+      document.getElementById('qtDVT').value = d.dvt || 'Kg';
+      document.getElementById('qtGia').value = d.gia || 0;
+
+      document.getElementById('titleFormSP').innerText = "✏️ Đang Sửa SP: " + (d.maSP || docId);
+      document.getElementById('btnSaveSP').innerText = "💾 Cập Nhật SP";
+      document.getElementById('btnCancelSP').style.display = 'inline-block';
+      document.getElementById('qtTenSP').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function huySuaSP() {
+      dangSuaSPId = null;
+      document.getElementById('qtMaSP').value = '';
+      document.getElementById('qtTenSP').value = '';
+      document.getElementById('qtMoTaSP').value = '';
+      document.getElementById('qtDVT').value = 'Kg';
+      document.getElementById('qtGia').value = '0';
+      document.getElementById('titleFormSP').innerText = "➕ Thêm Sản Phẩm Mới";
+      document.getElementById('btnSaveSP').innerText = "💾 Lưu Sản Phẩm";
+      document.getElementById('btnCancelSP').style.display = 'none';
+    }
+
+    async function themKhachHangNhanh() {
+      const tenKH = document.getElementById('qtTenKH')?.value.trim();
+      const infoKH = document.getElementById('qtInfoKH')?.value.trim() || '';
+      if (!tenKH) { alert("⚠️ Vui lòng nhập Tên Khách Hàng!"); return; }
+
+      try {
+        if (dangSuaKHId) {
+          await db.collection("KhachHang").doc(dangSuaKHId).set({ tenKH, infoKH, updatedAt: new Date().toISOString() }, { merge: true });
+          alert("✅ Đã cập nhật khách hàng!");
+        } else {
+          await db.collection("KhachHang").add({ tenKH, infoKH, createdAt: new Date().toISOString() });
+          alert("✅ Đã thêm khách hàng mới!");
+        }
+        huySuaKH();
+        await taiDuLieuMasterTuFirestore();
+      } catch (e) { alert("❌ Lỗi: " + e.message); }
+    }
+
+    function suaKhachHang(docId) {
+      const d = window.masterCache.kh[docId];
+      if (!d) return;
+      dangSuaKHId = docId;
+      document.getElementById('qtTenKH').value = d.tenKH || '';
+      document.getElementById('qtInfoKH').value = d.infoKH || '';
+      document.getElementById('titleFormKH').innerText = "✏️ Đang Sửa Khách Hàng";
+      document.getElementById('btnSaveKH').innerText = "💾 Cập Nhật KH";
+      document.getElementById('btnCancelKH').style.display = 'inline-block';
+      document.getElementById('qtTenKH').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function huySuaKH() {
+      dangSuaKHId = null;
+      document.getElementById('qtTenKH').value = '';
+      document.getElementById('qtInfoKH').value = '';
+      document.getElementById('titleFormKH').innerText = "👤 Thêm Khách Hàng (CRM)";
+      document.getElementById('btnSaveKH').innerText = "💾 Lưu Khách Hàng";
+      document.getElementById('btnCancelKH').style.display = 'none';
+    }
+
+    async function themBankNhanh() {
+      const bankName = document.getElementById('qtBankName')?.value.trim();
+      const accName = document.getElementById('qtAccName')?.value.trim() || '';
+      const accNo = document.getElementById('qtAccNo')?.value.trim();
+      const swift = document.getElementById('qtSwift')?.value.trim() || '';
+      if (!bankName || !accNo) { alert("⚠️ Nhập tên ngân hàng và số tài khoản!"); return; }
+
+      try {
+        if (dangSuaBankId) {
+          await db.collection("DM_Bank").doc(dangSuaBankId).set({ bankName, accName, accNo, swift, updatedAt: new Date().toISOString() }, { merge: true });
+          alert("✅ Đã cập nhật ngân hàng!");
+        } else {
+          await db.collection("DM_Bank").add({ bankName, accName, accNo, swift, createdAt: new Date().toISOString() });
+          alert("✅ Đã thêm ngân hàng mới!");
+        }
+        huySuaBank();
+        await taiDuLieuMasterTuFirestore();
+      } catch (e) { alert("❌ Lỗi: " + e.message); }
+    }
+
+    function suaBank(docId) {
+      const d = window.masterCache.bank[docId];
+      if (!d) return;
+      dangSuaBankId = docId;
+      document.getElementById('qtBankName').value = d.bankName || '';
+      document.getElementById('qtAccName').value = d.accName || '';
+      document.getElementById('qtAccNo').value = d.accNo || '';
+      document.getElementById('qtSwift').value = d.swift || '';
+      document.getElementById('titleFormBank').innerText = "✏️ Đang Sửa Ngân Hàng";
+      document.getElementById('btnSaveBank').innerText = "💾 Cập Nhật Bank";
+      document.getElementById('btnCancelBank').style.display = 'inline-block';
+      document.getElementById('qtBankName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function huySuaBank() {
+      dangSuaBankId = null;
+      document.getElementById('qtBankName').value = '';
+      document.getElementById('qtAccName').value = '';
+      document.getElementById('qtAccNo').value = '';
+      document.getElementById('qtSwift').value = '';
+      document.getElementById('titleFormBank').innerText = "🏦 Thêm Ngân Hàng T/T";
+      document.getElementById('btnSaveBank').innerText = "💾 Lưu Ngân Hàng";
+      document.getElementById('btnCancelBank').style.display = 'none';
+    }
+
+    async function taiDuLieuMasterTuFirestore() {
+      try {
+        window.masterCache = { sp: {}, kh: {}, bank: {} };
+
+        // Sản phẩm
+        const spSnap = await db.collection("Database").get();
+        const spSelect = document.getElementById('spSelect');
+        const tableSP = document.querySelector('#tableHistorySP tbody');
+        if (spSelect) spSelect.innerHTML = '<option value="">-- Chọn sản phẩm từ Database --</option>';
+        if (tableSP) tableSP.innerHTML = '';
+
+        let countSP = 0;
+        spSnap.forEach(doc => {
+          countSP++;
+          const d = doc.data();
+          const docId = doc.id;
+          const ma = d.maSP || docId;
+          const ten = d.tenSP || '';
+          const moTa = d.moTaSP || '';
+          const dvt = d.dvt || 'Kg';
+          const gia = Number(d.gia) || 0;
+
+          window.masterCache.sp[docId] = { docId, maSP: ma, tenSP: ten, moTaSP: moTa, dvt, gia };
+
+          if (spSelect) {
+            spSelect.innerHTML += `<option value="${escapeHtml(docId)}">[${escapeHtml(ma)}] ${escapeHtml(ten)} — ${gia.toLocaleString('vi-VN')} (${escapeHtml(dvt)})</option>`;
+          }
+          if (tableSP) {
+            tableSP.innerHTML += `
+              <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:8px; vertical-align:top;">
+                  <div style="font-weight:700; color:#0f172a;">[${escapeHtml(ma)}] ${escapeHtml(ten)}</div>
+                  ${moTa ? `<div style="color:#475569; font-size:11px; white-space:pre-line; margin-top:3px;">📝 ${escapeHtml(moTa)}</div>` : `<div style="color:#94a3b8; font-size:11px; font-style:italic;">(Chưa có mô tả chi tiết)</div>`}
+                </td>
+                <td style="padding:8px; vertical-align:top; font-weight:700; color:#0d9488;">
+                  ${gia.toLocaleString('vi-VN')}<br><span style="font-size:11px; color:#64748b;">${escapeHtml(dvt)}</span>
+                </td>
+                <td style="padding:8px; text-align:right; vertical-align:top; white-space:nowrap;">
+                  <button onclick="suaSanPham('${escapeHtml(docId)}')" style="background:#f59e0b; color:#fff; border:none; padding:4px 7px; border-radius:4px; font-size:11px; cursor:pointer; margin-right:3px;">Sửa</button>
+                  <button onclick="xoaFirestore('Database', '${escapeHtml(docId)}', 'Sản phẩm')" style="background:#ef4444; color:#fff; border:none; padding:4px 7px; border-radius:4px; font-size:11px; cursor:pointer;">Xóa</button>
+                </td>
+              </tr>`;
+          }
+        });
+
+        // Khách hàng
+        const khSnap = await db.collection("KhachHang").get();
+        const khSelect = document.getElementById('khSelect');
+        const tableKH = document.querySelector('#tableHistoryKH tbody');
+        if (khSelect) khSelect.innerHTML = '<option value="">-- Chọn khách hàng lưu sẵn --</option>';
+        if (tableKH) tableKH.innerHTML = '';
+
+        let countKH = 0;
+        khSnap.forEach(doc => {
+          countKH++;
+          const d = doc.data();
+          const docId = doc.id;
+          const ten = d.tenKH || '';
+          const info = d.infoKH || '';
+
+          window.masterCache.kh[docId] = { docId, tenKH: ten, infoKH: info };
+
+          if (khSelect) {
+            khSelect.innerHTML += `<option value="${escapeHtml(docId)}">${escapeHtml(ten)}</option>`;
+          }
+          if (tableKH) {
+            tableKH.innerHTML += `
+              <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:8px; vertical-align:top;">
+                  <div style="font-weight:700; color:#1e40af;">${escapeHtml(ten)}</div>
+                  ${info ? `<div style="color:#475569; font-size:11px; white-space:pre-line; margin-top:3px;">📍 ${escapeHtml(info)}</div>` : `<div style="color:#94a3b8; font-size:11px; font-style:italic;">(Chưa có thông tin)</div>`}
+                </td>
+                <td style="padding:8px; text-align:right; vertical-align:top; white-space:nowrap;">
+                  <button onclick="suaKhachHang('${escapeHtml(docId)}')" style="background:#f59e0b; color:#fff; border:none; padding:4px 7px; border-radius:4px; font-size:11px; cursor:pointer; margin-right:3px;">Sửa</button>
+                  <button onclick="xoaFirestore('KhachHang', '${escapeHtml(docId)}', 'Khách hàng')" style="background:#ef4444; color:#fff; border:none; padding:4px 7px; border-radius:4px; font-size:11px; cursor:pointer;">Xóa</button>
+                </td>
+              </tr>`;
+          }
+        });
+
+        // Ngân hàng
+        const bankSnap = await db.collection("DM_Bank").get();
+        const bankSelect = document.getElementById('bankSelect');
+        const tableBank = document.querySelector('#tableHistoryBank tbody');
+        if (bankSelect) bankSelect.innerHTML = '<option value="">-- Chọn Bank từ Database --</option>';
+        if (tableBank) tableBank.innerHTML = '';
+
+        bankSnap.forEach(doc => {
+          const d = doc.data();
+          const docId = doc.id;
+          const bName = d.bankName || '';
+          const accName = d.accName || '';
+          const accNo = d.accNo || '';
+          const swift = d.swift || '';
+
+          window.masterCache.bank[docId] = { docId, bankName: bName, accName, accNo, swift };
+
+          if (bankSelect) {
+            bankSelect.innerHTML += `<option value="${escapeHtml(docId)}">${escapeHtml(bName)} — A/C: ${escapeHtml(accNo)}</option>`;
+          }
+          if (tableBank) {
+            tableBank.innerHTML += `
+              <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:8px; vertical-align:top;">
+                  <div style="font-weight:700; color:#c2410c;">🏦 ${escapeHtml(bName)}</div>
+                  <div style="color:#0f172a; font-size:11.5px;">👤 ${escapeHtml(accName || '---')}</div>
+                  <div style="color:#0f172a; font-size:11.5px;">💳 STK: ${escapeHtml(accNo)}</div>
+                  <div style="color:#475569; font-size:11px;">🌐 Swift: ${escapeHtml(swift || '---')}</div>
+                </td>
+                <td style="padding:8px; text-align:right; vertical-align:top; white-space:nowrap;">
+                  <button onclick="suaBank('${escapeHtml(docId)}')" style="background:#f59e0b; color:#fff; border:none; padding:4px 7px; border-radius:4px; font-size:11px; cursor:pointer; margin-right:3px;">Sửa</button>
+                  <button onclick="xoaFirestore('DM_Bank', '${escapeHtml(docId)}', 'Ngân hàng')" style="background:#ef4444; color:#fff; border:none; padding:4px 7px; border-radius:4px; font-size:11px; cursor:pointer;">Xóa</button>
+                </td>
+              </tr>`;
+          }
+        });
+
+      } catch (err) {
+        console.error("Lỗi tải Master:", err);
+      }
+    }
+
+    async function xoaFirestore(collectionName, docId, tenLoai) {
+      if (confirm(`⚠️ Bạn có chắc chắn muốn xóa ${tenLoai} này không?`)) {
+        try {
+          await db.collection(collectionName).doc(docId).delete();
+          alert(`✅ Đã xóa thành công!`);
+          await taiDuLieuMasterTuFirestore();
+        } catch (e) { alert("❌ Lỗi: " + e.message); }
+      }
+    }
+
+    // Chọn sản phẩm -> Đẩy chuẩn xác Tên + Mô tả xuống ô nhập liệu
+    window.chonSPDatabase = function() {
+      const sel = document.getElementById('spSelect');
+      if (!sel || !sel.value) return;
+      const item = window.masterCache.sp[sel.value];
+      if (!item) return;
+
+      const fullDesc = item.moTaSP ? `${item.tenSP}\n${item.moTaSP}` : item.tenSP;
+
+      if (document.getElementById('inTenSP')) document.getElementById('inTenSP').value = fullDesc;
+      if (document.getElementById('inMaSPMoi')) document.getElementById('inMaSPMoi').value = item.maSP;
+      if (document.getElementById('inDVT')) document.getElementById('inDVT').value = item.dvt;
+      if (document.getElementById('inGia')) document.getElementById('inGia').value = item.gia;
+    };
+
+    window.chonKhachHangCRM = function() {
+      const sel = document.getElementById('khSelect');
+      if (!sel || !sel.value) return;
+      const kh = window.masterCache.kh[sel.value];
+      if (!kh) return;
+      if (document.getElementById('inKhach')) document.getElementById('inKhach').value = kh.tenKH || '';
+      if (document.getElementById('inLienHe')) document.getElementById('inLienHe').value = kh.infoKH || '';
+      updatePreview();
+    };
+
+    window.chonBankTuSheet = function() {
+      const sel = document.getElementById('bankSelect');
+      if (!sel || !sel.value) return;
+      const b = window.masterCache.bank[sel.value];
+      if (!b) return;
+
+      const lines = [];
+      if (b.bankName) lines.push(`Bank Name: ${b.bankName}`);
+      if (b.accName) lines.push(`Beneficiary: ${b.accName}`);
+      if (b.accNo) lines.push(`Account No: ${b.accNo}`);
+      if (b.swift) lines.push(`SWIFT Code: ${b.swift}`);
+
+      if (document.getElementById('inBankInfo')) {
+        document.getElementById('inBankInfo').value = lines.join('\n');
+      }
+      updatePreview();
+    };
+
+    window.luuKhachHangTuStudio = async function() {
+      const tenKH = document.getElementById('inKhach')?.value.trim();
+      const infoKH = document.getElementById('inLienHe')?.value.trim() || '';
+      if (!tenKH) { alert("⚠️ Vui lòng nhập Tên khách hàng!"); return; }
+      try {
+        await db.collection("KhachHang").add({ tenKH, infoKH, createdAt: new Date().toISOString() });
+        alert("✅ Đã lưu khách hàng vào Database!");
+        await taiDuLieuMasterTuFirestore();
+      } catch (e) { alert("❌ Lỗi: " + e.message); }
+    };
+
+    window.luuSanPhamTuStudio = async function() {
+      const maSP = document.getElementById('inMaSPMoi')?.value.trim() || ('SP' + Date.now().toString().slice(-4));
+      const fullText = document.getElementById('inTenSP')?.value.trim() || '';
+      const dvt = document.getElementById('inDVT')?.value.trim() || 'Kg';
+      const gia = parseFloat(document.getElementById('inGia')?.value) || 0;
+      if (!fullText) { alert("⚠️ Vui lòng nhập Tên / Mô tả sản phẩm!"); return; }
+
+      const parts = fullText.split('\n');
+      const tenSP = parts[0];
+      const moTaSP = parts.slice(1).join('\n');
+
+      try {
+        await db.collection("Database").doc(maSP).set({
+          maSP, tenSP, moTaSP, dvt, gia, updatedAt: new Date().toISOString()
+        }, { merge: true });
+        alert("✅ Đã lưu sản phẩm [" + maSP + "] vào Database!");
+        await taiDuLieuMasterTuFirestore();
+      } catch (e) { alert("❌ Lỗi: " + e.message); }
+    };
+
+    window.chenMauNhanh = function(elementId, text) {
+      const el = document.getElementById(elementId);
+      if (el) {
+        el.value = text;
+        el.dispatchEvent(new Event('input'));
+        updatePreview();
+      }
+    };
+
+    window.xuatPDF = async function() {
+      const paper = document.getElementById('a4Paper');
+      const wrapper = document.getElementById('a4Wrapper');
+      const panelRight = document.querySelector('#viewStudio .panel-right');
+      if (!paper) { alert("❌ Không tìm thấy khung giấy A4!"); return; }
+
+      const maDon = document.getElementById('inMa')?.value.trim() || 'BAO-GIA';
+      const oldTransform = wrapper ? wrapper.style.transform : '';
+      const oldPanelDisplay = panelRight ? panelRight.style.display : '';
+
+      if (panelRight && panelRight.style.display === 'none') panelRight.style.display = 'block';
+      if (wrapper) wrapper.style.transform = 'scale(1)';
+
+      try {
+        const opt = {
+          margin: 0,
+          filename: `${maDon}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        await html2pdf().set(opt).from(paper).save();
+      } catch (err) {
+        alert("❌ Lỗi khi tải PDF: " + err.message);
+      } finally {
+        if (wrapper) wrapper.style.transform = oldTransform;
+        if (panelRight) panelRight.style.display = oldPanelDisplay;
+      }
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      taiDuLieuMasterTuFirestore();
+      window.chuyenManHinhKapella('STUDIO');
+    });
+  </script>
 </body>
 </html>
