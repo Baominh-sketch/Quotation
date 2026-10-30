@@ -33,7 +33,7 @@
   
   <link rel="stylesheet" href="UI_Styles.css">
 
-  <!-- 4. BỘ CSS HIỂN THỊ ẢNH LỚN, WATERMARK PDF & TỐI ƯU MOBILE/TABLET -->
+  <!-- 4. BỘ CSS HIỂN THỊ ẢNH CỠ LỚN, WATERMARK XUYÊN THẤU & TỐI ƯU MOBILE/TABLET -->
   <style>
     .kp-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
     .kp-main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
@@ -44,50 +44,63 @@
     #a4Paper {
       position: relative !important;
       overflow: hidden !important;
+      background-color: #ffffff !important;
     }
     #sysLogo {
-      max-height: 72px;
-      max-width: 190px;
-      object-fit: contain;
+      max-height: 75px !important;
+      max-width: 200px !important;
+      object-fit: contain !important;
       display: none;
     }
-    /* Đặt Watermark ở lớp phủ xuyên thấu trên cùng để không bị nền trắng của bảng che mất khi xuất PDF */
+    /* Ghi đè toàn bộ CSS cũ của .watermark-overlay để hiển thị rõ nét trên cả màn hình và PDF */
+    #a4Paper .watermark-overlay,
     .watermark-overlay {
       position: absolute !important;
       top: 0 !important;
       left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
       width: 100% !important;
       height: 100% !important;
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
       pointer-events: none !important;
-      z-index: 25 !important;
+      z-index: 50 !important;
+      opacity: 1 !important;
+      visibility: visible !important;
       overflow: hidden !important;
     }
+    #a4Paper .watermark-overlay img,
     #watermarkImg {
-      width: 420px;
-      max-width: 68%;
-      max-height: 68%;
-      object-fit: contain;
-      display: none;
+      width: 440px !important;
+      height: auto !important;
+      max-width: 72% !important;
+      max-height: 72% !important;
+      object-fit: contain !important;
+      opacity: 1 !important;
+      filter: none !important;
     }
     .a4-content-body {
-      position: relative;
-      z-index: 2;
+      position: relative !important;
+      z-index: 2 !important;
     }
-    /* Khung ảnh sản phẩm lớn trên bảng báo giá A4 */
+
+    /* KHUNG ẢNH SẢN PHẨM TO CỠ KHUNG MÀU ĐỎ (160px x 145px) */
+    #a4Paper .modern-table td img.pdf-product-img,
+    .modern-table td img.pdf-product-img,
     .pdf-product-img {
-      width: 92px;
-      height: 92px;
-      max-width: 100px;
-      max-height: 92px;
-      object-fit: contain;
-      border-radius: 6px;
-      border: 1px solid #e2e8f0;
-      padding: 2px;
-      background: #ffffff;
-      display: inline-block;
+      width: 160px !important;
+      height: 145px !important;
+      max-width: 165px !important;
+      max-height: 150px !important;
+      object-fit: cover !important;
+      border-radius: 8px !important;
+      border: 1px solid #cbd5e1 !important;
+      padding: 0 !important;
+      background: #ffffff !important;
+      display: block !important;
+      margin: 4px auto !important;
     }
 
     @media screen and (max-width: 1024px) {
@@ -367,7 +380,7 @@
 
           <div class="row">
             <div class="form-group col"><label>Mã SP</label><input type="text" id="inMaSPMoi" placeholder="Tự động"></div>
-            <div class="form-group col"><label>ĐVT</label><input type="text" id="inDVT" value="Kg" oninput="renderTable()"></div>
+            <div class="form-group col"><label>ĐVT</label><input type="text" id="inDVT" value="CTN" oninput="renderTable()"></div>
             <div class="form-group col"><label>Số lượng</label><input type="number" id="inSL" value="1" min="0" step="any"></div>
           </div>
 
@@ -383,7 +396,7 @@
             <label>Ảnh sản phẩm (HD Lớn) — Tự động gắn vào dòng sản phẩm</label>
             <input type="file" id="inSpFile" accept="image/png, image/jpeg, image/webp" onchange="loadSpImage(this)">
             <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
-              <img id="spPreviewLeft" style="height:82px;width:82px;object-fit:contain;display:none;border-radius:8px;border:1px solid #cbd5e1;background:#fff;padding:2px;">
+              <img id="spPreviewLeft" style="height:86px;width:96px;object-fit:cover;display:none;border-radius:8px;border:1px solid #cbd5e1;background:#fff;">
               <button type="button" id="btnClearSpImg" onclick="xoaAnhSpTam()" style="display:none;background:#ef4444;color:#fff;border:none;padding:5px 10px;border-radius:4px;font-size:11px;cursor:pointer;">Xóa ảnh SP</button>
             </div>
           </div>
@@ -400,7 +413,7 @@
 
         <!-- 3. LOGO & WATERMARK -->
         <div class="argon-card">
-          <div class="argon-card-header"><div class="argon-card-title">🎨 3. Logo & Watermark (Tự lưu trình duyệt)</div></div>
+          <div class="argon-card-header"><div class="argon-card-title">🎨 3. Logo & Watermark (In trực tiếp vào PDF)</div></div>
           <div class="row">
             <div class="form-group col">
               <label>Logo Công ty</label>
@@ -408,8 +421,13 @@
               <button type="button" onclick="xoaLogo()" id="btnXoaLogo" style="display:none;margin-top:5px;background:var(--argon-danger);color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Xóa Logo</button>
             </div>
             <div class="form-group col">
-              <label>Watermark chìm (In vào PDF)</label>
+              <label>Watermark chìm (Tự tách nền trắng)</label>
               <input type="file" id="inWmFile" accept="image/png, image/jpeg, image/webp" onchange="loadWatermark(this)">
+              <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+                <span style="font-size:10.5px;color:#475569;font-weight:700;">Độ đậm:</span>
+                <input type="range" id="wmOpacitySlider" min="8" max="45" value="20" oninput="doiDoDamWatermark(this.value)" style="flex:1;cursor:pointer;">
+                <span id="wmOpacityLabel" style="font-size:10.5px;font-weight:700;color:#0d9488;">20%</span>
+              </div>
               <button type="button" onclick="xoaWatermark()" id="btnXoaWm" style="display:none;margin-top:5px;background:var(--argon-danger);color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Xóa Watermark</button>
             </div>
           </div>
@@ -559,13 +577,13 @@
         <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Tên Sản Phẩm:</label><input type="text" id="qtTenSP" placeholder="VD: COCONUT" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></div>
         <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Mô tả / Quy cách chi tiết:</label><textarea id="qtMoTaSP" rows="2" placeholder="Quy cách, thành phần, tiêu chuẩn xuất khẩu..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></textarea></div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom: 8px;">
-          <div><label style="font-size: 12px; font-weight: 600;">ĐVT:</label><input type="text" id="qtDVT" value="Kg" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></div>
+          <div><label style="font-size: 12px; font-weight: 600;">ĐVT:</label><input type="text" id="qtDVT" value="CTN" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></div>
           <div><label style="font-size: 12px; font-weight: 600;">Đơn Giá:</label><input type="number" id="qtGia" value="0" step="any" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></div>
         </div>
         <div style="margin-bottom: 12px;">
           <label style="font-size: 12px; font-weight: 600;">Ảnh Sản Phẩm Mặc Định (Tùy chọn):</label>
           <input type="file" id="qtFileSP" accept="image/png, image/jpeg, image/webp" onchange="loadMasterSpImage(this)" style="width: 100%; font-size: 12px;">
-          <img id="qtPreviewSP" style="height:68px; width:68px; object-fit:contain; display:none; margin-top:6px; border-radius:6px; border:1px solid #cbd5e1; background:#fff; padding:2px;">
+          <img id="qtPreviewSP" style="height:68px; width:68px; object-fit:cover; display:none; margin-top:6px; border-radius:6px; border:1px solid #cbd5e1; background:#fff;">
         </div>
         <div style="display:flex; gap:8px;">
           <button id="btnSaveSP" onclick="themSanPhamNhanh()" style="flex:1; background: #0d9488; color: white; border: none; padding: 11px; border-radius: 6px; font-weight: bold; cursor: pointer;">💾 Lưu Sản Phẩm</button>
@@ -675,6 +693,9 @@
     window.cheDoHienTai = 'BG_VN';
     window.currentSpImageBase64 = '';
     window.currentMasterSpImageBase64 = '';
+    window.rawWatermarkBase64 = '';
+    window.processedWatermarkBase64 = '';
+    window.wmOpacityPercent = 20;
     window.kpChartInstance = null;
 
     let dangSuaSPId = null;
@@ -703,38 +724,77 @@
     }
 
     // =====================================================
-    // 1. XỬ LÝ ĐỌC & NÉN ẢNH HD + XỬ LÝ WATERMARK XUYÊN THẤU CHO PDF
+    // 1. XỬ LÝ ẢNH HD & TÁCH NỀN TRẮNG CHO WATERMARK (100% HIỆN LÊN PDF)
     // =====================================================
-    function docFileAnhSangBase64(file, maxWidth, keepPng, alphaVal, callback) {
+    function docFileAnhSangBase64(file, maxWidth, keepPng, callback) {
       if (!file) return;
       const reader = new FileReader();
       reader.onload = function(e) {
-        chuyenDataUrlQuaCanvas(e.target.result, maxWidth, keepPng || file.type === 'image/png', alphaVal, callback);
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          let w = img.width;
+          let h = img.height;
+          if (w > maxWidth) {
+            h = Math.round((h * maxWidth) / w);
+            w = maxWidth;
+          }
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          const mime = (keepPng || file.type === 'image/png') ? 'image/png' : 'image/jpeg';
+          callback(canvas.toDataURL(mime, 0.92));
+        };
+        img.src = e.target.result;
       };
       reader.readAsDataURL(file);
     }
 
-    function chuyenDataUrlQuaCanvas(srcDataUrl, maxWidth, isPng, alphaVal, callback) {
+    // Hàm xử lý Watermark chuyên dụng: Tự động lọc bỏ nền trắng của file JPG/PNG và đặt độ đậm chuẩn
+    function taoWatermarkTachNenTrang(srcDataUrl, opacityPercent, callback) {
+      if (!srcDataUrl) return;
       const img = new Image();
+      img.crossOrigin = 'anonymous';
       img.onload = function() {
         const canvas = document.createElement('canvas');
-        let w = img.width;
-        let h = img.height;
-        if (w > maxWidth) {
-          h = Math.round((h * maxWidth) / w);
-          w = maxWidth;
+        let w = img.width || 500;
+        let h = img.height || 500;
+        const maxW = 700;
+        if (w > maxW) {
+          h = Math.round((h * maxW) / w);
+          w = maxW;
         }
         canvas.width = w;
         canvas.height = h;
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, w, h);
-        if (typeof alphaVal === 'number' && alphaVal < 1) {
-          ctx.globalAlpha = alphaVal;
-        }
         ctx.drawImage(img, 0, 0, w, h);
-        const mime = (isPng || (typeof alphaVal === 'number' && alphaVal < 1)) ? 'image/png' : 'image/jpeg';
-        const dataUrl = canvas.toDataURL(mime, 0.90);
-        callback(dataUrl);
+
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const data = imgData.data;
+        const targetAlpha = Math.round(255 * (opacityPercent / 100));
+
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          const a = data[i + 3];
+
+          if (a < 10) {
+            data[i + 3] = 0;
+          } else if (r > 238 && g > 238 && b > 238) {
+            // Điểm ảnh màu trắng nền JPG -> biến thành trong suốt 100%
+            data[i + 3] = 0;
+          } else {
+            // Điểm ảnh màu của Logo -> gán đúng độ đậm Watermark
+            data[i + 3] = targetAlpha;
+          }
+        }
+
+        ctx.putImageData(imgData, 0, 0);
+        const outPng = canvas.toDataURL('image/png');
+        callback(outPng);
       };
       img.src = srcDataUrl;
     }
@@ -743,7 +803,7 @@
     window.loadLogo = function(input) {
       const file = input?.files?.[0];
       if (!file) return;
-      docFileAnhSangBase64(file, 550, true, 1, function(dataUrl) {
+      docFileAnhSangBase64(file, 600, true, function(dataUrl) {
         apDungLogo(dataUrl);
         try { localStorage.setItem('argon_saved_logo', dataUrl); } catch (e) {}
         hienToast("✅ Đã cập nhật Logo công ty!");
@@ -756,11 +816,11 @@
       if (!logoEl) return;
       if (dataUrl) {
         logoEl.src = dataUrl;
-        logoEl.style.display = 'block';
+        logoEl.style.setProperty('display', 'block', 'important');
         if (btnXoa) btnXoa.style.display = 'inline-block';
       } else {
         logoEl.src = '';
-        logoEl.style.display = 'none';
+        logoEl.style.setProperty('display', 'none', 'important');
         if (btnXoa) btnXoa.style.display = 'none';
       }
     }
@@ -771,18 +831,38 @@
       try { localStorage.removeItem('argon_saved_logo'); } catch (e) {}
     };
 
-    // 1.2. Watermark chìm (Làm mờ trực tiếp 12% trên nền PNG trong suốt để 100% in ra PDF)
+    // 1.2. Watermark chìm
     window.loadWatermark = function(input) {
       const file = input?.files?.[0];
       if (!file) return;
-      docFileAnhSangBase64(file, 650, true, 0.12, function(dataUrl) {
-        apDungWatermark(dataUrl);
-        try {
-          localStorage.setItem('argon_saved_wm', dataUrl);
-          localStorage.setItem('argon_saved_wm_baked', '1');
-        } catch (e) {}
-        hienToast("✅ Đã chèn Watermark chìm vào trang PDF!");
+      docFileAnhSangBase64(file, 700, true, function(rawDataUrl) {
+        window.rawWatermarkBase64 = rawDataUrl;
+        try { localStorage.setItem('argon_raw_wm', rawDataUrl); } catch (e) {}
+
+        const pct = parseInt(document.getElementById('wmOpacitySlider')?.value || '20', 10);
+        window.wmOpacityPercent = pct;
+        taoWatermarkTachNenTrang(rawDataUrl, pct, function(processedPng) {
+          apDungWatermark(processedPng);
+          try { localStorage.setItem('argon_saved_wm', processedPng); } catch (e) {}
+          hienToast("✅ Đã chèn Watermark chìm vào trang A4 & PDF!");
+        });
       });
+    };
+
+    window.doiDoDamWatermark = function(val) {
+      const pct = parseInt(val || '20', 10);
+      window.wmOpacityPercent = pct;
+      const lbl = document.getElementById('wmOpacityLabel');
+      if (lbl) lbl.innerText = pct + '%';
+      try { localStorage.setItem('argon_wm_opacity', String(pct)); } catch (e) {}
+
+      const rawSrc = window.rawWatermarkBase64 || localStorage.getItem('argon_raw_wm') || localStorage.getItem('argon_saved_logo');
+      if (rawSrc) {
+        taoWatermarkTachNenTrang(rawSrc, pct, function(processedPng) {
+          apDungWatermark(processedPng);
+          try { localStorage.setItem('argon_saved_wm', processedPng); } catch (e) {}
+        });
+      }
     };
 
     function apDungWatermark(dataUrl) {
@@ -790,30 +870,34 @@
       const btnXoa = document.getElementById('btnXoaWm');
       if (!wmEl) return;
       if (dataUrl) {
+        window.processedWatermarkBase64 = dataUrl;
         wmEl.src = dataUrl;
-        wmEl.style.display = 'block';
+        wmEl.style.setProperty('display', 'block', 'important');
+        wmEl.style.setProperty('opacity', '1', 'important');
         if (btnXoa) btnXoa.style.display = 'inline-block';
       } else {
+        window.processedWatermarkBase64 = '';
         wmEl.src = '';
-        wmEl.style.display = 'none';
+        wmEl.style.setProperty('display', 'none', 'important');
         if (btnXoa) btnXoa.style.display = 'none';
       }
     }
 
     window.xoaWatermark = function() {
+      window.rawWatermarkBase64 = '';
       apDungWatermark('');
       if (document.getElementById('inWmFile')) document.getElementById('inWmFile').value = '';
       try {
+        localStorage.removeItem('argon_raw_wm');
         localStorage.removeItem('argon_saved_wm');
-        localStorage.removeItem('argon_saved_wm_baked');
       } catch (e) {}
     };
 
-    // 1.3. Ảnh sản phẩm HD Lớn (Nén ở độ phân giải 600px sắc nét)
+    // 1.3. Ảnh sản phẩm HD Lớn (Độ phân giải 700px)
     window.loadSpImage = function(input) {
       const file = input?.files?.[0];
       if (!file) return;
-      docFileAnhSangBase64(file, 600, false, 1, function(dataUrl) {
+      docFileAnhSangBase64(file, 700, false, function(dataUrl) {
         window.currentSpImageBase64 = dataUrl;
         const preview = document.getElementById('spPreviewLeft');
         const btnClear = document.getElementById('btnClearSpImg');
@@ -850,7 +934,7 @@
     window.loadMasterSpImage = function(input) {
       const file = input?.files?.[0];
       if (!file) return;
-      docFileAnhSangBase64(file, 600, false, 1, function(dataUrl) {
+      docFileAnhSangBase64(file, 700, false, function(dataUrl) {
         window.currentMasterSpImageBase64 = dataUrl;
         const img = document.getElementById('qtPreviewSP');
         if (img) { img.src = dataUrl; img.style.display = 'block'; }
@@ -985,7 +1069,6 @@
       window.doiCheDo('BG_EN');
     };
 
-    // Tự động tạo nội dung Email Tiếng Việt / Tiếng Anh khớp thời gian thực với Số chứng từ & Ngày lập
     window.datLaiNoiDungMacDinh = function(showAlert) {
       const mode = window.cheDoHienTai || 'BG_VN';
       const isEN = (mode === 'BG_EN');
@@ -1031,12 +1114,12 @@
     };
 
     // =====================================================
-    // 4. GIỎ HÀNG & BẢNG A4 (KHUNG ẢNH SẢN PHẨM LỚN 92x92px)
+    // 4. GIỎ HÀNG & BẢNG A4 (ẢNH LỚN 160x145px & ĐƠN GIÁ CHUẨN CTN)
     // =====================================================
     window.themVaoGio = function() {
       const maSP = document.getElementById('inMaSPMoi')?.value.trim() || ('SP' + (window.gioHang.length + 1));
       const tenSP = document.getElementById('inTenSP')?.value.trim();
-      const dvt = document.getElementById('inDVT')?.value.trim() || 'Kg';
+      const dvt = document.getElementById('inDVT')?.value.trim() || 'CTN';
       const sl = parseFloat(document.getElementById('inSL')?.value) || 1;
       const gia = parseFloat(document.getElementById('inGia')?.value) || 0;
       const vat = document.getElementById('inVAT')?.value || '8';
@@ -1077,7 +1160,7 @@
       dangSuaGioIndex = idx;
       document.getElementById('inMaSPMoi').value = item.maSP || '';
       document.getElementById('inTenSP').value = item.tenSP || '';
-      document.getElementById('inDVT').value = item.dvt || 'Kg';
+      document.getElementById('inDVT').value = item.dvt || 'CTN';
       document.getElementById('inSL').value = item.sl || 1;
       document.getElementById('inGia').value = item.gia || 0;
       if (document.getElementById('inVAT')) document.getElementById('inVAT').value = item.vat || '8';
@@ -1133,7 +1216,7 @@
       const isXK = (mode === 'XK');
       const isPI = isEN && (document.getElementById('chkIsPI')?.checked ?? false);
 
-      // 1. Bảng Mini bên trái (Ảnh preview 42x42px rõ nét)
+      // 1. Bảng Mini bên trái
       if (window.gioHang.length === 0) {
         miniBody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--argon-muted);">Chưa có sản phẩm</td></tr>';
       } else {
@@ -1144,7 +1227,7 @@
             <tr>
               <td><b>${escapeHtml(item.maSP)}</b><br><span style="font-size:11px; color:#475569;">${escapeHtml(tenNgan)}</span></td>
               <td>${item.sl} ${escapeHtml(item.dvt)}</td>
-              <td>${item.anh ? `<img src="${item.anh}" style="height:40px;width:40px;object-fit:contain;border-radius:4px;border:1px solid #cbd5e1;background:#fff;">` : '<span style="color:#cbd5e1;font-size:10px;">Trống</span>'}</td>
+              <td>${item.anh ? `<img src="${item.anh}" style="height:40px;width:44px;object-fit:cover;border-radius:4px;border:1px solid #cbd5e1;background:#fff;">` : '<span style="color:#cbd5e1;font-size:10px;">Trống</span>'}</td>
               <td style="text-align:right; white-space:nowrap;">
                 <button type="button" onclick="diChuyenGio(${idx}, -1)" style="background:#e2e8f0; border:none; padding:2px 5px; border-radius:3px; font-size:10px; cursor:pointer;">↑</button>
                 <button type="button" onclick="diChuyenGio(${idx}, 1)" style="background:#e2e8f0; border:none; padding:2px 5px; border-radius:3px; font-size:10px; cursor:pointer;">↓</button>
@@ -1155,27 +1238,26 @@
         });
       }
 
-      // 2. Bảng A4 bên phải (Cột ảnh rộng 115px, ảnh sản phẩm 92x92px)
+      // 2. Bảng A4 bên phải (Cột ảnh rộng 175px, ảnh 160x145px to cỡ khung đỏ)
       const showImage = document.getElementById('chkShowImage')?.checked ?? true;
       const showTotal = document.getElementById('chkShowTotal')?.checked ?? true;
       const showWords = document.getElementById('chkShowWords')?.checked ?? true;
       const currency = document.getElementById('inCurrency')?.value || 'USD';
       const volType = document.getElementById('inVolumeType')?.value || '(CTNS/40RF)';
-      const dvtHienTai = (window.gioHang[0]?.dvt || document.getElementById('inDVT')?.value || 'UNIT').toUpperCase();
 
       preTable.innerHTML = '';
       let tongTien = 0;
 
       if (mode === 'BG_VN') {
         headerRow.innerHTML = `
-          <th width="36">STT</th>
+          <th width="34">STT</th>
           <th>TÊN SẢN PHẨM / QUY CÁCH</th>
-          <th width="50">ĐVT</th>
-          <th width="50">SL</th>
-          <th width="85">ĐƠN GIÁ</th>
-          <th width="52">VAT</th>
-          <th width="95">THÀNH TIỀN</th>
-          ${showImage ? '<th width="115">HÌNH ẢNH</th>' : ''}
+          <th width="46">ĐVT</th>
+          <th width="46">SL</th>
+          <th width="80">ĐƠN GIÁ</th>
+          <th width="48">VAT</th>
+          <th width="90">THÀNH TIỀN</th>
+          ${showImage ? '<th width="175">HÌNH ẢNH</th>' : ''}
         `;
 
         const colSpanEmpty = showImage ? 8 : 7;
@@ -1197,7 +1279,7 @@
                 <td style="text-align:right;vertical-align:middle;">${item.gia.toLocaleString('vi-VN')}</td>
                 <td style="text-align:center;vertical-align:middle;">${item.vat === 'KKKNT' ? 'KKKNT' : item.vat + '%'}</td>
                 <td style="text-align:right;font-weight:700;vertical-align:middle;">${Math.round(thanhTien).toLocaleString('vi-VN')}</td>
-                ${showImage ? `<td style="text-align:center;vertical-align:middle;padding:6px;">${item.anh ? `<img src="${item.anh}" class="pdf-product-img">` : ''}</td>` : ''}
+                ${showImage ? `<td style="text-align:center;vertical-align:middle;padding:8px;">${item.anh ? `<img src="${item.anh}" class="pdf-product-img">` : ''}</td>` : ''}
               </tr>`;
           });
 
@@ -1226,20 +1308,21 @@
       } else if (mode === 'BG_EN') {
         if (isPI) {
           headerRow.innerHTML = `
-            <th width="38">NO.</th>
+            <th width="36">NO.</th>
             <th>DESCRIPTION OF GOODS</th>
-            <th width="80">QTY (${escapeHtml(dvtHienTai)})</th>
-            <th width="90">UNIT PRICE (${currency})</th>
-            <th width="100">AMOUNT (${currency})</th>
-            ${showImage ? '<th width="115">PHOTO</th>' : ''}
+            <th width="75">QTY (CTN)</th>
+            <th width="90">UNIT PRICE<br>(${currency}/CTN)</th>
+            <th width="95">AMOUNT (${currency})</th>
+            ${showImage ? '<th width="175">PHOTO</th>' : ''}
           `;
         } else {
+          // Tiêu đề khung xanh cố định PRICE (Tiền tệ/CTN) theo đúng yêu cầu
           headerRow.innerHTML = `
             <th width="38">NO.</th>
             <th>DESCRIPTION</th>
             <th width="105">VOLUME<br>${escapeHtml(volType)}</th>
-            <th width="105">PRICE<br>(${currency}/${escapeHtml(dvtHienTai)})</th>
-            ${showImage ? '<th width="115">PHOTO</th>' : ''}
+            <th width="105">PRICE<br>(${currency}/CTN)</th>
+            ${showImage ? '<th width="175">PHOTO</th>' : ''}
           `;
         }
 
@@ -1256,19 +1339,20 @@
                 <tr>
                   <td style="text-align:center;font-weight:700;vertical-align:middle;">${idx + 1}</td>
                   <td style="white-space:pre-line;font-weight:600;color:#0f172a;text-align:left;vertical-align:middle;">${escapeHtml(item.tenSP)}</td>
-                  <td style="text-align:center;font-weight:700;vertical-align:middle;">${item.sl.toLocaleString('en-US')} ${escapeHtml(item.dvt)}</td>
-                  <td style="text-align:right;vertical-align:middle;">${item.gia.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  <td style="text-align:center;font-weight:700;vertical-align:middle;">${item.sl.toLocaleString('en-US')}</td>
+                  <td style="text-align:center;font-weight:700;vertical-align:middle;">${item.gia.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   <td style="text-align:right;font-weight:700;vertical-align:middle;">${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                  ${showImage ? `<td style="text-align:center;vertical-align:middle;padding:6px;">${item.anh ? `<img src="${item.anh}" class="pdf-product-img">` : ''}</td>` : ''}
+                  ${showImage ? `<td style="text-align:center;vertical-align:middle;padding:8px;">${item.anh ? `<img src="${item.anh}" class="pdf-product-img">` : ''}</td>` : ''}
                 </tr>`;
             } else {
+              // Chỉ hiển thị con số đơn giá, bỏ hoàn toàn USD/TRÁI bên dưới
               preTable.innerHTML += `
                 <tr>
                   <td style="text-align:center;font-weight:700;vertical-align:middle;">${idx + 1}</td>
                   <td style="white-space:pre-line;font-weight:600;color:#0f172a;text-align:left;vertical-align:middle;">${escapeHtml(item.tenSP)}</td>
                   <td style="text-align:center;font-weight:700;vertical-align:middle;">${item.sl.toLocaleString('en-US')}</td>
-                  <td style="text-align:right;font-weight:700;vertical-align:middle;">${item.gia.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}/${escapeHtml(item.dvt)}</td>
-                  ${showImage ? `<td style="text-align:center;vertical-align:middle;padding:6px;">${item.anh ? `<img src="${item.anh}" class="pdf-product-img">` : ''}</td>` : ''}
+                  <td style="text-align:center;font-weight:700;font-size:13.5px;vertical-align:middle;">${item.gia.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  ${showImage ? `<td style="text-align:center;vertical-align:middle;padding:8px;">${item.anh ? `<img src="${item.anh}" class="pdf-product-img">` : ''}</td>` : ''}
                 </tr>`;
             }
           });
@@ -1297,11 +1381,11 @@
         }
       } else if (mode === 'XK') {
         headerRow.innerHTML = `
-          <th width="42">STT</th>
+          <th width="40">STT</th>
           <th>TÊN HÀNG HÓA / QUY CÁCH BAO BÌ</th>
           <th width="65">ĐVT</th>
           <th width="85">SỐ LƯỢNG</th>
-          ${showImage ? '<th width="115">HÌNH ẢNH</th>' : ''}
+          ${showImage ? '<th width="175">HÌNH ẢNH</th>' : ''}
         `;
 
         const colSpanEmpty = showImage ? 5 : 4;
@@ -1317,7 +1401,7 @@
                 <td style="white-space:pre-line;font-weight:600;color:#0f172a;text-align:left;vertical-align:middle;">${escapeHtml(item.tenSP)}</td>
                 <td style="text-align:center;vertical-align:middle;">${escapeHtml(item.dvt)}</td>
                 <td style="text-align:center;font-weight:700;vertical-align:middle;">${item.sl.toLocaleString('vi-VN')}</td>
-                ${showImage ? `<td style="text-align:center;vertical-align:middle;padding:6px;">${item.anh ? `<img src="${item.anh}" class="pdf-product-img">` : ''}</td>` : ''}
+                ${showImage ? `<td style="text-align:center;vertical-align:middle;padding:8px;">${item.anh ? `<img src="${item.anh}" class="pdf-product-img">` : ''}</td>` : ''}
               </tr>`;
           });
           preTable.innerHTML += `
@@ -1330,7 +1414,6 @@
       }
     };
 
-    // Cập nhật trang A4 VÀ tự động cập nhật Số chứng từ + Ngày lập vào Email
     window.updatePreview = function() {
       const mode = window.cheDoHienTai || 'BG_VN';
       const isEN = (mode === 'BG_EN');
@@ -1404,7 +1487,6 @@
       document.getElementById('boxEnNotePre').style.display = (isEN && enNoteVal) ? 'block' : 'none';
       document.getElementById('preEnNote').innerText = enNoteVal;
 
-      // Tự động cập nhật ngay Số chứng từ, Ngày lập & Tên khách hàng vào Tiêu đề và Nội dung Email
       window.datLaiNoiDungMacDinh(false);
     };
 
@@ -1668,20 +1750,26 @@
     };
 
     // =====================================================
-    // 6. TẢI PDF & GỬI MAIL (ĐẢM BẢO CHÈN WATERMARK + ẢNH LỚN VÀO PDF)
+    // 6. TẢI PDF & GỬI MAIL (ĐÓNG DẤU TRỰC TIẾP WATERMARK LÊN MỌI TRANG PDF)
     // =====================================================
     window.xuatPDF = async function() {
       const paper = document.getElementById('a4Paper');
       const wrapper = document.getElementById('a4Wrapper');
       const panelRight = document.querySelector('#viewStudio .panel-right');
+      const wmImg = document.getElementById('watermarkImg');
       if (!paper) { alert("❌ Không tìm thấy khung giấy A4!"); return; }
 
       const maDon = document.getElementById('inMa')?.value.trim() || 'BAO-GIA';
       const oldTransform = wrapper ? wrapper.style.transform : '';
       const oldPanelDisplay = panelRight ? panelRight.style.display : '';
+      const wmSrc = window.processedWatermarkBase64 || (wmImg && wmImg.src && wmImg.src.startsWith('data:image') ? wmImg.src : '');
 
       if (panelRight && panelRight.style.display === 'none') panelRight.style.display = 'block';
       if (wrapper) wrapper.style.transform = 'scale(1)';
+
+      // Tạm ẩn thẻ #watermarkImg trong DOM lúc chụp để tránh nhân đôi, sau đó dùng jsPDF đóng dấu PNG trong suốt chính xác 100% lên giữa trang PDF
+      const oldWmDisplay = wmImg ? wmImg.style.display : '';
+      if (wmImg && wmSrc) wmImg.style.setProperty('display', 'none', 'important');
 
       try {
         const opt = {
@@ -1691,10 +1779,40 @@
           html2canvas: { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff', scrollY: 0 },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
-        await html2pdf().set(opt).from(paper).save();
+
+        const worker = html2pdf().set(opt).from(paper).toPdf();
+        const pdf = await worker.get('pdf');
+
+        if (wmSrc) {
+          const totalPages = pdf.internal.getNumberOfPages();
+          const pageW = pdf.internal.pageSize.getWidth();   // 210mm
+          const pageH = pdf.internal.pageSize.getHeight();  // 297mm
+
+          // Tính tỷ lệ khung ảnh Watermark để không bị méo trên trang A4
+          const tempImg = new Image();
+          await new Promise(resolve => {
+            tempImg.onload = resolve;
+            tempImg.onerror = resolve;
+            tempImg.src = wmSrc;
+          });
+          const maxWmW = 125; // rộng 125mm giữa trang A4
+          const ratio = (tempImg.width && tempImg.height) ? (tempImg.height / tempImg.width) : 1;
+          const wmW = maxWmW;
+          const wmH = Math.min(160, Math.round(wmW * ratio));
+          const xPos = (pageW - wmW) / 2;
+          const yPos = (pageH - wmH) / 2;
+
+          for (let i = 1; i <= totalPages; i++) {
+            pdf.setPage(i);
+            pdf.addImage(wmSrc, 'PNG', xPos, yPos, wmW, wmH, undefined, 'FAST');
+          }
+        }
+
+        pdf.save(`${maDon}.pdf`);
       } catch (err) {
         alert("❌ Lỗi khi tải PDF: " + err.message);
       } finally {
+        if (wmImg && wmSrc) wmImg.style.setProperty('display', oldWmDisplay || 'block', 'important');
         if (wrapper) wrapper.style.transform = oldTransform;
         if (panelRight) panelRight.style.display = oldPanelDisplay;
       }
@@ -1729,7 +1847,7 @@
       const maSP = document.getElementById('qtMaSP')?.value.trim();
       const tenSP = document.getElementById('qtTenSP')?.value.trim();
       const moTaSP = document.getElementById('qtMoTaSP')?.value.trim() || '';
-      const dvt = document.getElementById('qtDVT')?.value.trim() || 'Kg';
+      const dvt = document.getElementById('qtDVT')?.value.trim() || 'CTN';
       const gia = parseFloat(document.getElementById('qtGia')?.value) || 0;
       const anhSP = window.currentMasterSpImageBase64 || (dangSuaSPId && window.masterCache.sp[dangSuaSPId]?.anhSP) || '';
 
@@ -1762,7 +1880,7 @@
       document.getElementById('qtMaSP').value = d.maSP || docId;
       document.getElementById('qtTenSP').value = d.tenSP || '';
       document.getElementById('qtMoTaSP').value = d.moTaSP || '';
-      document.getElementById('qtDVT').value = d.dvt || 'Kg';
+      document.getElementById('qtDVT').value = d.dvt || 'CTN';
       document.getElementById('qtGia').value = d.gia || 0;
       window.currentMasterSpImageBase64 = d.anhSP || '';
 
@@ -1784,7 +1902,7 @@
       document.getElementById('qtMaSP').value = '';
       document.getElementById('qtTenSP').value = '';
       document.getElementById('qtMoTaSP').value = '';
-      document.getElementById('qtDVT').value = 'Kg';
+      document.getElementById('qtDVT').value = 'CTN';
       document.getElementById('qtGia').value = '0';
       if (document.getElementById('qtFileSP')) document.getElementById('qtFileSP').value = '';
       if (document.getElementById('qtPreviewSP')) {
@@ -1900,7 +2018,7 @@
           const ma = d.maSP || docId;
           const ten = d.tenSP || '';
           const moTa = d.moTaSP || d.moTa || d.chiTiet || '';
-          const dvt = d.dvt || 'Kg';
+          const dvt = d.dvt || 'CTN';
           const gia = Number(d.gia) || 0;
           const anhSP = d.anhSP || '';
 
@@ -1914,7 +2032,7 @@
               <tr style="border-bottom:1px solid #f1f5f9;">
                 <td style="padding:8px; vertical-align:top;">
                   <div style="display:flex;gap:8px;align-items:flex-start;">
-                    ${anhSP ? `<img src="${anhSP}" style="width:46px;height:46px;object-fit:contain;border-radius:4px;border:1px solid #cbd5e1;background:#fff;">` : ''}
+                    ${anhSP ? `<img src="${anhSP}" style="width:48px;height:48px;object-fit:cover;border-radius:4px;border:1px solid #cbd5e1;background:#fff;">` : ''}
                     <div>
                       <div style="font-weight:700; color:#0f172a;">[${escapeHtml(ma)}] ${escapeHtml(ten)}</div>
                       ${moTa ? `<div style="color:#475569; font-size:11px; white-space:pre-line; margin-top:3px;">📝 ${escapeHtml(moTa)}</div>` : `<div style="color:#94a3b8; font-size:11px; font-style:italic;">(Chưa có mô tả chi tiết)</div>`}
@@ -2083,7 +2201,7 @@
     window.luuSanPhamTuStudio = async function() {
       const maSP = document.getElementById('inMaSPMoi')?.value.trim() || ('SP' + Date.now().toString().slice(-4));
       const fullText = document.getElementById('inTenSP')?.value.trim() || '';
-      const dvt = document.getElementById('inDVT')?.value.trim() || 'Kg';
+      const dvt = document.getElementById('inDVT')?.value.trim() || 'CTN';
       const gia = parseFloat(document.getElementById('inGia')?.value) || 0;
       const anhSP = window.currentSpImageBase64 || '';
       if (!fullText) { alert("⚠️ Vui lòng nhập Tên / Mô tả sản phẩm!"); return; }
@@ -2110,37 +2228,43 @@
       }
     };
 
-    // Khởi chạy toàn bộ khi mở trang
-    window.addEventListener('DOMContentLoaded', () => {
-      if (document.getElementById('inNgay') && !document.getElementById('inNgay').value) {
-        document.getElementById('inNgay').value = new Date().toLocaleDateString('vi-VN');
-      }
-      // Khôi phục Logo & Watermark (Nếu ảnh Watermark cũ chưa làm mờ PNG thì tự động chuyển đổi sang PNG mờ 12%)
+    function khoiPhucLogoVaWatermarkTuBoNho() {
       try {
         const savedLogo = localStorage.getItem('argon_saved_logo');
         if (savedLogo) apDungLogo(savedLogo);
 
-        const savedWm = localStorage.getItem('argon_saved_wm');
-        const isBaked = localStorage.getItem('argon_saved_wm_baked');
-        if (savedWm) {
-          if (isBaked === '1') {
-            apDungWatermark(savedWm);
-          } else {
-            chuyenDataUrlQuaCanvas(savedWm, 650, true, 0.12, function(bakedUrl) {
-              apDungWatermark(bakedUrl);
-              try {
-                localStorage.setItem('argon_saved_wm', bakedUrl);
-                localStorage.setItem('argon_saved_wm_baked', '1');
-              } catch (e) {}
-            });
-          }
+        const savedPct = parseInt(localStorage.getItem('argon_wm_opacity') || '20', 10);
+        window.wmOpacityPercent = savedPct;
+        if (document.getElementById('wmOpacitySlider')) document.getElementById('wmOpacitySlider').value = savedPct;
+        if (document.getElementById('wmOpacityLabel')) document.getElementById('wmOpacityLabel').innerText = savedPct + '%';
+
+        const rawWm = localStorage.getItem('argon_raw_wm') || localStorage.getItem('argon_saved_wm') || savedLogo;
+        if (rawWm) {
+          window.rawWatermarkBase64 = rawWm;
+          taoWatermarkTachNenTrang(rawWm, savedPct, function(processedPng) {
+            apDungWatermark(processedPng);
+            try { localStorage.setItem('argon_saved_wm', processedPng); } catch (e) {}
+          });
         }
       } catch (e) {}
+    }
 
+    // Khởi chạy toàn bộ khi mở trang (chạy cả ở DOMContentLoaded và sau window.onload để không bị file JS cũ ghi đè)
+    window.addEventListener('DOMContentLoaded', () => {
+      if (document.getElementById('inNgay') && !document.getElementById('inNgay').value) {
+        document.getElementById('inNgay').value = new Date().toLocaleDateString('vi-VN');
+      }
+      khoiPhucLogoVaWatermarkTuBoNho();
       taiDuLieuMasterTuFirestore();
       taiDanhSachDonLuuApp();
       window.chuyenManHinhKapella('STUDIO');
       window.doiCheDo('BG_VN');
+    });
+
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        khoiPhucLogoVaWatermarkTuBoNho();
+      }, 200);
     });
   </script>
 </body>
