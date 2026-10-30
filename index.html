@@ -32,6 +32,211 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
   
   <link rel="stylesheet" href="UI_Styles.css">
+
+  <!-- 4. BỘ CSS TỐI ƯU HÓA GIAO DIỆN MOBILE & TABLET -->
+  <style>
+    /* Bố cục Grid mặc định trên Máy tính (Desktop) */
+    .kp-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .kp-main-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+    }
+    .master-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 25px;
+    }
+    .kp-welcome-banner {
+      background: linear-gradient(135deg, #001737 0%, #1e293b 100%);
+      color: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      gap: 12px;
+    }
+
+    /* Giao diện Máy tính bảng (Tablet <= 1024px) */
+    @media screen and (max-width: 1024px) {
+      .kp-grid-4 {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+      .kp-main-grid {
+        grid-template-columns: 1fr !important;
+      }
+      .master-grid-3 {
+        grid-template-columns: 1fr 1fr !important;
+      }
+    }
+
+    /* Giao diện Điện thoại (Mobile <= 768px) */
+    @media screen and (max-width: 768px) {
+      body {
+        overflow-x: hidden;
+      }
+
+      /* 1. Thanh điều hướng trên cùng gọn gàng 2 tầng */
+      .kapella-top-nav {
+        flex-wrap: wrap !important;
+        height: auto !important;
+        padding: 8px 10px !important;
+        gap: 8px !important;
+      }
+      .kapella-brand {
+        font-size: 13px !important;
+        flex: 1;
+        min-width: 180px;
+      }
+      .kapella-brand span {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 210px;
+        display: inline-block;
+      }
+      .kapella-nav-tabs {
+        order: 3;
+        width: 100% !important;
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 5px !important;
+        margin-top: 2px;
+      }
+      .kapella-tab-btn {
+        padding: 7px 4px !important;
+        font-size: 11px !important;
+        justify-content: center !important;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* 2. Màn hình Dashboard trên Mobile */
+      #viewDashboard {
+        padding: 12px !important;
+        padding-bottom: 40px !important;
+        height: calc(100vh - 96px) !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+      }
+      .kp-welcome-banner {
+        flex-direction: column;
+        align-items: flex-start !important;
+        padding: 15px !important;
+      }
+      .kp-grid-4 {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+      }
+      .kp-main-grid {
+        grid-template-columns: 1fr !important;
+        gap: 15px !important;
+      }
+      .kp-search-box {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 8px;
+      }
+      .kp-search-box input {
+        width: 100% !important;
+      }
+
+      /* 3. Màn hình Quản lý Database & CRM trên Mobile */
+      #manHinhQuanLyMaster {
+        padding: 12px !important;
+        padding-bottom: 50px !important;
+        height: calc(100vh - 96px) !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+      }
+      #manHinhQuanLyMaster h2 {
+        font-size: 16px !important;
+        margin-bottom: 14px !important;
+      }
+      .master-grid-3 {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+      }
+
+      /* 4. Màn hình Studio (Soạn Đơn & Xem A4) trên Mobile */
+      #viewStudio.app-workspace {
+        flex-direction: column !important;
+        height: calc(100vh - 148px) !important;
+        overflow: hidden !important;
+      }
+      #viewStudio .panel-left,
+      #viewStudio .panel-right {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+      }
+      #viewStudio .panel-scroll-body {
+        padding-bottom: 80px !important;
+      }
+      .preview-toolbar {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        padding: 8px !important;
+        justify-content: space-between !important;
+      }
+      .a4-wrapper {
+        transform-origin: top center !important;
+        margin: 0 auto !important;
+      }
+      #panelRightScroll {
+        padding: 8px 4px 80px 4px !important;
+        overflow-x: hidden !important;
+      }
+
+      /* Chống tự động phóng to trên Safari iOS khi bấm vào ô nhập */
+      input[type="text"],
+      input[type="number"],
+      select,
+      textarea {
+        font-size: 16px !important;
+      }
+
+      /* Thanh chuyển đổi dưới đáy cho Studio trên Mobile */
+      .mobile-bottom-nav {
+        display: flex !important;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 52px;
+        background: #ffffff;
+        border-top: 1px solid #cbd5e1;
+        z-index: 999;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.06);
+      }
+      .mob-nav-btn {
+        flex: 1;
+        border: none;
+        background: transparent;
+        font-weight: 700;
+        font-size: 13px;
+        color: #64748b;
+        cursor: pointer;
+      }
+      .mob-nav-btn.active {
+        color: #464dee;
+        background: #eef2ff;
+        border-top: 3px solid #464dee;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -39,73 +244,71 @@
   <div class="kapella-top-nav">
     <div class="kapella-brand">
       <i class="mdi mdi-cube-send" style="font-size:22px;"></i>
-      <span>GOODS LINK ERP — KAPELLA STUDIO v5.0</span>
+      <span>GOODS LINK ERP — KAPELLA v5.0</span>
     </div>
     <div class="kapella-nav-tabs">
       <button class="kapella-tab-btn" id="tabBtnDash" onclick="chuyenManHinhKapella('DASH')">
-        <i class="mdi mdi-view-dashboard-outline"></i> 📊 Tổng Quan (Dashboard)
+        📊 Tổng Quan
       </button>
       <button class="kapella-tab-btn active" id="tabBtnStudio" onclick="chuyenManHinhKapella('STUDIO')">
-        <i class="mdi mdi-file-document-edit-outline"></i> ⚡ Soạn Báo Giá / PI (Studio)
+        ⚡ Báo Giá / PI
       </button>
       <button class="kapella-tab-btn" id="tabBtnMaster" onclick="chuyenManHinhKapella('MASTER')">
-        <i class="mdi mdi-database-cog-outline"></i> 📦 Quản Lý Database & CRM
+        📦 Database & CRM
       </button>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <button onclick="taoDonMoi(); chuyenManHinhKapella('STUDIO');" style="background:#0ddbb9;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button onclick="taoDonMoi(); chuyenManHinhKapella('STUDIO');" style="background:#0ddbb9;color:#fff;border:none;padding:6px 10px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
         + Tạo Đơn Mới
       </button>
     </div>
   </div>
 
   <!-- ========================================================= -->
-  <!-- MÀN HÌNH 1: KAPELLA DASHBOARD (ĐÃ KHÔI PHỤC ĐẦY ĐỦ GIAO DIỆN) -->
+  <!-- MÀN HÌNH 1: KAPELLA DASHBOARD                              -->
   <!-- ========================================================= -->
   <div id="viewDashboard" style="display:none; padding:20px; background:#f8fafc; min-height:85vh;">
-    <div class="kp-welcome-banner" style="background:linear-gradient(135deg, #001737 0%, #1e293b 100%); color:#fff; padding:20px; border-radius:12px; display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+    <div class="kp-welcome-banner">
       <div>
-        <h3 style="margin:0 0 4px 0;font-size:18px;font-weight:800;">Bảng Điều Khiển Quản Trị Báo Giá & Ngoại Thương</h3>
+        <h3 style="margin:0 0 4px 0;font-size:17px;font-weight:800;">Bảng Điều Khiển Quản Trị Báo Giá & Ngoại Thương</h3>
         <div style="font-size:12px;opacity:0.9;">Dữ liệu đồng bộ thời gian thực từ Firebase Firestore</div>
       </div>
-      <button onclick="taiDanhSachDonLuuApp()" style="background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.4);padding:7px 14px;border-radius:6px;cursor:pointer;font-weight:700;font-size:12px;">
+      <button onclick="taiDanhSachDonLuuApp()" style="background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.4);padding:7px 14px;border-radius:6px;cursor:pointer;font-weight:700;font-size:12px;white-space:nowrap;">
         🔄 Làm mới dữ liệu
       </button>
     </div>
 
-    <!-- 4 THẺ KPI KAPELLA -->
-    <div class="kp-grid-4" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:15px; margin-bottom:20px;">
+    <div class="kp-grid-4">
       <div class="kp-card" style="background:#fff; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
         <div class="kp-stat-title" style="font-size:12px; color:#64748b; font-weight:700;">☁️ Tổng Đơn Lưu Cloud</div>
-        <div class="kp-stat-val" id="kpTotalOrders" style="font-size:24px; font-weight:800; color:#0f172a; margin:8px 0;">0</div>
+        <div class="kp-stat-val" id="kpTotalOrders" style="font-size:22px; font-weight:800; color:#0f172a; margin:8px 0;">0</div>
         <div class="kp-progress" style="background:#e2e8f0; height:6px; border-radius:3px;"><div class="kp-progress-bar" style="width:100%;background:#464dee; height:6px; border-radius:3px;"></div></div>
       </div>
       <div class="kp-card" style="background:#fff; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-        <div class="kp-stat-title" style="font-size:12px; color:#64748b; font-weight:700;">🌐 Báo Giá Quốc Tế (Quote / PI)</div>
-        <div class="kp-stat-val" id="kpCountEN" style="font-size:24px; font-weight:800; color:#0ddbb9; margin:8px 0;">0</div>
+        <div class="kp-stat-title" style="font-size:12px; color:#64748b; font-weight:700;">🌐 Báo Giá Quốc Tế (EN)</div>
+        <div class="kp-stat-val" id="kpCountEN" style="font-size:22px; font-weight:800; color:#0ddbb9; margin:8px 0;">0</div>
         <div class="kp-progress" style="background:#e2e8f0; height:6px; border-radius:3px;"><div class="kp-progress-bar" id="kpBarEN" style="width:50%;background:#0ddbb9; height:6px; border-radius:3px;"></div></div>
       </div>
       <div class="kp-card" style="background:#fff; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-        <div class="kp-stat-title" style="font-size:12px; color:#64748b; font-weight:700;">🇻🇳 Báo Giá Nội Địa & Xuất Kho</div>
-        <div class="kp-stat-val" id="kpCountVN" style="font-size:24px; font-weight:800; color:#f6881f; margin:8px 0;">0</div>
+        <div class="kp-stat-title" style="font-size:12px; color:#64748b; font-weight:700;">🇻🇳 Nội Địa & Xuất Kho</div>
+        <div class="kp-stat-val" id="kpCountVN" style="font-size:22px; font-weight:800; color:#f6881f; margin:8px 0;">0</div>
         <div class="kp-progress" style="background:#e2e8f0; height:6px; border-radius:3px;"><div class="kp-progress-bar" id="kpBarVN" style="width:50%;background:#f6881f; height:6px; border-radius:3px;"></div></div>
       </div>
       <div class="kp-card" style="background:#fff; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-        <div class="kp-stat-title" style="font-size:12px; color:#64748b; font-weight:700;">📦 Danh Mục SP & Khách Hàng</div>
-        <div class="kp-stat-val" id="kpCountMaster" style="font-size:20px; font-weight:800; color:#ee5b5b; margin:8px 0;">0 SP / 0 KH</div>
+        <div class="kp-stat-title" style="font-size:12px; color:#64748b; font-weight:700;">📦 Danh Mục SP & KH</div>
+        <div class="kp-stat-val" id="kpCountMaster" style="font-size:18px; font-weight:800; color:#ee5b5b; margin:8px 0;">0 SP / 0 KH</div>
         <div class="kp-progress" style="background:#e2e8f0; height:6px; border-radius:3px;"><div class="kp-progress-bar" style="width:85%;background:#ee5b5b; height:6px; border-radius:3px;"></div></div>
       </div>
     </div>
 
-    <!-- BẢNG ĐƠN HÀNG GẦN ĐÂY & BIỂU ĐỒ -->
-    <div class="kp-main-grid" style="display:grid; grid-template-columns:2fr 1fr; gap:20px;">
-      <div class="kp-card" style="background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <div class="kp-main-grid">
+      <div class="kp-card" style="background:#fff; padding:16px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05); overflow:hidden;">
+        <div class="kp-search-box" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
           <div style="font-weight:800;font-size:14px;color:#001737;">📋 Danh Sách Đơn Hàng Cloud Gần Đây</div>
-          <input type="text" id="kpSearchOrder" placeholder="🔍 Tìm mã đơn hoặc tên khách..." oninput="renderKapellaDashboard()" style="width:220px;padding:6px 10px;font-size:12px;border:1px solid #cbd5e1;border-radius:6px;">
+          <input type="text" id="kpSearchOrder" placeholder="🔍 Tìm mã đơn hoặc tên khách..." oninput="renderKapellaDashboard()" style="width:220px;padding:6px 10px;font-size:12px;border:1px solid #cbd5e1;border-radius:6px;box-sizing:border-box;">
         </div>
-        <div style="max-height:360px;overflow-y:auto;">
-          <table class="kp-table" style="width:100%; border-collapse:collapse; font-size:13px;">
+        <div style="max-height:360px;overflow-y:auto;overflow-x:auto;">
+          <table class="kp-table" style="width:100%; min-width:500px; border-collapse:collapse; font-size:13px;">
             <thead>
               <tr style="border-bottom:2px solid #e2e8f0; text-align:left; color:#475569;">
                 <th style="padding:8px;">Mã chứng từ</th>
@@ -121,23 +324,20 @@
           </table>
         </div>
       </div>
-
-      <div class="kp-card" style="background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+      <div class="kp-card" style="background:#fff; padding:16px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
         <div style="font-weight:800;font-size:14px;color:#001737;margin-bottom:12px;">📈 Tỷ Trọng Chứng Từ</div>
-        <div style="height:240px;display:flex;align-items:center;justify-content:center;">
-          <canvas id="kpOrderChart"></canvas>
-        </div>
+        <div style="height:240px;display:flex;align-items:center;justify-content:center;"><canvas id="kpOrderChart"></canvas></div>
       </div>
     </div>
   </div>
 
   <!-- ========================================================= -->
-  <!-- MÀN HÌNH 2: STUDIO SOẠN BÁO GIÁ & XEM TRƯỚC A4 (2 CỘT)    -->
+  <!-- MÀN HÌNH 2: STUDIO SOẠN BÁO GIÁ & XEM TRƯỚC A4            -->
   <!-- ========================================================= -->
   <div class="app-workspace" id="viewStudio">
 
     <!-- CỘT TRÁI: FORM NHẬP LIỆU -->
-    <div class="panel-left">
+    <div class="panel-left" id="panelLeftForm">
       <div class="argon-hero-header">
         <div class="brand-bar">
           <h2 class="brand-title">⚡ ARGON STUDIO <span class="badge-argon">MODULAR v5.0</span></h2>
@@ -165,7 +365,7 @@
         <div class="argon-card">
           <div class="argon-card-header">
             <div class="argon-card-title">👤 1. Thông Tin Khách Hàng & Đơn</div>
-            <button class="btn-mini-save" onclick="luuKhachHangMoi()">➕ Lưu KH vào Sheet</button>
+            <button class="btn-mini-save" onclick="luuKhachHangTuStudio()">➕ Lưu KH vào Database</button>
           </div>
 
           <div id="divTitleENSelect" style="display:none;">
@@ -206,7 +406,7 @@
             <div class="form-group col"><label>Valid until</label><input type="text" id="inValidUntil" oninput="updatePreview()"></div>
           </div>
 
-          <!-- BỘ CHỌN INCOTERMS & LOGISTICS -->
+          <!-- BỘ CHỌN INCOTERMS & LOGISTICS THÔNG MINH -->
           <div id="divIncotermBuilder" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;padding:8px;border-radius:6px;margin-bottom:10px;">
             <label style="color:#15803d;font-weight:800;font-size:11px;margin-bottom:6px;display:block;">🚢 Tạo nhanh Incoterms & Logistics</label>
             <div class="row" style="gap:6px;margin-bottom:6px;">
@@ -219,35 +419,37 @@
             </div>
           </div>
 
-          <!-- ========================================================= -->
-<!-- PHẦN 1: THANH CHỌN NHANH GHI CHÚ & THANH TOÁN (TRONG STUDIO) -->
-<!-- ========================================================= -->
+          <!-- GHI CHÚ & CHỌN NHANH -->
+          <div class="form-group">
+            <label>Ghi chú & Điều khoản</label>
+            <div class="preset-bar" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+              <span class="preset-chip" onclick="chenMauNhanh('inDieuKhoan', 'The above rates are CNF SHANGHAI')" style="background:#e2e8f0; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">+ CNF SHANGHAI</span>
+              <span class="preset-chip" onclick="chenMauNhanh('inDieuKhoan', 'The above rates are FOB HO CHI MINH CITY')" style="background:#e2e8f0; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">+ FOB HCMC</span>
+              <span class="preset-chip" onclick="chenMauNhanh('inDieuKhoan', 'Giao hàng trong vòng 3 ngày kể từ khi nhận cọc.')" style="background:#e2e8f0; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">+ Giao nhanh 3 ngày</span>
+            </div>
+            <textarea id="inDieuKhoan" rows="2" placeholder="Nhập ghi chú hoặc điều khoản..." oninput="updatePreview()"></textarea>
+          </div>
 
-<!-- Thay thế phần "Ghi chú & Điều khoản" cũ -->
-<div class="form-group">
-  <label>Ghi chú & Điều khoản</label>
-  <div class="preset-bar" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
-    <span class="preset-chip" onclick="chenMauNhanh('inDieuKhoan', 'The above rates are CNF SHANGHAI')" style="background:#e2e8f0; padding:3px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">+ CNF SHANGHAI</span>
-    <span class="preset-chip" onclick="chenMauNhanh('inDieuKhoan', 'The above rates are FOB HO CHI MINH CITY')" style="background:#e2e8f0; padding:3px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">+ FOB HCMC</span>
-    <span class="preset-chip" onclick="chenMauNhanh('inDieuKhoan', 'Giao hàng trong vòng 3 ngày kể từ khi nhận cọc.')" style="background:#e2e8f0; padding:3px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">+ Giao nhanh 3 ngày</span>
-  </div>
-  <textarea id="inDieuKhoan" rows="2" placeholder="Nhập ghi chú hoặc điều khoản..." oninput="updatePreview()"></textarea>
-</div>
+          <div class="form-group" id="divEnNoteGroup" style="display:none;">
+            <label style="color:var(--argon-primary);">🌐 Câu Note Liên Hệ (PDF Tiếng Anh)</label>
+            <textarea id="inEnNote" rows="2" placeholder="Please contact us via information..." oninput="updatePreview()"></textarea>
+          </div>
 
-<!-- Thay thế phần "Phương thức thanh toán" cũ -->
-<div class="form-group">
-  <label>Phương thức thanh toán</label>
-  <div class="preset-bar" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
-    <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'Thanh toán 100% bằng chuyển khoản hoặc tiền mặt ngay khi nhận hàng.')" style="background:#e2e8f0; padding:3px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">+ TT 100%</span>
-    <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'Đặt cọc 50% ngay sau khi xác nhận đơn hàng, 50% còn lại thanh toán trước khi giao hàng.')" style="background:#e2e8f0; padding:3px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">+ Cọc 50-50</span>
-    <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'The buyer shall deposit 30% upon signing contract. The remaining 70% against shipping documents.')" style="background:#e2e8f0; padding:3px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">+ T/T 30-70 (EN)</span>
-  </div>
-  <textarea id="inPaymentTerm" rows="2" placeholder="Nhập điều khoản / phương thức thanh toán..." oninput="updatePreview()"></textarea>
-</div>
+          <!-- THANH TOÁN & CHỌN NHANH -->
+          <div class="form-group" id="divPaymentTermInput">
+            <label id="lblPaymentTermInput">Phương thức thanh toán</label>
+            <div class="preset-bar" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+              <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'Thanh toán 100% bằng chuyển khoản hoặc tiền mặt ngay khi nhận hàng.')" style="background:#e2e8f0; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">+ TT 100% (VN)</span>
+              <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'Đặt cọc 50% ngay sau khi xác nhận đơn hàng, 50% còn lại thanh toán trước khi giao hàng.')" style="background:#e2e8f0; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">+ Cọc 50-50 (VN)</span>
+              <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'The buyer shall deposit 30% of the total contract value upon signing the contract. The remaining 70% shall be paid within 3 days upon receipt of the copy documents via email.')" style="background:#e2e8f0; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">+ T/T 30-70 (EN)</span>
+            </div>
+            <textarea id="inPaymentTerm" rows="2" placeholder="Nhập điều khoản / phương thức thanh toán..." oninput="updatePreview()"></textarea>
+          </div>
 
+          <!-- NGÂN HÀNG T/T -->
           <div class="form-group" id="divBankInfoInput" style="display:none;">
             <label style="color:var(--argon-primary);">🏦 Thông tin Ngân hàng Quốc tế (PI)</label>
-            <select id="bankSelect" onchange="chonBankTuSheet()" style="margin-bottom:6px;"><option value="">-- Chọn Bank từ Sheet --</option></select>
+            <select id="bankSelect" onchange="chonBankTuSheet()" style="margin-bottom:6px;"><option value="">-- Chọn Bank từ Database --</option></select>
             <textarea id="inBankInfo" rows="3" placeholder="Chọn ngân hàng ở trên hoặc tự nhập..." oninput="updatePreview()"></textarea>
           </div>
         </div>
@@ -256,12 +458,12 @@
         <div class="argon-card">
           <div class="argon-card-header">
             <div class="argon-card-title">📦 2. Chi Tiết Hàng Hóa</div>
-            <button class="btn-mini-save" onclick="luuSanPhamMoi()">➕ Lưu SP vào Database</button>
+            <button class="btn-mini-save" onclick="luuSanPhamTuStudio()">➕ Lưu SP vào Database</button>
           </div>
 
           <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;background:#f8fafc;padding:8px;border-radius:6px;">
-            <label style="display:flex;align-items:center;gap:4px;margin:0;font-size:11px;color:#059669;cursor:pointer;"><input type="checkbox" id="chkShowTotal" checked onchange="renderTable()"> Hiện Tổng cộng</label>
-            <label style="display:flex;align-items:center;gap:4px;margin:0;font-size:11px;color:#d9460f;cursor:pointer;"><input type="checkbox" id="chkShowWords" checked onchange="renderTable()"> Đọc số thành chữ</label>
+            <label id="lblToggleTotal" style="display:flex;align-items:center;gap:4px;margin:0;font-size:11px;color:#059669;cursor:pointer;"><input type="checkbox" id="chkShowTotal" checked onchange="renderTable()"> Hiện Tổng cộng</label>
+            <label id="lblToggleWords" style="display:flex;align-items:center;gap:4px;margin:0;font-size:11px;color:#d9460f;cursor:pointer;"><input type="checkbox" id="chkShowWords" checked onchange="renderTable()"> Đọc số thành chữ</label>
             <label style="display:flex;align-items:center;gap:4px;margin:0;font-size:11px;color:var(--argon-primary);cursor:pointer;"><input type="checkbox" id="chkShowImage" checked onchange="renderTable()"> Hiện cột Ảnh</label>
           </div>
 
@@ -278,7 +480,10 @@
             </div>
           </div>
 
-          <div class="form-group"><select id="spSelect" onchange="chonSPDatabase()"><option value="">-- Chọn sản phẩm từ Database --</option></select></div>
+          <div class="form-group">
+            <label>Chọn sản phẩm từ Database</label>
+            <select id="spSelect" onchange="chonSPDatabase()"><option value="">-- Chọn sản phẩm từ Database --</option></select>
+          </div>
           <div class="form-group"><label>Tên / Mô tả quy cách</label><textarea id="inTenSP" rows="2"></textarea></div>
 
           <div class="row">
@@ -369,7 +574,7 @@
         </div>
         <div class="toolbar-item">
           <span>🔍 Zoom:</span>
-          <select onchange="doiTyLeZoom(this.value)" style="width:auto;padding:4px 8px;font-weight:700;">
+          <select id="zoomSelectBox" onchange="doiTyLeZoom(this.value)" style="width:auto;padding:4px 8px;font-weight:700;">
             <option value="1">100%</option><option value="0.85">85%</option><option value="0.5">50% (Mobile)</option>
           </select>
         </div>
@@ -451,105 +656,117 @@
       </div>
     </div>
 
-  </div><!-- ĐÓNG #viewStudio -->
+  </div>
 
   <!-- ========================================================= -->
-<!-- MÀN HÌNH 3: QUẢN LÝ MASTER DATA & CRM & LỊCH SỬ TẠO          -->
--- ========================================================= -->
-<div id="manHinhQuanLyMaster" class="main-content-tab" style="display:none; padding:25px; background:#f8fafc; height: 100vh; overflow-y: auto; box-sizing: border-box;">
-  <h2 style="color: #1e293b; margin-bottom: 20px;">⚙️ Quản Lý Nhanh Dữ Liệu & Lịch Sử (Database, CRM, Bank)</h2>
-  
-  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+  <!-- MÀN HÌNH 3: QUẢN LÝ MASTER DATA & CRM (TỐI ƯU MOBILE)      -->
+  <!-- ========================================================= -->
+  <div id="manHinhQuanLyMaster" class="main-content-tab" style="display:none; padding:25px; background:#f8fafc; height:calc(100vh - 56px); overflow-y:auto; box-sizing:border-box;">
+    <h2 style="color: #1e293b; margin-bottom: 20px;">⚙️ Quản Lý Nhanh Dữ Liệu & Lịch Sử (Database, CRM, Bank)</h2>
     
-    <!-- 1. THÊM SẢN PHẨM MỚI (CÓ THÊM Ô MÔ TẢ CHI TIẾT) -->
-    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
-      <h3 style="color: #0d9488; margin-bottom: 15px;">➕ Thêm Sản Phẩm Mới</h3>
-      <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Mã SP:</label><input type="text" id="qtMaSP" placeholder="VD: GACAP" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
-      <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Tên Sản Phẩm:</label><input type="text" id="qtTenSP" placeholder="Nhập tên sản phẩm..." style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
-      <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Mô tả / Quy cách chi tiết:</label><textarea id="qtMoTaSP" rows="2" placeholder="Quy cách, thành phần, tiêu chuẩn..." style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></textarea></div>
-      <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">ĐVT:</label><input type="text" id="qtDVT" value="Kg" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
-      <div style="margin-bottom: 12px;"><label style="font-size: 12px; font-weight: 600;">Đơn Giá:</label><input type="number" id="qtGia" value="0" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
-      <button onclick="themSanPhamNhanh()" style="width: 100%; background: #0d9488; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;">Lưu Sản Phẩm</button>
+    <div class="master-grid-3">
+      
+      <!-- 1. THÊM / SỬA SẢN PHẨM -->
+      <div style="background: white; padding: 18px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+        <h3 style="color: #0d9488; margin-bottom: 14px; font-size: 16px;" id="titleFormSP">➕ Thêm Sản Phẩm Mới</h3>
+        <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Mã SP:</label><input type="text" id="qtMaSP" placeholder="VD: GACAP" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></div>
+        <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Tên Sản Phẩm:</label><input type="text" id="qtTenSP" placeholder="Nhập tên sản phẩm..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></div>
+        <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Mô tả / Quy cách chi tiết:</label><textarea id="qtMoTaSP" rows="3" placeholder="Quy cách, thành phần, tiêu chuẩn xuất khẩu..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></textarea></div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom: 12px;">
+          <div><label style="font-size: 12px; font-weight: 600;">ĐVT:</label><input type="text" id="qtDVT" value="Kg" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></div>
+          <div><label style="font-size: 12px; font-weight: 600;">Đơn Giá:</label><input type="number" id="qtGia" value="0" step="any" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button id="btnSaveSP" onclick="themSanPhamNhanh()" style="flex:1; background: #0d9488; color: white; border: none; padding: 11px; border-radius: 6px; font-weight: bold; cursor: pointer;">💾 Lưu Sản Phẩm</button>
+          <button id="btnCancelSP" onclick="huySuaSP()" style="display:none; background: #64748b; color: white; border: none; padding: 11px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;">Hủy</button>
+        </div>
+      </div>
+
+      <!-- 2. THÊM / SỬA KHÁCH HÀNG -->
+      <div style="background: white; padding: 18px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+        <h3 style="color: #2563eb; margin-bottom: 14px; font-size: 16px;" id="titleFormKH">👤 Thêm Khách Hàng (CRM)</h3>
+        <div style="margin-bottom: 10px;"><label style="font-size: 12px; font-weight: 600;">Tên Công Ty / Đối Tác:</label><input type="text" id="qtTenKH" placeholder="Nhập tên khách hàng..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></div>
+        <div style="margin-bottom: 15px;"><label style="font-size: 12px; font-weight: 600;">Thông Tin Liên Hệ (Địa chỉ, SĐT, Email, Attn):</label><textarea id="qtInfoKH" rows="5" placeholder="Địa chỉ, SĐT, Email, Người liên hệ..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></textarea></div>
+        <div style="display:flex; gap:8px;">
+          <button id="btnSaveKH" onclick="themKhachHangNhanh()" style="flex:1; background: #2563eb; color: white; border: none; padding: 11px; border-radius: 6px; font-weight: bold; cursor: pointer;">💾 Lưu Khách Hàng</button>
+          <button id="btnCancelKH" onclick="huySuaKH()" style="display:none; background: #64748b; color: white; border: none; padding: 11px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;">Hủy</button>
+        </div>
+      </div>
+
+      <!-- 3. THÊM / SỬA NGÂN HÀNG THANH TOÁN -->
+      <div style="background: white; padding: 18px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+        <h3 style="color: #ea580c; margin-bottom: 14px; font-size: 16px;" id="titleFormBank">🏦 Thêm Ngân Hàng T/T</h3>
+        <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Tên Ngân Hàng (Bank Name):</label><input type="text" id="qtBankName" placeholder="VD: VIETCOMBANK - HCMC" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></div>
+        <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Tên Tài Khoản (Beneficiary):</label><input type="text" id="qtAccName" placeholder="CONG TY CO PHAN GOODS LINK" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></div>
+        <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Số Tài Khoản (Account No):</label><input type="text" id="qtAccNo" placeholder="Số tài khoản USD / VND..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></div>
+        <div style="margin-bottom: 12px;"><label style="font-size: 12px; font-weight: 600;">Swift Code:</label><input type="text" id="qtSwift" placeholder="VD: BFTVVNVX..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></div>
+        <div style="display:flex; gap:8px;">
+          <button id="btnSaveBank" onclick="themBankNhanh()" style="flex:1; background: #ea580c; color: white; border: none; padding: 11px; border-radius: 6px; font-weight: bold; cursor: pointer;">💾 Lưu Ngân Hàng</button>
+          <button id="btnCancelBank" onclick="huySuaBank()" style="display:none; background: #64748b; color: white; border: none; padding: 11px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;">Hủy</button>
+        </div>
+      </div>
+
     </div>
 
-    <!-- 2. THÊM KHÁCH HÀNG MỚI -->
-    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
-      <h3 style="color: #2563eb; margin-bottom: 15px;">👤 Thêm Khách Hàng (CRM)</h3>
-      <div style="margin-bottom: 10px;"><label style="font-size: 12px; font-weight: 600;">Tên Công Ty / Đối Tác:</label><input type="text" id="qtTenKH" placeholder="Nhập tên khách hàng..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
-      <div style="margin-bottom: 15px;"><label style="font-size: 12px; font-weight: 600;">Thông Tin Liên Hệ:</label><textarea id="qtInfoKH" rows="4" placeholder="Địa chỉ, SĐT, Email..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;"></textarea></div>
-      <button onclick="themKhachHangNhanh()" style="width: 100%; background: #2563eb; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;">Lưu Khách Hàng</button>
-    </div>
+    <!-- BẢNG LỊCH SỬ KÈM THANH CUỘN -->
+    <div class="master-grid-3" style="margin-top:20px; padding-bottom:60px;">
+      
+      <!-- Lịch sử SP -->
+      <div style="background:white; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+        <h4 style="color:#0d9488; margin-bottom:10px; font-size:14px;">📦 Danh sách Sản phẩm đã lưu</h4>
+        <div style="max-height: 360px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 6px;">
+          <table style="width:100%; font-size:12px; border-collapse:collapse;" id="tableHistorySP">
+            <thead>
+              <tr style="border-bottom:2px solid #e2e8f0; text-align:left; background:#f8fafc; position:sticky; top:0;">
+                <th style="padding:8px;">Mã / Tên / Mô tả quy cách</th>
+                <th style="padding:8px; width:80px;">Giá / ĐVT</th>
+                <th style="padding:8px; text-align:right; width:85px;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
 
-    <!-- 3. THÊM NGÂN HÀNG THANH TOÁN -->
-    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
-      <h3 style="color: #ea580c; margin-bottom: 15px;">🏦 Thêm Ngân Hàng T/T</h3>
-      <div style="margin-bottom: 6px;"><label style="font-size: 11px; font-weight: 600;">Tên Ngân Hàng:</label><input type="text" id="qtBankName" placeholder="VIETCOMBANK" style="width: 100%; padding: 5px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
-      <div style="margin-bottom: 6px;"><label style="font-size: 11px; font-weight: 600;">Tên Tài Khoản:</label><input type="text" id="qtAccName" placeholder="CONG TY..." style="width: 100%; padding: 5px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
-      <div style="margin-bottom: 6px;"><label style="font-size: 11px; font-weight: 600;">Số Tài Khoản:</label><input type="text" id="qtAccNo" placeholder="Số TK..." style="width: 100%; padding: 5px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
-      <div style="margin-bottom: 10px;"><label style="font-size: 11px; font-weight: 600;">Swift Code:</label><input type="text" id="qtSwift" placeholder="Swift..." style="width: 100%; padding: 5px; border: 1px solid #cbd5e1; border-radius: 6px;"></div>
-      <button onclick="themBankNhanh()" style="width: 100%; background: #ea580c; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;">Lưu Ngân Hàng</button>
-    </div>
+      <!-- Lịch sử KH -->
+      <div style="background:white; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+        <h4 style="color:#2563eb; margin-bottom:10px; font-size:14px;">👤 Danh sách Khách hàng đã lưu</h4>
+        <div style="max-height: 360px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 6px;">
+          <table style="width:100%; font-size:12px; border-collapse:collapse;" id="tableHistoryKH">
+            <thead>
+              <tr style="border-bottom:2px solid #e2e8f0; text-align:left; background:#f8fafc; position:sticky; top:0;">
+                <th style="padding:8px;">Tên Công Ty & Thông Tin Liên Hệ</th>
+                <th style="padding:8px; text-align:right; width:85px;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
 
+      <!-- Lịch sử Bank -->
+      <div style="background:white; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+        <h4 style="color:#ea580c; margin-bottom:10px; font-size:14px;">🏦 Danh sách Ngân hàng đã lưu</h4>
+        <div style="max-height: 360px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 6px;">
+          <table style="width:100%; font-size:12px; border-collapse:collapse;" id="tableHistoryBank">
+            <thead>
+              <tr style="border-bottom:2px solid #e2e8f0; text-align:left; background:#f8fafc; position:sticky; top:0;">
+                <th style="padding:8px;">Chi tiết Ngân hàng / Beneficiary / STK / Swift</th>
+                <th style="padding:8px; text-align:right; width:85px;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
   </div>
 
- <!-- BẢNG HIỂN THỊ LỊCH SỬ ĐÃ TẠO (CÓ THANH CUỘN & NÚT SỬA/XÓA) -->
-<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; margin-top:20px;">
-  
-  <!-- Lịch sử Sản phẩm -->
-  <div style="background:white; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-    <h4 style="color:#0d9488; margin-bottom:10px; font-size:14px;">📦 Lịch sử Sản phẩm</h4>
-    <div style="max-height: 280px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 6px;">
-      <table style="width:100%; font-size:12px; border-collapse:collapse;" id="tableHistorySP">
-        <thead>
-          <tr style="border-bottom:2px solid #e2e8f0; text-align:left; background:#f8fafc; position:sticky; top:0;">
-            <th style="padding:6px;">Mã/Tên</th>
-            <th style="padding:6px;">Giá</th>
-            <th style="padding:6px; text-align:right;">Thao tác</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Lịch sử Khách hàng -->
-  <div style="background:white; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-    <h4 style="color:#2563eb; margin-bottom:10px; font-size:14px;">👤 Lịch sử Khách hàng</h4>
-    <div style="max-height: 280px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 6px;">
-      <table style="width:100%; font-size:12px; border-collapse:collapse;" id="tableHistoryKH">
-        <thead>
-          <tr style="border-bottom:2px solid #e2e8f0; text-align:left; background:#f8fafc; position:sticky; top:0;">
-            <th style="padding:6px;">Tên Khách Hàng</th>
-            <th style="padding:6px; text-align:right;">Thao tác</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Lịch sử Ngân hàng -->
-  <div style="background:white; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-    <h4 style="color:#ea580c; margin-bottom:10px; font-size:14px;">🏦 Lịch sử Ngân hàng</h4>
-    <div style="max-height: 280px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 6px;">
-      <table style="width:100%; font-size:12px; border-collapse:collapse;" id="tableHistoryBank">
-        <thead>
-          <tr style="border-bottom:2px solid #e2e8f0; text-align:left; background:#f8fafc; position:sticky; top:0;">
-            <th style="padding:6px;">Ngân hàng / Số TK</th>
-            <th style="padding:6px; text-align:right;">Thao tác</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-
-</div>
-
-  <!-- NAVIGATION MOBILE -->
-  <div class="mobile-bottom-nav">
+  <!-- THANH CHUYỂN TAB MOBILE (CHỈ HIỆN TRÊN ĐIỆN THOẠI KHI Ở STUDIO) -->
+  <div class="mobile-bottom-nav" id="mobileBottomNav">
     <button class="mob-nav-btn active" id="mobBtnForm" onclick="chuyenTabMobile('FORM')">📝 1. Soạn Đơn</button>
-    <button class="mob-nav-btn" id="mobBtnPreview" onclick="chuyenTabMobile('PREVIEW')">📄 2. Xem A4 & Gửi Mail</button>
+    <button class="mob-nav-btn" id="mobBtnPreview" onclick="chuyenTabMobile('PREVIEW')">📄 2. Xem A4 & Tải PDF</button>
   </div>
 
   <div id="loading-overlay"><div class="spinner"></div><div class="loading-text">Đang xử lý...</div></div>
@@ -560,12 +777,89 @@
   <script src="JS_State_CRUD.js"></script>
   <script src="JS_Render_PDF.js"></script>
 
-  <!-- SCRIPT ĐIỀU HƯỚNG TAB & TẢI DỮ LIỆU -->
+  <!-- SCRIPT ĐIỀU HƯỚNG, TỐI ƯU MOBILE & ĐỒNG BỘ DỮ LIỆU -->
   <script>
+    window.masterCache = {
+      sp: {},
+      kh: {},
+      bank: {}
+    };
+
+    let dangSuaSPId = null;
+    let dangSuaKHId = null;
+    let dangSuaBankId = null;
+    let currentMainTab = 'STUDIO';
+    let currentMobileSubTab = 'FORM';
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Xử lý chuyển đổi giữa Form và Xem trước A4 trên điện thoại
+    window.chuyenTabMobile = function(subTab) {
+      currentMobileSubTab = subTab;
+      const panelLeft = document.querySelector('#viewStudio .panel-left');
+      const panelRight = document.querySelector('#viewStudio .panel-right');
+      const btnForm = document.getElementById('mobBtnForm');
+      const btnPreview = document.getElementById('mobBtnPreview');
+      const isMobile = window.innerWidth <= 768;
+
+      if (!panelLeft || !panelRight) return;
+
+      if (!isMobile) {
+        // Trên máy tính luôn hiển thị song song 2 cột
+        panelLeft.style.display = '';
+        panelRight.style.display = '';
+        return;
+      }
+
+      if (subTab === 'PREVIEW') {
+        panelLeft.style.display = 'none';
+        panelRight.style.display = 'block';
+        btnForm?.classList.remove('active');
+        btnPreview?.classList.add('active');
+        tuDongZoomA4TrenMobile();
+      } else {
+        panelLeft.style.display = 'block';
+        panelRight.style.display = 'none';
+        btnForm?.classList.add('active');
+        btnPreview?.classList.remove('active');
+      }
+    };
+
+    // Tự động tính tỷ lệ thu nhỏ tờ A4 vừa khít màn hình điện thoại
+    function tuDongZoomA4TrenMobile() {
+      const wrapper = document.getElementById('a4Wrapper');
+      if (!wrapper) return;
+      if (window.innerWidth <= 768) {
+        const scale = Math.min(1, (window.innerWidth - 20) / 794);
+        wrapper.style.transform = `scale(${scale.toFixed(2)})`;
+        wrapper.style.transformOrigin = 'top center';
+      } else {
+        const zoomSelect = document.getElementById('zoomSelectBox');
+        const val = zoomSelect ? zoomSelect.value : '1';
+        wrapper.style.transform = `scale(${val})`;
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      if (currentMainTab === 'STUDIO') {
+        window.chuyenTabMobile(currentMobileSubTab);
+      }
+    });
+
+    // Điều hướng 3 màn hình chính
     window.chuyenManHinhKapella = function(tab) {
+      currentMainTab = tab;
       const dashScreen = document.getElementById('viewDashboard');
       const studioScreen = document.getElementById('viewStudio');
       const masterScreen = document.getElementById('manHinhQuanLyMaster');
+      const mobNav = document.getElementById('mobileBottomNav');
 
       [dashScreen, studioScreen, masterScreen].forEach((screen) => {
         if (screen) screen.style.display = 'none';
@@ -578,530 +872,476 @@
       if (tab === 'DASH' && dashScreen) {
         dashScreen.style.display = 'block';
         document.getElementById('tabBtnDash')?.classList.add('active');
+        if (mobNav) mobNav.style.setProperty('display', 'none', 'important');
+        if (typeof renderKapellaDashboard === 'function') renderKapellaDashboard();
       } else if (tab === 'STUDIO' && studioScreen) {
         studioScreen.style.display = 'flex';
         document.getElementById('tabBtnStudio')?.classList.add('active');
+        if (mobNav) mobNav.style.display = '';
+        window.chuyenTabMobile(currentMobileSubTab);
       } else if (tab === 'MASTER' && masterScreen) {
         masterScreen.style.display = 'block';
         document.getElementById('tabBtnMaster')?.classList.add('active');
+        if (mobNav) mobNav.style.setProperty('display', 'none', 'important');
+      }
+    };
+
+    // =====================================================
+    // 1. QUẢN LÝ SẢN PHẨM (THÊM, SỬA, HỦY SỬA)
+    // =====================================================
+    async function themSanPhamNhanh() {
+      const maSP = document.getElementById('qtMaSP')?.value.trim();
+      const tenSP = document.getElementById('qtTenSP')?.value.trim();
+      const moTaSP = document.getElementById('qtMoTaSP')?.value.trim() || '';
+      const dvt = document.getElementById('qtDVT')?.value.trim() || 'Kg';
+      const gia = parseFloat(document.getElementById('qtGia')?.value) || 0;
+
+      if (!maSP || !tenSP) {
+        alert("⚠️ Vui lòng nhập đầy đủ Mã SP và Tên Sản Phẩm!");
+        return;
+      }
+
+      try {
+        if (dangSuaSPId && dangSuaSPId !== maSP) {
+          await db.collection("Database").doc(dangSuaSPId).delete();
+        }
+
+        await db.collection("Database").doc(maSP).set({
+          maSP: maSP,
+          tenSP: tenSP,
+          moTaSP: moTaSP,
+          dvt: dvt,
+          gia: gia,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+
+        alert(dangSuaSPId ? "✅ Đã cập nhật sản phẩm thành công!" : "✅ Đã thêm sản phẩm mới thành công!");
+        huySuaSP();
+        await taiDuLieuMasterTuFirestore();
+      } catch (err) {
+        alert("❌ Lỗi khi lưu sản phẩm: " + err.message);
+      }
+    }
+
+    function suaSanPham(docId) {
+      const d = window.masterCache.sp[docId];
+      if (!d) return;
+      dangSuaSPId = docId;
+      document.getElementById('qtMaSP').value = d.maSP || docId;
+      document.getElementById('qtTenSP').value = d.tenSP || '';
+      document.getElementById('qtMoTaSP').value = d.moTaSP || '';
+      document.getElementById('qtDVT').value = d.dvt || 'Kg';
+      document.getElementById('qtGia').value = d.gia || 0;
+
+      document.getElementById('titleFormSP').innerText = "✏️ Đang Sửa SP: " + (d.maSP || docId);
+      document.getElementById('btnSaveSP').innerText = "💾 Cập Nhật Sản Phẩm";
+      document.getElementById('btnCancelSP').style.display = 'inline-block';
+      document.getElementById('qtTenSP').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function huySuaSP() {
+      dangSuaSPId = null;
+      document.getElementById('qtMaSP').value = '';
+      document.getElementById('qtTenSP').value = '';
+      document.getElementById('qtMoTaSP').value = '';
+      document.getElementById('qtDVT').value = 'Kg';
+      document.getElementById('qtGia').value = '0';
+      document.getElementById('titleFormSP').innerText = "➕ Thêm Sản Phẩm Mới";
+      document.getElementById('btnSaveSP').innerText = "💾 Lưu Sản Phẩm";
+      document.getElementById('btnCancelSP').style.display = 'none';
+    }
+
+    // =====================================================
+    // 2. QUẢN LÝ KHÁCH HÀNG (THÊM, SỬA, HỦY SỬA)
+    // =====================================================
+    async function themKhachHangNhanh() {
+      const tenKH = document.getElementById('qtTenKH')?.value.trim();
+      const infoKH = document.getElementById('qtInfoKH')?.value.trim() || '';
+      if (!tenKH) {
+        alert("⚠️ Vui lòng nhập Tên Công Ty / Đối Tác!");
+        return;
+      }
+
+      try {
+        if (dangSuaKHId) {
+          await db.collection("KhachHang").doc(dangSuaKHId).set({
+            tenKH: tenKH,
+            infoKH: infoKH,
+            updatedAt: new Date().toISOString()
+          }, { merge: true });
+          alert("✅ Đã cập nhật thông tin khách hàng!");
+        } else {
+          await db.collection("KhachHang").add({
+            tenKH: tenKH,
+            infoKH: infoKH,
+            createdAt: new Date().toISOString()
+          });
+          alert("✅ Đã thêm khách hàng mới thành công!");
+        }
+        huySuaKH();
+        await taiDuLieuMasterTuFirestore();
+      } catch (err) {
+        alert("❌ Lỗi khi lưu khách hàng: " + err.message);
+      }
+    }
+
+    function suaKhachHang(docId) {
+      const d = window.masterCache.kh[docId];
+      if (!d) return;
+      dangSuaKHId = docId;
+      document.getElementById('qtTenKH').value = d.tenKH || '';
+      document.getElementById('qtInfoKH').value = d.infoKH || '';
+
+      document.getElementById('titleFormKH').innerText = "✏️ Đang Sửa Khách Hàng";
+      document.getElementById('btnSaveKH').innerText = "💾 Cập Nhật Khách Hàng";
+      document.getElementById('btnCancelKH').style.display = 'inline-block';
+      document.getElementById('qtTenKH').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function huySuaKH() {
+      dangSuaKHId = null;
+      document.getElementById('qtTenKH').value = '';
+      document.getElementById('qtInfoKH').value = '';
+      document.getElementById('titleFormKH').innerText = "👤 Thêm Khách Hàng (CRM)";
+      document.getElementById('btnSaveKH').innerText = "💾 Lưu Khách Hàng";
+      document.getElementById('btnCancelKH').style.display = 'none';
+    }
+
+    // =====================================================
+    // 3. QUẢN LÝ NGÂN HÀNG (THÊM, SỬA, HỦY SỬA)
+    // =====================================================
+    async function themBankNhanh() {
+      const bankName = document.getElementById('qtBankName')?.value.trim();
+      const accName = document.getElementById('qtAccName')?.value.trim() || '';
+      const accNo = document.getElementById('qtAccNo')?.value.trim();
+      const swift = document.getElementById('qtSwift')?.value.trim() || '';
+      if (!bankName || !accNo) {
+        alert("⚠️ Vui lòng nhập Tên ngân hàng và Số tài khoản!");
+        return;
+      }
+
+      try {
+        if (dangSuaBankId) {
+          await db.collection("DM_Bank").doc(dangSuaBankId).set({
+            bankName, accName, accNo, swift,
+            updatedAt: new Date().toISOString()
+          }, { merge: true });
+          alert("✅ Đã cập nhật thông tin ngân hàng!");
+        } else {
+          await db.collection("DM_Bank").add({
+            bankName, accName, accNo, swift,
+            createdAt: new Date().toISOString()
+          });
+          alert("✅ Đã thêm ngân hàng mới thành công!");
+        }
+        huySuaBank();
+        await taiDuLieuMasterTuFirestore();
+      } catch (err) {
+        alert("❌ Lỗi khi lưu ngân hàng: " + err.message);
+      }
+    }
+
+    function suaBank(docId) {
+      const d = window.masterCache.bank[docId];
+      if (!d) return;
+      dangSuaBankId = docId;
+      document.getElementById('qtBankName').value = d.bankName || '';
+      document.getElementById('qtAccName').value = d.accName || '';
+      document.getElementById('qtAccNo').value = d.accNo || '';
+      document.getElementById('qtSwift').value = d.swift || '';
+
+      document.getElementById('titleFormBank').innerText = "✏️ Đang Sửa Ngân Hàng";
+      document.getElementById('btnSaveBank').innerText = "💾 Cập Nhật Ngân Hàng";
+      document.getElementById('btnCancelBank').style.display = 'inline-block';
+      document.getElementById('qtBankName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function huySuaBank() {
+      dangSuaBankId = null;
+      document.getElementById('qtBankName').value = '';
+      document.getElementById('qtAccName').value = '';
+      document.getElementById('qtAccNo').value = '';
+      document.getElementById('qtSwift').value = '';
+      document.getElementById('titleFormBank').innerText = "🏦 Thêm Ngân Hàng T/T";
+      document.getElementById('btnSaveBank').innerText = "💾 Lưu Ngân Hàng";
+      document.getElementById('btnCancelBank').style.display = 'none';
+    }
+
+    // =====================================================
+    // 4. TẢI DỮ LIỆU FIRESTORE & ĐỔ ĐẦY ĐỦ RA BẢNG LỊCH SỬ
+    // =====================================================
+    async function taiDuLieuMasterTuFirestore() {
+      try {
+        window.masterCache = { sp: {}, kh: {}, bank: {} };
+
+        // 1. Tải Sản phẩm
+        const spSnap = await db.collection("Database").get();
+        const spSelect = document.getElementById('spSelect');
+        const tableSP = document.querySelector('#tableHistorySP tbody');
+        if (spSelect) spSelect.innerHTML = '<option value="">-- Chọn sản phẩm từ Database --</option>';
+        if (tableSP) tableSP.innerHTML = '';
+
+        let countSP = 0;
+        spSnap.forEach(doc => {
+          countSP++;
+          const d = doc.data();
+          const docId = doc.id;
+          const ma = d.maSP || docId;
+          const ten = d.tenSP || '';
+          const moTa = d.moTaSP || '';
+          const dvt = d.dvt || 'Kg';
+          const gia = Number(d.gia) || 0;
+
+          window.masterCache.sp[docId] = { docId, maSP: ma, tenSP: ten, moTaSP: moTa, dvt, gia };
+
+          if (spSelect) {
+            spSelect.innerHTML += `<option value="${escapeHtml(docId)}">[${escapeHtml(ma)}] ${escapeHtml(ten)} — ${gia.toLocaleString('vi-VN')} (${escapeHtml(dvt)})</option>`;
+          }
+          if (tableSP) {
+            tableSP.innerHTML += `
+              <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:8px; vertical-align:top;">
+                  <div style="font-weight:700; color:#0f172a;">[${escapeHtml(ma)}] ${escapeHtml(ten)}</div>
+                  ${moTa ? `<div style="color:#475569; font-size:11px; white-space:pre-line; margin-top:3px;">📝 ${escapeHtml(moTa)}</div>` : `<div style="color:#94a3b8; font-size:11px; font-style:italic;">(Chưa có mô tả chi tiết)</div>`}
+                </td>
+                <td style="padding:8px; vertical-align:top; font-weight:700; color:#0d9488;">
+                  ${gia.toLocaleString('vi-VN')}<br>
+                  <span style="font-size:11px; color:#64748b; font-weight:500;">ĐVT: ${escapeHtml(dvt)}</span>
+                </td>
+                <td style="padding:8px; text-align:right; vertical-align:top; white-space:nowrap;">
+                  <button onclick="suaSanPham('${escapeHtml(docId)}')" style="background:#f59e0b; color:#fff; border:none; padding:5px 8px; border-radius:4px; font-size:11px; cursor:pointer; margin-right:4px;">Sửa</button>
+                  <button onclick="xoaFirestore('Database', '${escapeHtml(docId)}', 'Sản phẩm')" style="background:#ef4444; color:#fff; border:none; padding:5px 8px; border-radius:4px; font-size:11px; cursor:pointer;">Xóa</button>
+                </td>
+              </tr>`;
+          }
+        });
+
+        // 2. Tải Khách hàng
+        const khSnap = await db.collection("KhachHang").get();
+        const khSelect = document.getElementById('khSelect');
+        const tableKH = document.querySelector('#tableHistoryKH tbody');
+        if (khSelect) khSelect.innerHTML = '<option value="">-- Chọn khách hàng lưu sẵn --</option>';
+        if (tableKH) tableKH.innerHTML = '';
+
+        let countKH = 0;
+        khSnap.forEach(doc => {
+          countKH++;
+          const d = doc.data();
+          const docId = doc.id;
+          const ten = d.tenKH || d.tenKhachHang || d.name || docId;
+          const info = d.infoKH || d.lienHe || d.thongTin || '';
+
+          window.masterCache.kh[docId] = { docId, tenKH: ten, infoKH: info };
+
+          if (khSelect) {
+            khSelect.innerHTML += `<option value="${escapeHtml(docId)}">${escapeHtml(ten)}</option>`;
+          }
+          if (tableKH) {
+            tableKH.innerHTML += `
+              <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:8px; vertical-align:top;">
+                  <div style="font-weight:700; color:#1e40af;">${escapeHtml(ten)}</div>
+                  ${info ? `<div style="color:#475569; font-size:11px; white-space:pre-line; margin-top:3px;">📍 ${escapeHtml(info)}</div>` : `<div style="color:#94a3b8; font-size:11px; font-style:italic;">(Chưa có thông tin liên hệ)</div>`}
+                </td>
+                <td style="padding:8px; text-align:right; vertical-align:top; white-space:nowrap;">
+                  <button onclick="suaKhachHang('${escapeHtml(docId)}')" style="background:#f59e0b; color:#fff; border:none; padding:5px 8px; border-radius:4px; font-size:11px; cursor:pointer; margin-right:4px;">Sửa</button>
+                  <button onclick="xoaFirestore('KhachHang', '${escapeHtml(docId)}', 'Khách hàng')" style="background:#ef4444; color:#fff; border:none; padding:5px 8px; border-radius:4px; font-size:11px; cursor:pointer;">Xóa</button>
+                </td>
+              </tr>`;
+          }
+        });
+
+        // 3. Tải Ngân hàng
+        const bankSnap = await db.collection("DM_Bank").get();
+        const bankSelect = document.getElementById('bankSelect');
+        const tableBank = document.querySelector('#tableHistoryBank tbody');
+        if (bankSelect) bankSelect.innerHTML = '<option value="">-- Chọn Bank từ Database --</option>';
+        if (tableBank) tableBank.innerHTML = '';
+
+        bankSnap.forEach(doc => {
+          const d = doc.data();
+          const docId = doc.id;
+          const bName = d.bankName || d.tenBank || '';
+          const accName = d.accName || d.tenTaiKhoan || '';
+          const accNo = d.accNo || d.soTaiKhoan || '';
+          const swift = d.swift || d.swiftCode || '';
+
+          window.masterCache.bank[docId] = { docId, bankName: bName, accName, accNo, swift };
+
+          if (bankSelect) {
+            bankSelect.innerHTML += `<option value="${escapeHtml(docId)}">${escapeHtml(bName)} — A/C: ${escapeHtml(accNo)}</option>`;
+          }
+          if (tableBank) {
+            tableBank.innerHTML += `
+              <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:8px; vertical-align:top;">
+                  <div style="font-weight:700; color:#c2410c;">🏦 ${escapeHtml(bName)}</div>
+                  <div style="color:#0f172a; font-size:11.5px; margin-top:2px;">👤 <b>Chủ TK:</b> ${escapeHtml(accName || '---')}</div>
+                  <div style="color:#0f172a; font-size:11.5px;">💳 <b>Số TK:</b> ${escapeHtml(accNo)}</div>
+                  <div style="color:#475569; font-size:11px;">🌐 <b>Swift Code:</b> ${escapeHtml(swift || '---')}</div>
+                </td>
+                <td style="padding:8px; text-align:right; vertical-align:top; white-space:nowrap;">
+                  <button onclick="suaBank('${escapeHtml(docId)}')" style="background:#f59e0b; color:#fff; border:none; padding:5px 8px; border-radius:4px; font-size:11px; cursor:pointer; margin-right:4px;">Sửa</button>
+                  <button onclick="xoaFirestore('DM_Bank', '${escapeHtml(docId)}', 'Ngân hàng')" style="background:#ef4444; color:#fff; border:none; padding:5px 8px; border-radius:4px; font-size:11px; cursor:pointer;">Xóa</button>
+                </td>
+              </tr>`;
+          }
+        });
+
+        const kpCountMaster = document.getElementById('kpCountMaster');
+        if (kpCountMaster) kpCountMaster.innerText = `${countSP} SP / ${countKH} KH`;
+
+      } catch (err) {
+        console.error("Lỗi tải Master:", err);
+      }
+    }
+
+    async function xoaFirestore(collectionName, docId, tenLoai) {
+      if (confirm(`⚠️ Bạn có chắc chắn muốn xóa ${tenLoai} này không?`)) {
+        try {
+          await db.collection(collectionName).doc(docId).delete();
+          alert(`✅ Đã xóa ${tenLoai} thành công!`);
+          await taiDuLieuMasterTuFirestore();
+        } catch (err) {
+          alert("❌ Lỗi khi xóa: " + err.message);
+        }
+      }
+    }
+
+    // =====================================================
+    // 5. ĐỒNG BỘ KHI CHỌN SP, KHÁCH HÀNG, BANK Ở STUDIO
+    // =====================================================
+    window.chonSPDatabase = function() {
+      const sel = document.getElementById('spSelect');
+      if (!sel || !sel.value) return;
+      const item = window.masterCache.sp[sel.value];
+      if (!item) return;
+
+      const noiDungHienThi = item.moTaSP
+        ? `${item.tenSP}\n${item.moTaSP}`
+        : item.tenSP;
+
+      if (document.getElementById('inTenSP')) document.getElementById('inTenSP').value = noiDungHienThi;
+      if (document.getElementById('inMaSPMoi')) document.getElementById('inMaSPMoi').value = item.maSP;
+      if (document.getElementById('inDVT')) document.getElementById('inDVT').value = item.dvt;
+      if (document.getElementById('inGia')) document.getElementById('inGia').value = item.gia;
+
+      if (typeof renderTable === 'function') renderTable();
+      if (typeof updatePreview === 'function') updatePreview();
+    };
+
+    window.chonKhachHangCRM = function() {
+      const sel = document.getElementById('khSelect');
+      if (!sel || !sel.value) return;
+      const kh = window.masterCache.kh[sel.value];
+      if (!kh) return;
+
+      if (document.getElementById('inKhach')) document.getElementById('inKhach').value = kh.tenKH || '';
+      if (document.getElementById('inLienHe')) document.getElementById('inLienHe').value = kh.infoKH || '';
+      if (typeof updatePreview === 'function') updatePreview();
+    };
+
+    window.chonBankTuSheet = function() {
+      const sel = document.getElementById('bankSelect');
+      if (!sel || !sel.value) return;
+      const b = window.masterCache.bank[sel.value];
+      if (!b) return;
+
+      const lines = [];
+      if (b.bankName) lines.push(`Bank Name: ${b.bankName}`);
+      if (b.accName) lines.push(`Beneficiary: ${b.accName}`);
+      if (b.accNo) lines.push(`Account No: ${b.accNo}`);
+      if (b.swift) lines.push(`SWIFT Code: ${b.swift}`);
+
+      if (document.getElementById('inBankInfo')) {
+        document.getElementById('inBankInfo').value = lines.join('\n');
+      }
+      if (typeof updatePreview === 'function') updatePreview();
+    };
+
+    window.luuKhachHangTuStudio = async function() {
+      const tenKH = document.getElementById('inKhach')?.value.trim();
+      const infoKH = document.getElementById('inLienHe')?.value.trim() || '';
+      if (!tenKH) { alert("⚠️ Vui lòng nhập Tên khách hàng trước khi lưu!"); return; }
+      try {
+        await db.collection("KhachHang").add({ tenKH, infoKH, createdAt: new Date().toISOString() });
+        alert("✅ Đã lưu khách hàng vào Database!");
+        await taiDuLieuMasterTuFirestore();
+      } catch (e) { alert("❌ Lỗi: " + e.message); }
+    };
+
+    window.luuSanPhamTuStudio = async function() {
+      const maSP = document.getElementById('inMaSPMoi')?.value.trim() || ('SP' + Date.now().toString().slice(-4));
+      const fullText = document.getElementById('inTenSP')?.value.trim() || '';
+      const dvt = document.getElementById('inDVT')?.value.trim() || 'Kg';
+      const gia = parseFloat(document.getElementById('inGia')?.value) || 0;
+      if (!fullText) { alert("⚠️ Vui lòng nhập Tên / Mô tả sản phẩm trước khi lưu!"); return; }
+
+      const parts = fullText.split('\n');
+      const tenSP = parts[0];
+      const moTaSP = parts.slice(1).join('\n');
+
+      try {
+        await db.collection("Database").doc(maSP).set({
+          maSP, tenSP, moTaSP, dvt, gia, updatedAt: new Date().toISOString()
+        }, { merge: true });
+        alert("✅ Đã lưu sản phẩm [" + maSP + "] vào Database!");
+        await taiDuLieuMasterTuFirestore();
+      } catch (e) { alert("❌ Lỗi: " + e.message); }
+    };
+
+    window.chenMauNhanh = function(elementId, text) {
+      const el = document.getElementById(elementId);
+      if (el) {
+        el.value = text;
+        el.dispatchEvent(new Event('input'));
+        if (typeof updatePreview === 'function') updatePreview();
+      }
+    };
+
+    // Xuất PDF chuẩn A4 (Tự động trả về tỷ lệ 100% khi xuất rồi khôi phục lại zoom mobile)
+    window.xuatPDF = async function() {
+      const paper = document.getElementById('a4Paper');
+      const wrapper = document.getElementById('a4Wrapper');
+      const panelRight = document.querySelector('#viewStudio .panel-right');
+      if (!paper) {
+        alert("❌ Không tìm thấy khung giấy A4!");
+        return;
+      }
+
+      const maDon = document.getElementById('inMa')?.value.trim() || 'BAO-GIA';
+      const oldTransform = wrapper ? wrapper.style.transform : '';
+      const oldPanelDisplay = panelRight ? panelRight.style.display : '';
+
+      // Đảm bảo khung A4 hiển thị và ở tỷ lệ 1:1 trong lúc chụp PDF
+      if (panelRight && panelRight.style.display === 'none') {
+        panelRight.style.display = 'block';
+      }
+      if (wrapper) wrapper.style.transform = 'scale(1)';
+
+      try {
+        const opt = {
+          margin: 0,
+          filename: `${maDon}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        await html2pdf().set(opt).from(paper).save();
+      } catch (err) {
+        console.error("Lỗi xuất PDF:", err);
+        alert("❌ Lỗi khi tải PDF: " + err.message);
+      } finally {
+        if (wrapper) wrapper.style.transform = oldTransform;
+        if (panelRight) panelRight.style.display = oldPanelDisplay;
       }
     };
 
     window.addEventListener('DOMContentLoaded', () => {
-      if (typeof taiDuLieuMasterTuFirestore === 'function') {
-        taiDuLieuMasterTuFirestore();
-      }
+      taiDuLieuMasterTuFirestore();
       window.chuyenManHinhKapella('STUDIO');
     });
   </script>
-<script>
-// --- CÁC HÀM XỬ LÝ LƯU MASTER DATA & CRM VÀO FIREBASE ---
 
-// 1. Thêm Sản Phẩm Mới vào Collection "Database"
-async function themSanPhamNhanh() {
-  const maSP = document.getElementById('qtMaSP')?.value.trim();
-  const tenSP = document.getElementById('qtTenSP')?.value.trim();
-  const dvt = document.getElementById('qtDVT')?.value.trim() || 'Kg';
-  const gia = parseFloat(document.getElementById('qtGia')?.value) || 0;
-
-  if (!maSP || !tenSP) {
-    alert("⚠️ Vui lòng nhập đầy đủ Mã sản phẩm và Tên sản phẩm!");
-    return;
-  }
-
-  try {
-    await db.collection("Database").doc(maSP).set({
-      maSP: maSP,
-      tenSP: tenSP,
-      dvt: dvt,
-      gia: gia,
-      createdAt: new Date().toISOString()
-    });
-    alert("✅ Đã lưu sản phẩm thành công vào Firebase!");
-    // Clear form
-    document.getElementById('qtMaSP').value = '';
-    document.getElementById('qtTenSP').value = '';
-    document.getElementById('qtGia').value = '0';
-    // Load lại danh sách nếu có hàm cập nhật
-    if (typeof taiDuLieuMasterTuFirestore === 'function') taiDuLieuMasterTuFirestore();
-  } catch (error) {
-    console.error("Lỗi khi lưu sản phẩm:", error);
-    alert("❌ Không thể lưu sản phẩm: " + error.message);
-  }
-}
-
-// 2. Thêm Khách Hàng mới vào Collection "KhachHang"
-async function themKhachHangNhanh() {
-  const tenKH = document.getElementById('qtTenKH')?.value.trim();
-  const infoKH = document.getElementById('qtInfoKH')?.value.trim();
-
-  if (!tenKH) {
-    alert("⚠️ Vui lòng nhập tên công ty hoặc đối tác khách hàng!");
-    return;
-  }
-
-  try {
-    await db.collection("KhachHang").add({
-      tenKH: tenKH,
-      infoKH: infoKH,
-      createdAt: new Date().toISOString()
-    });
-    alert("✅ Đã lưu khách hàng mới thành công vào Firebase!");
-    document.getElementById('qtTenKH').value = '';
-    document.getElementById('qtInfoKH').value = '';
-    if (typeof taiDuLieuMasterTuFirestore === 'function') taiDuLieuMasterTuFirestore();
-  } catch (error) {
-    console.error("Lỗi khi lưu khách hàng:", error);
-    alert("❌ Không thể lưu khách hàng: " + error.message);
-  }
-}
-
-// 3. Thêm Ngân Hàng T/T vào Collection "DM_Bank"
-async function themBankNhanh() {
-  const bankName = document.getElementById('qtBankName')?.value.trim();
-  const accName = document.getElementById('qtAccName')?.value.trim();
-  const accNo = document.getElementById('qtAccNo')?.value.trim();
-  const swift = document.getElementById('qtSwift')?.value.trim();
-
-  if (!bankName || !accNo) {
-    alert("⚠️ Vui lòng nhập Tên ngân hàng và Số tài khoản!");
-    return;
-  }
-
-  try {
-    await db.collection("DM_Bank").add({
-      bankName: bankName,
-      accName: accName,
-      accNo: accNo,
-      swift: swift,
-      createdAt: new Date().toISOString()
-    });
-    alert("✅ Đã lưu thông tin ngân hàng thành công vào Firebase!");
-    document.getElementById('qtBankName').value = '';
-    document.getElementById('qtAccName').value = '';
-    document.getElementById('qtAccNo').value = '';
-    document.getElementById('qtSwift').value = '';
-    if (typeof taiDuLieuMasterTuFirestore === 'function') taiDuLieuMasterTuFirestore();
-  } catch (error) {
-    console.error("Lỗi khi lưu ngân hàng:", error);
-    alert("❌ Không thể lưu ngân hàng: " + error.message);
-  }
-}
-</script>
-<script>
-// --- HÀM TẢI DỮ LIỆU VÀ HIỂN THỊ BẢNG LỊCH SỬ KÈM NÚT SỬA/XÓA ---
-async function taiDuLieuMasterTuFirestore() {
-  try {
-    // 1. Sản phẩm (Collection: Database)
-    const spSnap = await db.collection("Database").get();
-    const spSelect = document.getElementById('spSelect');
-    const tableSP = document.querySelector('#tableHistorySP tbody');
-    if (spSelect) spSelect.innerHTML = '<option value="">-- Chọn sản phẩm từ Database --</option>';
-    if (tableSP) tableSP.innerHTML = '';
-
-    spSnap.forEach(doc => {
-      const d = doc.data();
-      const docId = doc.id;
-      const ma = d.maSP || docId;
-      const ten = d.tenSP || 'SP';
-      const gia = d.gia || 0;
-      const moTa = d.moTaSP || '';
-      const dvt = d.dvt || 'Kg';
-
-      if (spSelect) {
-        spSelect.innerHTML += `<option value="${ma}" data-mota="${moTa}" data-gia="${gia}" data-dvt="${dvt}">${ten} - ${gia}đ (${dvt})</option>`;
-      }
-      if (tableSP) {
-        tableSP.innerHTML += `
-          <tr style="border-bottom:1px solid #f1f5f9;">
-            <td style="padding:6px;"><b>${ma}</b><br>${ten}</td>
-            <td style="padding:6px;">${gia}đ</td>
-            <td style="padding:6px; text-align:right; white-space:nowrap;">
-              <button onclick="suaSanPham('${docId}', '${ma}', '${ten.replace(/'/g, "\\'")}', '${moTa.replace(/'/g, "\\'")}', '${dvt}', ${gia})" style="background:#f59e0b; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer; margin-right:4px;">Sửa</button>
-              <button onclick="xoaFirestore('Database', '${docId}', 'Sản phẩm')" style="background:#ef4444; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer;">Xóa</button>
-            </td>
-          </tr>`;
-      }
-    });
-
-    // 2. Khách hàng (Collection: KhachHang)
-    const khSnap = await db.collection("KhachHang").get();
-    const khSelect = document.getElementById('khSelect');
-    const tableKH = document.querySelector('#tableHistoryKH tbody');
-    if (khSelect) khSelect.innerHTML = '<option value="">-- Chọn khách hàng lưu sẵn --</option>';
-    if (tableKH) tableKH.innerHTML = '';
-
-    khSnap.forEach(doc => {
-      const d = doc.data();
-      const docId = doc.id;
-      const ten = d.tenKH || '';
-      const info = d.infoKH || '';
-
-      if (khSelect) khSelect.innerHTML += `<option value="${ten}">${ten}</option>`;
-      if (tableKH) {
-        tableKH.innerHTML += `
-          <tr style="border-bottom:1px solid #f1f5f9;">
-            <td style="padding:6px;"><b>${ten}</b><br><span style="color:#64748b; font-size:11px;">${info}</span></td>
-            <td style="padding:6px; text-align:right; white-space:nowrap;">
-              <button onclick="suaKhachHang('${docId}', '${ten.replace(/'/g, "\\'")}', '${info.replace(/'/g, "\\'")}')" style="background:#f59e0b; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer; margin-right:4px;">Sửa</button>
-              <button onclick="xoaFirestore('KhachHang', '${docId}', 'Khách hàng')" style="background:#ef4444; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer;">Xóa</button>
-            </td>
-          </tr>`;
-      }
-    });
-
-    // 3. Ngân hàng (Collection: DM_Bank)
-    const bankSnap = await db.collection("DM_Bank").get();
-    const bankSelect = document.getElementById('bankSelect');
-    const tableBank = document.querySelector('#tableHistoryBank tbody');
-    if (bankSelect) bankSelect.innerHTML = '<option value="">-- Chọn Bank từ Sheet --</option>';
-    if (tableBank) tableBank.innerHTML = '';
-
-    bankSnap.forEach(doc => {
-      const d = doc.data();
-      const docId = doc.id;
-      const bName = d.bankName || '';
-      const accNo = d.accNo || '';
-      const accName = d.accName || '';
-      const swift = d.swift || '';
-
-      if (bankSelect) bankSelect.innerHTML += `<option value="${accNo}">${bName} - A/C: ${accNo}</option>`;
-      if (tableBank) {
-        tableBank.innerHTML += `
-          <tr style="border-bottom:1px solid #f1f5f9;">
-            <td style="padding:6px;"><b>${bName}</b><br>STK: ${accNo}</td>
-            <td style="padding:6px; text-align:right; white-space:nowrap;">
-              <button onclick="suaBank('${docId}', '${bName.replace(/'/g, "\\'")}', '${accName.replace(/'/g, "\\'")}', '${accNo}', '${swift}')" style="background:#f59e0b; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer; margin-right:4px;">Sửa</button>
-              <button onclick="xoaFirestore('DM_Bank', '${docId}', 'Ngân hàng')" style="background:#ef4444; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer;">Xóa</button>
-            </td>
-          </tr>`;
-      }
-    });
-
-  } catch (err) {
-    console.error("Lỗi tải Master:", err);
-  }
-}
-
-// --- HÀM XÓA CHUNG TRÊN FIRESTORE ---
-async function xoaFirestore(collectionName, docId, tenLoai) {
-  if (confirm(`⚠️ Bạn có chắc chắn muốn xóa ${tenLoai} này không?`)) {
-    try {
-      await db.collection(collectionName).doc(docId).delete();
-      alert(`✅ Đã xóa ${tenLoai} thành công!`);
-      taiDuLieuMasterTuFirestore();
-    } catch (err) {
-      alert("❌ Lỗi khi xóa: " + err.message);
-    }
-  }
-}
-
-// --- HÀM ĐỔ DỮ LIỆU LÊN FORM ĐỂ CHỈNH SỬA ---
-function suaSanPham(docId, ma, ten, moTa, dvt, gia) {
-  document.getElementById('qtMaSP').value = ma;
-  document.getElementById('qtTenSP').value = ten;
-  document.getElementById('qtMoTaSP').value = moTa;
-  document.getElementById('qtDVT').value = dvt;
-  document.getElementById('qtGia').value = gia;
-  // Cuộn màn hình lên đầu để chỉnh sửa
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function suaKhachHang(docId, ten, info) {
-  document.getElementById('qtTenKH').value = ten;
-  document.getElementById('qtInfoKH').value = info;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function suaBank(docId, bName, accName, accNo, swift) {
-  document.getElementById('qtBankName').value = bName;
-  document.getElementById('qtAccName').value = accName;
-  document.getElementById('qtAccNo').value = accNo;
-  document.getElementById('qtSwift').value = swift;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-</script>
-
-<script>
-// Hàm hỗ trợ chèn nhanh nội dung vào textarea
-function chenMauNhanh(elementId, text) {
-  const el = document.getElementById(elementId);
-  if (el) {
-    el.value = text;
-    // Kích hoạt sự kiện input để update preview tự động
-    el.dispatchEvent(new Event('input'));
-  }
-}
-
-<script>
-// --- BIẾN TOÀN CỤC LƯU TRẠNG THÁI ĐANG SỬA ---
-let dangSuaSPId = null;
-let dangSuaKHId = null;
-let dangSuaBankId = null;
-
-// 1. Thêm / Cập nhật Sản Phẩm
-async function themSanPhamNhanh() {
-  const maSP = document.getElementById('qtMaSP')?.value.trim();
-  const tenSP = document.getElementById('qtTenSP')?.value.trim();
-  const moTaSP = document.getElementById('qtMoTaSP')?.value.trim();
-  const dvt = document.getElementById('qtDVT')?.value.trim() || 'Kg';
-  const gia = parseFloat(document.getElementById('qtGia')?.value) || 0;
-
-  if (!maSP || !tenSP) {
-    alert("⚠️ Vui lòng nhập Mã SP và Tên SP!");
-    return;
-  }
-
-  try {
-    // Sử dụng doc(maSP) để nếu trùng mã thì cập nhật, nếu chưa có thì tạo mới
-    await db.collection("Database").doc(maSP).set({
-      maSP, tenSP, moTaSP, dvt, gia,
-      updatedAt: new Date().toISOString()
-    }, { merge: true });
-
-    alert(dangSuaSPId ? "✅ Cập nhật sản phẩm thành công!" : "✅ Thêm sản phẩm thành công!");
-    
-    // Reset form & trạng thái sửa
-    document.getElementById('qtMaSP').value = '';
-    document.getElementById('qtTenSP').value = '';
-    document.getElementById('qtMoTaSP').value = '';
-    document.getElementById('qtGia').value = '0';
-    document.getElementById('qtMaSP').disabled = false; // Mở lại ô mã SP
-    dangSuaSPId = null;
-
-    taiDuLieuMasterTuFirestore();
-  } catch (err) {
-    alert("❌ Lỗi: " + err.message);
-  }
-}
-
-// 2. Thêm / Cập nhật Khách hàng
-async function themKhachHangNhanh() {
-  const tenKH = document.getElementById('qtTenKH')?.value.trim();
-  const infoKH = document.getElementById('qtInfoKH')?.value.trim();
-  if (!tenKH) { alert("⚠️ Nhập tên khách hàng!"); return; }
-
-  try {
-    if (dangSuaKHId) {
-      // Nếu đang ở chế độ sửa -> Cập nhật đúng docId cũ
-      await db.collection("KhachHang").doc(dangSuaKHId).update({
-        tenKH, infoKH, updatedAt: new Date().toISOString()
-      });
-      alert("✅ Cập nhật khách hàng thành công!");
-      dangSuaKHId = null;
-    } else {
-      // Nếu thêm mới -> Tạo document mới
-      await db.collection("KhachHang").add({
-        tenKH, infoKH, createdAt: new Date().toISOString()
-      });
-      alert("✅ Thêm khách hàng thành công!");
-    }
-
-    document.getElementById('qtTenKH').value = '';
-    document.getElementById('qtInfoKH').value = '';
-    taiDuLieuMasterTuFirestore();
-  } catch (err) { alert("❌ Lỗi: " + err.message); }
-}
-
-// 3. Thêm / Cập nhật Ngân hàng
-async function themBankNhanh() {
-  const bankName = document.getElementById('qtBankName')?.value.trim();
-  const accName = document.getElementById('qtAccName')?.value.trim();
-  const accNo = document.getElementById('qtAccNo')?.value.trim();
-  const swift = document.getElementById('qtSwift')?.value.trim();
-  if (!bankName || !accNo) { alert("⚠️ Nhập tên ngân hàng và số tài khoản!"); return; }
-
-  try {
-    if (dangSuaBankId) {
-      // Cập nhật ngân hàng cũ
-      await db.collection("DM_Bank").doc(dangSuaBankId).update({
-        bankName, accName, accNo, swift, updatedAt: new Date().toISOString()
-      });
-      alert("✅ Cập nhật ngân hàng thành công!");
-      dangSuaBankId = null;
-    } else {
-      // Thêm ngân hàng mới
-      await db.collection("DM_Bank").add({
-        bankName, accName, accNo, swift, createdAt: new Date().toISOString()
-      });
-      alert("✅ Thêm ngân hàng thành công!");
-    }
-
-    document.getElementById('qtBankName').value = '';
-    document.getElementById('qtAccName').value = '';
-    document.getElementById('qtAccNo').value = '';
-    document.getElementById('qtSwift').value = '';
-    taiDuLieuMasterTuFirestore();
-  } catch (err) { alert("❌ Lỗi: " + err.message); }
-}
-
-// --- CẬP NHẬT HÀM ĐỔ DỮ LIỆU BẢNG LỊCH SỬ (TRUYỀN ĐÚNG DOC ID) ---
-async function taiDuLieuMasterTuFirestore() {
-  try {
-    // 1. Sản phẩm
-    const spSnap = await db.collection("Database").get();
-    const spSelect = document.getElementById('spSelect');
-    const tableSP = document.querySelector('#tableHistorySP tbody');
-    if (spSelect) spSelect.innerHTML = '<option value="">-- Chọn sản phẩm từ Database --</option>';
-    if (tableSP) tableSP.innerHTML = '';
-
-    spSnap.forEach(doc => {
-      const d = doc.data();
-      const docId = doc.id;
-      const ma = d.maSP || docId;
-      const ten = d.tenSP || 'SP';
-      const gia = d.gia || 0;
-      const moTa = d.moTaSP || '';
-      const dvt = d.dvt || 'Kg';
-
-      if (spSelect) {
-        spSelect.innerHTML += `<option value="${ma}" data-mota="${moTa}" data-gia="${gia}" data-dvt="${dvt}">${ten} - ${gia}đ (${dvt})</option>`;
-      }
-      if (tableSP) {
-        tableSP.innerHTML += `
-          <tr style="border-bottom:1px solid #f1f5f9;">
-            <td style="padding:6px;"><b>${ma}</b><br>${ten}</td>
-            <td style="padding:6px;">${gia}đ</td>
-            <td style="padding:6px; text-align:right; white-space:nowrap;">
-              <button onclick="suaSanPham('${docId}', '${ma}', '${ten.replace(/'/g, "\\'")}', '${moTa.replace(/'/g, "\\'")}', '${dvt}', ${gia})" style="background:#f59e0b; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer; margin-right:4px;">Sửa</button>
-              <button onclick="xoaFirestore('Database', '${docId}', 'Sản phẩm')" style="background:#ef4444; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer;">Xóa</button>
-            </td>
-          </tr>`;
-      }
-    });
-
-    // 2. Khách hàng
-    const khSnap = await db.collection("KhachHang").get();
-    const khSelect = document.getElementById('khSelect');
-    const tableKH = document.querySelector('#tableHistoryKH tbody');
-    if (khSelect) khSelect.innerHTML = '<option value="">-- Chọn khách hàng lưu sẵn --</option>';
-    if (tableKH) tableKH.innerHTML = '';
-
-    khSnap.forEach(doc => {
-      const d = doc.data();
-      const docId = doc.id;
-      const ten = d.tenKH || '';
-      const info = d.infoKH || '';
-
-      if (khSelect) khSelect.innerHTML += `<option value="${ten}">${ten}</option>`;
-      if (tableKH) {
-        tableKH.innerHTML += `
-          <tr style="border-bottom:1px solid #f1f5f9;">
-            <td style="padding:6px;"><b>${ten}</b><br><span style="color:#64748b; font-size:11px;">${info}</span></td>
-            <td style="padding:6px; text-align:right; white-space:nowrap;">
-              <button onclick="suaKhachHang('${docId}', '${ten.replace(/'/g, "\\'")}', '${info.replace(/'/g, "\\'")}')" style="background:#f59e0b; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer; margin-right:4px;">Sửa</button>
-              <button onclick="xoaFirestore('KhachHang', '${docId}', 'Khách hàng')" style="background:#ef4444; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer;">Xóa</button>
-            </td>
-          </tr>`;
-      }
-    });
-
-    // 3. Ngân hàng
-    const bankSnap = await db.collection("DM_Bank").get();
-    const bankSelect = document.getElementById('bankSelect');
-    const tableBank = document.querySelector('#tableHistoryBank tbody');
-    if (bankSelect) bankSelect.innerHTML = '<option value="">-- Chọn Bank từ Sheet --</option>';
-    if (tableBank) tableBank.innerHTML = '';
-
-    bankSnap.forEach(doc => {
-      const d = doc.data();
-      const docId = doc.id;
-      const bName = d.bankName || '';
-      const accNo = d.accNo || '';
-      const accName = d.accName || '';
-      const swift = d.swift || '';
-
-      if (bankSelect) bankSelect.innerHTML += `<option value="${accNo}">${bName} - A/C: ${accNo}</option>`;
-      if (tableBank) {
-        tableBank.innerHTML += `
-          <tr style="border-bottom:1px solid #f1f5f9;">
-            <td style="padding:6px;"><b>${bName}</b><br>STK: ${accNo}</td>
-            <td style="padding:6px; text-align:right; white-space:nowrap;">
-              <button onclick="suaBank('${docId}', '${bName.replace(/'/g, "\\'")}', '${accName.replace(/'/g, "\\'")}', '${accNo}', '${swift}')" style="background:#f59e0b; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer; margin-right:4px;">Sửa</button>
-              <button onclick="xoaFirestore('DM_Bank', '${docId}', 'Ngân hàng')" style="background:#ef4444; color:#fff; border:none; padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer;">Xóa</button>
-            </td>
-          </tr>`;
-      }
-    });
-
-  } catch (err) {
-    console.error("Lỗi tải Master:", err);
-  }
-}
-
-// --- HÀM XÓA CHUNG ---
-async function xoaFirestore(collectionName, docId, tenLoai) {
-  if (confirm(`⚠️ Bạn có chắc chắn muốn xóa ${tenLoai} này không?`)) {
-    try {
-      await db.collection(collectionName).doc(docId).delete();
-      alert(`✅ Đã xóa ${tenLoai} thành công!`);
-      taiDuLieuMasterTuFirestore();
-    } catch (err) {
-      alert("❌ Lỗi khi xóa: " + err.message);
-    }
-  }
-}
-
-// --- HÀM ĐỔ DỮ LIỆU LÊN FORM VÀ GÁN ID ĐANG SỬA ---
-function suaSanPham(docId, ma, ten, moTa, dvt, gia) {
-  dangSuaSPId = docId;
-  document.getElementById('qtMaSP').value = ma;
-  document.getElementById('qtMaSP').disabled = true; // Khóa mã SP khi sửa để tránh lệch ID
-  document.getElementById('qtTenSP').value = ten;
-  document.getElementById('qtMoTaSP').value = moTa;
-  document.getElementById('qtDVT').value = dvt;
-  document.getElementById('qtGia').value = gia;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function suaKhachHang(docId, ten, info) {
-  dangSuaKHId = docId;
-  document.getElementById('qtTenKH').value = ten;
-  document.getElementById('qtInfoKH').value = info;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function suaBank(docId, bName, accName, accNo, swift) {
-  dangSuaBankId = docId;
-  document.getElementById('qtBankName').value = bName;
-  document.getElementById('qtAccName').value = accName;
-  document.getElementById('qtAccNo').value = accNo;
-  document.getElementById('qtSwift').value = swift;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// Tự động chạy khi mở trang
-window.addEventListener('DOMContentLoaded', () => {
-  if (typeof taiDuLieuMasterTuFirestore === 'function') {
-    taiDuLieuMasterTuFirestore();
-  }
-});
-</script>
-
-<script>
-// Tự động chạy hàm tải dữ liệu ngay khi trang vừa mở xong
-window.addEventListener('DOMContentLoaded', () => {
-  if (typeof taiDuLieuMasterTuFirestore === 'function') {
-    taiDuLieuMasterTuFirestore();
-  }
-});
-
-// Tự động gán mô tả chi tiết vào ô Tên/Mô tả quy cách khi chọn sản phẩm ở Studio
-function chonSPDatabase() {
-  const sel = document.getElementById('spSelect');
-  const opt = sel.options[sel.selectedIndex];
-  if (opt && opt.value) {
-    const moTa = opt.getAttribute('data-mota') || opt.text;
-    const gia = opt.getAttribute('data-gia') || 0;
-    const dvt = opt.getAttribute('data-dvt') || 'Kg';
-
-    document.getElementById('inTenSP').value = moTa;
-    document.getElementById('inGia').value = gia;
-    document.getElementById('inDVT').value = dvt;
-    document.getElementById('inMaSPMoi').value = opt.value;
-    if (typeof updatePreview === 'function') updatePreview();
-  }
-}
-</script>
 </body>
 </html>
