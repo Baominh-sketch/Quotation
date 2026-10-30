@@ -33,40 +33,61 @@
   
   <link rel="stylesheet" href="UI_Styles.css">
 
-  <!-- 4. BỘ CSS HIỂN THỊ ẢNH PDF & TỐI ƯU MOBILE/TABLET -->
+  <!-- 4. BỘ CSS HIỂN THỊ ẢNH LỚN, WATERMARK PDF & TỐI ƯU MOBILE/TABLET -->
   <style>
     .kp-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
     .kp-main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
     .master-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 25px; }
     .kp-welcome-banner { background: linear-gradient(135deg, #001737 0%, #1e293b 100%); color: #fff; padding: 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 12px; }
 
-    /* Đảm bảo Logo, Watermark và Ảnh SP hiển thị sắc nét trên tờ A4 & PDF */
+    /* Đảm bảo khung giấy A4 luôn là mốc tọa độ cho Watermark */
+    #a4Paper {
+      position: relative !important;
+      overflow: hidden !important;
+    }
     #sysLogo {
-      max-height: 68px;
-      max-width: 180px;
+      max-height: 72px;
+      max-width: 190px;
       object-fit: contain;
       display: none;
     }
+    /* Đặt Watermark ở lớp phủ xuyên thấu trên cùng để không bị nền trắng của bảng che mất khi xuất PDF */
     .watermark-overlay {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
-      z-index: 1;
-      overflow: hidden;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      pointer-events: none !important;
+      z-index: 25 !important;
+      overflow: hidden !important;
     }
     #watermarkImg {
-      max-width: 65%;
-      max-height: 65%;
+      width: 420px;
+      max-width: 68%;
+      max-height: 68%;
       object-fit: contain;
-      opacity: 0.10;
       display: none;
     }
     .a4-content-body {
       position: relative;
       z-index: 2;
+    }
+    /* Khung ảnh sản phẩm lớn trên bảng báo giá A4 */
+    .pdf-product-img {
+      width: 92px;
+      height: 92px;
+      max-width: 100px;
+      max-height: 92px;
+      object-fit: contain;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      padding: 2px;
+      background: #ffffff;
+      display: inline-block;
     }
 
     @media screen and (max-width: 1024px) {
@@ -359,19 +380,19 @@
           </div>
 
           <div class="form-group">
-            <label>Ảnh sản phẩm (HD) — Tự động gắn vào dòng sản phẩm</label>
+            <label>Ảnh sản phẩm (HD Lớn) — Tự động gắn vào dòng sản phẩm</label>
             <input type="file" id="inSpFile" accept="image/png, image/jpeg, image/webp" onchange="loadSpImage(this)">
-            <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
-              <img id="spPreviewLeft" style="max-height:52px;display:none;border-radius:6px;border:1px solid #cbd5e1;">
-              <button type="button" id="btnClearSpImg" onclick="xoaAnhSpTam()" style="display:none;background:#ef4444;color:#fff;border:none;padding:3px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Xóa ảnh SP</button>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
+              <img id="spPreviewLeft" style="height:82px;width:82px;object-fit:contain;display:none;border-radius:8px;border:1px solid #cbd5e1;background:#fff;padding:2px;">
+              <button type="button" id="btnClearSpImg" onclick="xoaAnhSpTam()" style="display:none;background:#ef4444;color:#fff;border:none;padding:5px 10px;border-radius:4px;font-size:11px;cursor:pointer;">Xóa ảnh SP</button>
             </div>
           </div>
 
           <button class="btn-argon btn-primary-argon" id="btnAddCartMain" onclick="themVaoGio()">+ Thêm Sản Phẩm Vào Đơn</button>
 
-          <div style="margin-top:12px;max-height:190px;overflow-y:auto;">
+          <div style="margin-top:12px;max-height:210px;overflow-y:auto;">
             <table class="cart-mini-table">
-              <thead><tr><th>Sản phẩm</th><th width="45">SL</th><th width="45">Ảnh</th><th width="110" style="text-align:right;">Thao tác</th></tr></thead>
+              <thead><tr><th>Sản phẩm</th><th width="45">SL</th><th width="55">Ảnh</th><th width="110" style="text-align:right;">Thao tác</th></tr></thead>
               <tbody id="cartMiniBody"><tr><td colspan="4" style="text-align:center;color:var(--argon-muted);">Chưa có sản phẩm</td></tr></tbody>
             </table>
           </div>
@@ -387,7 +408,7 @@
               <button type="button" onclick="xoaLogo()" id="btnXoaLogo" style="display:none;margin-top:5px;background:var(--argon-danger);color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Xóa Logo</button>
             </div>
             <div class="form-group col">
-              <label>Watermark chìm</label>
+              <label>Watermark chìm (In vào PDF)</label>
               <input type="file" id="inWmFile" accept="image/png, image/jpeg, image/webp" onchange="loadWatermark(this)">
               <button type="button" onclick="xoaWatermark()" id="btnXoaWm" style="display:none;margin-top:5px;background:var(--argon-danger);color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Xóa Watermark</button>
             </div>
@@ -402,8 +423,8 @@
           </div>
           <div class="form-group"><label>Email khách hàng nhận file PDF</label><input type="text" id="inEmailKhach" placeholder="VD: contact@customer.com"></div>
           <div class="form-group"><label>Thông tin liên hệ của bạn (Hiển thị trong email & Note A4)</label><input type="text" id="inThongTinLienHeMail" placeholder="VD: Mr. Minh - Phone/WhatsApp: +84 707 253 054 - Email: work.baominh@gmail.com" oninput="capNhatLienHeVaoA4()"></div>
-          <div class="form-group"><label>Tiêu đề thư (Subject)</label><input type="text" id="inEmailSubject" placeholder="Tiêu đề email..."></div>
-          <div class="form-group"><label>Nội dung lời nhắn (Tự động Tiếng Việt / Tiếng Anh theo chế độ)</label><textarea id="inEmailBody" rows="5" placeholder="Nội dung email..."></textarea></div>
+          <div class="form-group"><label>Tiêu đề thư (Subject — Tự động nhảy theo Số chứng từ)</label><input type="text" id="inEmailSubject" placeholder="Tiêu đề email..."></div>
+          <div class="form-group"><label>Nội dung lời nhắn (Tự động nhảy theo Số chứng từ & Ngày lập)</label><textarea id="inEmailBody" rows="5" placeholder="Nội dung email..."></textarea></div>
         </div>
 
         <!-- THAO TÁC HỆ THỐNG -->
@@ -531,7 +552,7 @@
     
     <div class="master-grid-3">
       
-      <!-- 1. THÊM / SỬA SẢN PHẨM (CÓ LUÔN ẢNH SẢN PHẨM) -->
+      <!-- 1. THÊM / SỬA SẢN PHẨM -->
       <div style="background: white; padding: 18px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
         <h3 style="color: #0d9488; margin-bottom: 14px; font-size: 16px;" id="titleFormSP">➕ Thêm Sản Phẩm Mới</h3>
         <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Mã SP:</label><input type="text" id="qtMaSP" placeholder="VD: 01" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></div>
@@ -544,7 +565,7 @@
         <div style="margin-bottom: 12px;">
           <label style="font-size: 12px; font-weight: 600;">Ảnh Sản Phẩm Mặc Định (Tùy chọn):</label>
           <input type="file" id="qtFileSP" accept="image/png, image/jpeg, image/webp" onchange="loadMasterSpImage(this)" style="width: 100%; font-size: 12px;">
-          <img id="qtPreviewSP" style="max-height:44px; display:none; margin-top:6px; border-radius:4px; border:1px solid #cbd5e1;">
+          <img id="qtPreviewSP" style="height:68px; width:68px; object-fit:contain; display:none; margin-top:6px; border-radius:6px; border:1px solid #cbd5e1; background:#fff; padding:2px;">
         </div>
         <div style="display:flex; gap:8px;">
           <button id="btnSaveSP" onclick="themSanPhamNhanh()" style="flex:1; background: #0d9488; color: white; border: none; padding: 11px; border-radius: 6px; font-weight: bold; cursor: pointer;">💾 Lưu Sản Phẩm</button>
@@ -647,7 +668,7 @@
   <script src="JS_State_CRUD.js"></script>
   <script src="JS_Render_PDF.js"></script>
 
-  <!-- SCRIPT TÍCH HỢP TOÀN DIỆN (ẢNH BASE64, EMAIL SONG NGỮ, CLOUD ORDERS & DASHBOARD) -->
+  <!-- SCRIPT TÍCH HỢP TOÀN DIỆN -->
   <script>
     window.masterCache = { sp: {}, kh: {}, bank: {}, orders: {} };
     window.gioHang = [];
@@ -682,39 +703,47 @@
     }
 
     // =====================================================
-    // 1. XỬ LÝ ĐỌC & NÉN ẢNH (LOGO, WATERMARK, ẢNH SẢN PHẨM)
+    // 1. XỬ LÝ ĐỌC & NÉN ẢNH HD + XỬ LÝ WATERMARK XUYÊN THẤU CHO PDF
     // =====================================================
-    function docFileAnhSangBase64(file, maxWidth, keepPng, callback) {
+    function docFileAnhSangBase64(file, maxWidth, keepPng, alphaVal, callback) {
       if (!file) return;
       const reader = new FileReader();
       reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-          const canvas = document.createElement('canvas');
-          let w = img.width;
-          let h = img.height;
-          if (w > maxWidth) {
-            h = Math.round((h * maxWidth) / w);
-            w = maxWidth;
-          }
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, w, h);
-          const mime = (keepPng || file.type === 'image/png') ? 'image/png' : 'image/jpeg';
-          const dataUrl = canvas.toDataURL(mime, 0.85);
-          callback(dataUrl);
-        };
-        img.src = e.target.result;
+        chuyenDataUrlQuaCanvas(e.target.result, maxWidth, keepPng || file.type === 'image/png', alphaVal, callback);
       };
       reader.readAsDataURL(file);
+    }
+
+    function chuyenDataUrlQuaCanvas(srcDataUrl, maxWidth, isPng, alphaVal, callback) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        let w = img.width;
+        let h = img.height;
+        if (w > maxWidth) {
+          h = Math.round((h * maxWidth) / w);
+          w = maxWidth;
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, w, h);
+        if (typeof alphaVal === 'number' && alphaVal < 1) {
+          ctx.globalAlpha = alphaVal;
+        }
+        ctx.drawImage(img, 0, 0, w, h);
+        const mime = (isPng || (typeof alphaVal === 'number' && alphaVal < 1)) ? 'image/png' : 'image/jpeg';
+        const dataUrl = canvas.toDataURL(mime, 0.90);
+        callback(dataUrl);
+      };
+      img.src = srcDataUrl;
     }
 
     // 1.1. Logo Công ty
     window.loadLogo = function(input) {
       const file = input?.files?.[0];
       if (!file) return;
-      docFileAnhSangBase64(file, 500, true, function(dataUrl) {
+      docFileAnhSangBase64(file, 550, true, 1, function(dataUrl) {
         apDungLogo(dataUrl);
         try { localStorage.setItem('argon_saved_logo', dataUrl); } catch (e) {}
         hienToast("✅ Đã cập nhật Logo công ty!");
@@ -742,14 +771,17 @@
       try { localStorage.removeItem('argon_saved_logo'); } catch (e) {}
     };
 
-    // 1.2. Watermark chìm
+    // 1.2. Watermark chìm (Làm mờ trực tiếp 12% trên nền PNG trong suốt để 100% in ra PDF)
     window.loadWatermark = function(input) {
       const file = input?.files?.[0];
       if (!file) return;
-      docFileAnhSangBase64(file, 600, true, function(dataUrl) {
+      docFileAnhSangBase64(file, 650, true, 0.12, function(dataUrl) {
         apDungWatermark(dataUrl);
-        try { localStorage.setItem('argon_saved_wm', dataUrl); } catch (e) {}
-        hienToast("✅ Đã cập nhật Watermark chìm!");
+        try {
+          localStorage.setItem('argon_saved_wm', dataUrl);
+          localStorage.setItem('argon_saved_wm_baked', '1');
+        } catch (e) {}
+        hienToast("✅ Đã chèn Watermark chìm vào trang PDF!");
       });
     };
 
@@ -771,14 +803,17 @@
     window.xoaWatermark = function() {
       apDungWatermark('');
       if (document.getElementById('inWmFile')) document.getElementById('inWmFile').value = '';
-      try { localStorage.removeItem('argon_saved_wm'); } catch (e) {}
+      try {
+        localStorage.removeItem('argon_saved_wm');
+        localStorage.removeItem('argon_saved_wm_baked');
+      } catch (e) {}
     };
 
-    // 1.3. Ảnh sản phẩm ở Studio (Tự động gắn vào sản phẩm đang chọn hoặc dòng vừa thêm)
+    // 1.3. Ảnh sản phẩm HD Lớn (Nén ở độ phân giải 600px sắc nét)
     window.loadSpImage = function(input) {
       const file = input?.files?.[0];
       if (!file) return;
-      docFileAnhSangBase64(file, 360, false, function(dataUrl) {
+      docFileAnhSangBase64(file, 600, false, 1, function(dataUrl) {
         window.currentSpImageBase64 = dataUrl;
         const preview = document.getElementById('spPreviewLeft');
         const btnClear = document.getElementById('btnClearSpImg');
@@ -788,21 +823,17 @@
         }
         if (btnClear) btnClear.style.display = 'inline-block';
 
-        // Nếu đang ở chế độ Sửa 1 dòng trong giỏ hàng -> cập nhật ảnh ngay cho dòng đó
         if (dangSuaGioIndex >= 0 && window.gioHang[dangSuaGioIndex]) {
           window.gioHang[dangSuaGioIndex].anh = dataUrl;
           renderTable();
-          hienToast("📸 Đã gắn ảnh vào dòng sản phẩm #" + (dangSuaGioIndex + 1));
+          hienToast("📸 Đã cập nhật ảnh lớn vào dòng #" + (dangSuaGioIndex + 1));
         } else if (window.gioHang.length > 0 && !document.getElementById('inTenSP')?.value.trim()) {
-          // Nếu người dùng vừa bấm Thêm SP vào giỏ xong mới bấm chọn tệp ảnh -> gắn luôn vào dòng cuối cùng vừa thêm!
           const lastIdx = window.gioHang.length - 1;
-          if (!window.gioHang[lastIdx].anh) {
-            window.gioHang[lastIdx].anh = dataUrl;
-            renderTable();
-            hienToast("📸 Đã tự động gắn ảnh vào sản phẩm vừa thêm!");
-          }
+          window.gioHang[lastIdx].anh = dataUrl;
+          renderTable();
+          hienToast("📸 Đã gắn ảnh lớn vào sản phẩm vừa thêm!");
         } else {
-          hienToast("📸 Đã nạp ảnh SP! Hãy bấm '+ Thêm Sản Phẩm Vào Đơn'.");
+          hienToast("📸 Đã nạp ảnh SP! Bấm '+ Thêm Sản Phẩm Vào Đơn'.");
         }
       });
     };
@@ -816,11 +847,10 @@
       if (document.getElementById('inSpFile')) document.getElementById('inSpFile').value = '';
     };
 
-    // Ảnh sản phẩm trong Quản lý Master Data
     window.loadMasterSpImage = function(input) {
       const file = input?.files?.[0];
       if (!file) return;
-      docFileAnhSangBase64(file, 360, false, function(dataUrl) {
+      docFileAnhSangBase64(file, 600, false, 1, function(dataUrl) {
         window.currentMasterSpImageBase64 = dataUrl;
         const img = document.getElementById('qtPreviewSP');
         if (img) { img.src = dataUrl; img.style.display = 'block'; }
@@ -905,7 +935,7 @@
     };
 
     // =====================================================
-    // 3. CHUYỂN ĐỔI 3 CHẾ ĐỘ & ĐỒNG BỘ EMAIL TIẾNG VIỆT / TIẾNG ANH
+    // 3. CHUYỂN ĐỔI 3 CHẾ ĐỘ & TỰ ĐỘNG NHẢY SỐ BÁO GIÁ / NGÀY LẬP VÀO EMAIL
     // =====================================================
     window.doiCheDo = function(mode) {
       window.cheDoHienTai = mode;
@@ -947,9 +977,6 @@
       if (signTitle) signTitle.innerText = isEN ? 'AUTHORIZED SIGNATURE' : 'ĐẠI DIỆN CÔNG TY';
       if (signSub) signSub.innerText = isEN ? '(Signed & Stamped)' : '(Ký, đóng dấu & ghi rõ họ tên)';
 
-      // Tự động chuyển ngôn ngữ mẫu Email sang Tiếng Việt / Tiếng Anh tương ứng
-      window.datLaiNoiDungMacDinh(false);
-
       renderTable();
       updatePreview();
     };
@@ -958,7 +985,7 @@
       window.doiCheDo('BG_EN');
     };
 
-    // Tự động tạo nội dung Email Tiếng Việt cho BG_VN/XK và Tiếng Anh cho BG_EN
+    // Tự động tạo nội dung Email Tiếng Việt / Tiếng Anh khớp thời gian thực với Số chứng từ & Ngày lập
     window.datLaiNoiDungMacDinh = function(showAlert) {
       const mode = window.cheDoHienTai || 'BG_VN';
       const isEN = (mode === 'BG_EN');
@@ -986,7 +1013,7 @@
         bodyEl.value = `Kính gửi: ${khach},\n\nCông ty Cổ phần Goods Link xin gửi lời chào trân trọng và cảm ơn sự quan tâm của Quý khách hàng / Đối tác.\n\nChúng tôi xin gửi kèm theo email này Bảng Báo Giá chi tiết (Mã chứng từ: ${ma}, ngày lập: ${ngay}) trong tệp PDF đính kèm.\n\nNếu cần trao đổi thêm về quy cách, số lượng hoặc điều khoản giao hàng, Quý khách vui lòng phản hồi lại email này${lienHe ? ' hoặc liên hệ trực tiếp: ' + lienHe : ''}.\n\nTrân trọng cảm ơn và rất mong được hợp tác!\nCÔNG TY CỔ PHẦN GOODS LINK`;
       }
 
-      if (showAlert) hienToast(isEN ? "🇬🇧 Đã tạo mẫu Email Tiếng Anh!" : "🇻🇳 Đã tạo mẫu Email Tiếng Việt!");
+      if (showAlert) hienToast(isEN ? "🇬🇧 Đã cập nhật mẫu Email Tiếng Anh!" : "🇻🇳 Đã cập nhật mẫu Email Tiếng Việt!");
     };
 
     window.capNhatLienHeVaoA4 = function() {
@@ -1004,7 +1031,7 @@
     };
 
     // =====================================================
-    // 4. GIỎ HÀNG & BẢNG A4
+    // 4. GIỎ HÀNG & BẢNG A4 (KHUNG ẢNH SẢN PHẨM LỚN 92x92px)
     // =====================================================
     window.themVaoGio = function() {
       const maSP = document.getElementById('inMaSPMoi')?.value.trim() || ('SP' + (window.gioHang.length + 1));
@@ -1106,7 +1133,7 @@
       const isXK = (mode === 'XK');
       const isPI = isEN && (document.getElementById('chkIsPI')?.checked ?? false);
 
-      // 1. Bảng Mini bên trái
+      // 1. Bảng Mini bên trái (Ảnh preview 42x42px rõ nét)
       if (window.gioHang.length === 0) {
         miniBody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--argon-muted);">Chưa có sản phẩm</td></tr>';
       } else {
@@ -1117,7 +1144,7 @@
             <tr>
               <td><b>${escapeHtml(item.maSP)}</b><br><span style="font-size:11px; color:#475569;">${escapeHtml(tenNgan)}</span></td>
               <td>${item.sl} ${escapeHtml(item.dvt)}</td>
-              <td>${item.anh ? `<img src="${item.anh}" style="height:26px;width:26px;object-fit:cover;border-radius:4px;">` : '<span style="color:#cbd5e1;font-size:10px;">Trống</span>'}</td>
+              <td>${item.anh ? `<img src="${item.anh}" style="height:40px;width:40px;object-fit:contain;border-radius:4px;border:1px solid #cbd5e1;background:#fff;">` : '<span style="color:#cbd5e1;font-size:10px;">Trống</span>'}</td>
               <td style="text-align:right; white-space:nowrap;">
                 <button type="button" onclick="diChuyenGio(${idx}, -1)" style="background:#e2e8f0; border:none; padding:2px 5px; border-radius:3px; font-size:10px; cursor:pointer;">↑</button>
                 <button type="button" onclick="diChuyenGio(${idx}, 1)" style="background:#e2e8f0; border:none; padding:2px 5px; border-radius:3px; font-size:10px; cursor:pointer;">↓</button>
@@ -1128,7 +1155,7 @@
         });
       }
 
-      // 2. Bảng A4 bên phải
+      // 2. Bảng A4 bên phải (Cột ảnh rộng 115px, ảnh sản phẩm 92x92px)
       const showImage = document.getElementById('chkShowImage')?.checked ?? true;
       const showTotal = document.getElementById('chkShowTotal')?.checked ?? true;
       const showWords = document.getElementById('chkShowWords')?.checked ?? true;
@@ -1141,14 +1168,14 @@
 
       if (mode === 'BG_VN') {
         headerRow.innerHTML = `
-          <th width="38">STT</th>
+          <th width="36">STT</th>
           <th>TÊN SẢN PHẨM / QUY CÁCH</th>
-          <th width="55">ĐVT</th>
-          <th width="55">SL</th>
-          <th width="90">ĐƠN GIÁ</th>
-          <th width="60">VAT</th>
-          <th width="105">THÀNH TIỀN</th>
-          ${showImage ? '<th width="70">HÌNH ẢNH</th>' : ''}
+          <th width="50">ĐVT</th>
+          <th width="50">SL</th>
+          <th width="85">ĐƠN GIÁ</th>
+          <th width="52">VAT</th>
+          <th width="95">THÀNH TIỀN</th>
+          ${showImage ? '<th width="115">HÌNH ẢNH</th>' : ''}
         `;
 
         const colSpanEmpty = showImage ? 8 : 7;
@@ -1163,14 +1190,14 @@
 
             preTable.innerHTML += `
               <tr>
-                <td style="text-align:center;font-weight:700;">${idx + 1}</td>
-                <td style="white-space:pre-line;font-weight:600;color:#0f172a;text-align:left;">${escapeHtml(item.tenSP)}</td>
-                <td style="text-align:center;">${escapeHtml(item.dvt)}</td>
-                <td style="text-align:center;font-weight:700;">${item.sl.toLocaleString('vi-VN')}</td>
-                <td style="text-align:right;">${item.gia.toLocaleString('vi-VN')}</td>
-                <td style="text-align:center;">${item.vat === 'KKKNT' ? 'KKKNT' : item.vat + '%'}</td>
-                <td style="text-align:right;font-weight:700;">${Math.round(thanhTien).toLocaleString('vi-VN')}</td>
-                ${showImage ? `<td style="text-align:center;">${item.anh ? `<img src="${item.anh}" style="max-height:48px;max-width:62px;border-radius:4px;object-fit:contain;display:inline-block;">` : ''}</td>` : ''}
+                <td style="text-align:center;font-weight:700;vertical-align:middle;">${idx + 1}</td>
+                <td style="white-space:pre-line;font-weight:600;color:#0f172a;text-align:left;vertical-align:middle;">${escapeHtml(item.tenSP)}</td>
+                <td style="text-align:center;vertical-align:middle;">${escapeHtml(item.dvt)}</td>
+                <td style="text-align:center;font-weight:700;vertical-align:middle;">${item.sl.toLocaleString('vi-VN')}</td>
+                <td style="text-align:right;vertical-align:middle;">${item.gia.toLocaleString('vi-VN')}</td>
+                <td style="text-align:center;vertical-align:middle;">${item.vat === 'KKKNT' ? 'KKKNT' : item.vat + '%'}</td>
+                <td style="text-align:right;font-weight:700;vertical-align:middle;">${Math.round(thanhTien).toLocaleString('vi-VN')}</td>
+                ${showImage ? `<td style="text-align:center;vertical-align:middle;padding:6px;">${item.anh ? `<img src="${item.anh}" class="pdf-product-img">` : ''}</td>` : ''}
               </tr>`;
           });
 
@@ -1199,20 +1226,20 @@
       } else if (mode === 'BG_EN') {
         if (isPI) {
           headerRow.innerHTML = `
-            <th width="40">NO.</th>
+            <th width="38">NO.</th>
             <th>DESCRIPTION OF GOODS</th>
-            <th width="85">QTY (${escapeHtml(dvtHienTai)})</th>
-            <th width="95">UNIT PRICE (${currency})</th>
-            <th width="105">AMOUNT (${currency})</th>
-            ${showImage ? '<th width="70">PHOTO</th>' : ''}
+            <th width="80">QTY (${escapeHtml(dvtHienTai)})</th>
+            <th width="90">UNIT PRICE (${currency})</th>
+            <th width="100">AMOUNT (${currency})</th>
+            ${showImage ? '<th width="115">PHOTO</th>' : ''}
           `;
         } else {
           headerRow.innerHTML = `
-            <th width="40">NO.</th>
+            <th width="38">NO.</th>
             <th>DESCRIPTION</th>
-            <th width="110">VOLUME<br>${escapeHtml(volType)}</th>
-            <th width="110">PRICE<br>(${currency}/${escapeHtml(dvtHienTai)})</th>
-            ${showImage ? '<th width="70">PHOTO</th>' : ''}
+            <th width="105">VOLUME<br>${escapeHtml(volType)}</th>
+            <th width="105">PRICE<br>(${currency}/${escapeHtml(dvtHienTai)})</th>
+            ${showImage ? '<th width="115">PHOTO</th>' : ''}
           `;
         }
 
@@ -1227,21 +1254,21 @@
             if (isPI) {
               preTable.innerHTML += `
                 <tr>
-                  <td style="text-align:center;font-weight:700;">${idx + 1}</td>
-                  <td style="white-space:pre-line;font-weight:600;color:#0f172a;text-align:left;">${escapeHtml(item.tenSP)}</td>
-                  <td style="text-align:center;font-weight:700;">${item.sl.toLocaleString('en-US')} ${escapeHtml(item.dvt)}</td>
-                  <td style="text-align:right;">${item.gia.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                  <td style="text-align:right;font-weight:700;">${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                  ${showImage ? `<td style="text-align:center;">${item.anh ? `<img src="${item.anh}" style="max-height:48px;max-width:62px;border-radius:4px;object-fit:contain;display:inline-block;">` : ''}</td>` : ''}
+                  <td style="text-align:center;font-weight:700;vertical-align:middle;">${idx + 1}</td>
+                  <td style="white-space:pre-line;font-weight:600;color:#0f172a;text-align:left;vertical-align:middle;">${escapeHtml(item.tenSP)}</td>
+                  <td style="text-align:center;font-weight:700;vertical-align:middle;">${item.sl.toLocaleString('en-US')} ${escapeHtml(item.dvt)}</td>
+                  <td style="text-align:right;vertical-align:middle;">${item.gia.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  <td style="text-align:right;font-weight:700;vertical-align:middle;">${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  ${showImage ? `<td style="text-align:center;vertical-align:middle;padding:6px;">${item.anh ? `<img src="${item.anh}" class="pdf-product-img">` : ''}</td>` : ''}
                 </tr>`;
             } else {
               preTable.innerHTML += `
                 <tr>
-                  <td style="text-align:center;font-weight:700;">${idx + 1}</td>
-                  <td style="white-space:pre-line;font-weight:600;color:#0f172a;text-align:left;">${escapeHtml(item.tenSP)}</td>
-                  <td style="text-align:center;font-weight:700;">${item.sl.toLocaleString('en-US')}</td>
-                  <td style="text-align:right;font-weight:700;">${item.gia.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}/${escapeHtml(item.dvt)}</td>
-                  ${showImage ? `<td style="text-align:center;">${item.anh ? `<img src="${item.anh}" style="max-height:48px;max-width:62px;border-radius:4px;object-fit:contain;display:inline-block;">` : ''}</td>` : ''}
+                  <td style="text-align:center;font-weight:700;vertical-align:middle;">${idx + 1}</td>
+                  <td style="white-space:pre-line;font-weight:600;color:#0f172a;text-align:left;vertical-align:middle;">${escapeHtml(item.tenSP)}</td>
+                  <td style="text-align:center;font-weight:700;vertical-align:middle;">${item.sl.toLocaleString('en-US')}</td>
+                  <td style="text-align:right;font-weight:700;vertical-align:middle;">${item.gia.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}/${escapeHtml(item.dvt)}</td>
+                  ${showImage ? `<td style="text-align:center;vertical-align:middle;padding:6px;">${item.anh ? `<img src="${item.anh}" class="pdf-product-img">` : ''}</td>` : ''}
                 </tr>`;
             }
           });
@@ -1270,11 +1297,11 @@
         }
       } else if (mode === 'XK') {
         headerRow.innerHTML = `
-          <th width="45">STT</th>
+          <th width="42">STT</th>
           <th>TÊN HÀNG HÓA / QUY CÁCH BAO BÌ</th>
-          <th width="70">ĐVT</th>
-          <th width="90">SỐ LƯỢNG</th>
-          ${showImage ? '<th width="75">HÌNH ẢNH</th>' : ''}
+          <th width="65">ĐVT</th>
+          <th width="85">SỐ LƯỢNG</th>
+          ${showImage ? '<th width="115">HÌNH ẢNH</th>' : ''}
         `;
 
         const colSpanEmpty = showImage ? 5 : 4;
@@ -1286,11 +1313,11 @@
             tongSL += Number(item.sl) || 0;
             preTable.innerHTML += `
               <tr>
-                <td style="text-align:center;font-weight:700;">${idx + 1}</td>
-                <td style="white-space:pre-line;font-weight:600;color:#0f172a;text-align:left;">${escapeHtml(item.tenSP)}</td>
-                <td style="text-align:center;">${escapeHtml(item.dvt)}</td>
-                <td style="text-align:center;font-weight:700;">${item.sl.toLocaleString('vi-VN')}</td>
-                ${showImage ? `<td style="text-align:center;">${item.anh ? `<img src="${item.anh}" style="max-height:48px;max-width:62px;border-radius:4px;object-fit:contain;display:inline-block;">` : ''}</td>` : ''}
+                <td style="text-align:center;font-weight:700;vertical-align:middle;">${idx + 1}</td>
+                <td style="white-space:pre-line;font-weight:600;color:#0f172a;text-align:left;vertical-align:middle;">${escapeHtml(item.tenSP)}</td>
+                <td style="text-align:center;vertical-align:middle;">${escapeHtml(item.dvt)}</td>
+                <td style="text-align:center;font-weight:700;vertical-align:middle;">${item.sl.toLocaleString('vi-VN')}</td>
+                ${showImage ? `<td style="text-align:center;vertical-align:middle;padding:6px;">${item.anh ? `<img src="${item.anh}" class="pdf-product-img">` : ''}</td>` : ''}
               </tr>`;
           });
           preTable.innerHTML += `
@@ -1303,6 +1330,7 @@
       }
     };
 
+    // Cập nhật trang A4 VÀ tự động cập nhật Số chứng từ + Ngày lập vào Email
     window.updatePreview = function() {
       const mode = window.cheDoHienTai || 'BG_VN';
       const isEN = (mode === 'BG_EN');
@@ -1375,6 +1403,9 @@
       const enNoteVal = document.getElementById('inEnNote')?.value.trim() || '';
       document.getElementById('boxEnNotePre').style.display = (isEN && enNoteVal) ? 'block' : 'none';
       document.getElementById('preEnNote').innerText = enNoteVal;
+
+      // Tự động cập nhật ngay Số chứng từ, Ngày lập & Tên khách hàng vào Tiêu đề và Nội dung Email
+      window.datLaiNoiDungMacDinh(false);
     };
 
     window.chenIncotermThongMinh = function() {
@@ -1400,7 +1431,6 @@
       xoaAnhSpTam();
       renderTable();
       updatePreview();
-      window.datLaiNoiDungMacDinh(false);
       hienToast("✨ Đã khởi tạo đơn mới!");
     };
 
@@ -1471,7 +1501,6 @@
       }
     };
 
-    // Tải danh sách đơn hàng từ Firestore về Dropdown & Bảng Tổng Quan (Dashboard)
     window.taiDanhSachDonLuuApp = async function() {
       try {
         const snap = await db.collection("DonHang").get();
@@ -1487,7 +1516,6 @@
           arr.push({ id, ...d });
         });
 
-        // Sắp xếp đơn mới nhất lên đầu
         arr.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
 
         arr.forEach(item => {
@@ -1562,7 +1590,6 @@
         }
       }
 
-      // Cập nhật Biểu đồ tròn Chart.js
       const ctx = document.getElementById('kpOrderChart');
       if (ctx && typeof Chart !== 'undefined') {
         if (window.kpChartInstance) window.kpChartInstance.destroy();
@@ -1641,7 +1668,7 @@
     };
 
     // =====================================================
-    // 6. TẢI PDF & GỬI MAIL (TỰ ĐỘNG TẢI PDF ĐỂ ĐÍNH KÈM + MỞ GMAIL)
+    // 6. TẢI PDF & GỬI MAIL (ĐẢM BẢO CHÈN WATERMARK + ẢNH LỚN VÀO PDF)
     // =====================================================
     window.xuatPDF = async function() {
       const paper = document.getElementById('a4Paper');
@@ -1661,7 +1688,7 @@
           margin: 0,
           filename: `${maDon}.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, allowTaint: true, scrollY: 0 },
+          html2canvas: { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff', scrollY: 0 },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
         await html2pdf().set(opt).from(paper).save();
@@ -1681,10 +1708,7 @@
         return;
       }
 
-      // Đảm bảo nội dung email đã khớp ngôn ngữ hiện tại nếu đang trống
-      if (!document.getElementById('inEmailSubject')?.value.trim() || !document.getElementById('inEmailBody')?.value.trim()) {
-        window.datLaiNoiDungMacDinh(false);
-      }
+      window.datLaiNoiDungMacDinh(false);
 
       const subject = document.getElementById('inEmailSubject')?.value.trim();
       const bodyMsg = document.getElementById('inEmailBody')?.value.trim();
@@ -1699,7 +1723,7 @@
     };
 
     // =====================================================
-    // 7. QUẢN LÝ MASTER DATA (CÓ ẢNH SP TRONG DATABASE)
+    // 7. QUẢN LÝ MASTER DATA
     // =====================================================
     async function themSanPhamNhanh() {
       const maSP = document.getElementById('qtMaSP')?.value.trim();
@@ -1862,7 +1886,6 @@
         window.masterCache.kh = {};
         window.masterCache.bank = {};
 
-        // 1. Sản phẩm
         const spSnap = await db.collection("Database").get();
         const spSelect = document.getElementById('spSelect');
         const tableSP = document.querySelector('#tableHistorySP tbody');
@@ -1891,7 +1914,7 @@
               <tr style="border-bottom:1px solid #f1f5f9;">
                 <td style="padding:8px; vertical-align:top;">
                   <div style="display:flex;gap:8px;align-items:flex-start;">
-                    ${anhSP ? `<img src="${anhSP}" style="width:34px;height:34px;object-fit:cover;border-radius:4px;border:1px solid #cbd5e1;">` : ''}
+                    ${anhSP ? `<img src="${anhSP}" style="width:46px;height:46px;object-fit:contain;border-radius:4px;border:1px solid #cbd5e1;background:#fff;">` : ''}
                     <div>
                       <div style="font-weight:700; color:#0f172a;">[${escapeHtml(ma)}] ${escapeHtml(ten)}</div>
                       ${moTa ? `<div style="color:#475569; font-size:11px; white-space:pre-line; margin-top:3px;">📝 ${escapeHtml(moTa)}</div>` : `<div style="color:#94a3b8; font-size:11px; font-style:italic;">(Chưa có mô tả chi tiết)</div>`}
@@ -1909,7 +1932,6 @@
           }
         });
 
-        // 2. Khách hàng
         const khSnap = await db.collection("KhachHang").get();
         const khSelect = document.getElementById('khSelect');
         const tableKH = document.querySelector('#tableHistoryKH tbody');
@@ -1944,7 +1966,6 @@
           }
         });
 
-        // 3. Ngân hàng
         const bankSnap = await db.collection("DM_Bank").get();
         const bankSelect = document.getElementById('bankSelect');
         const tableBank = document.querySelector('#tableHistoryBank tbody');
@@ -1999,7 +2020,6 @@
       }
     }
 
-    // Khi chọn sản phẩm từ Database -> tự động lấy cả Mô tả & Ảnh SP (nếu có)
     window.chonSPDatabase = function() {
       const sel = document.getElementById('spSelect');
       if (!sel || !sel.value) return;
@@ -2029,7 +2049,6 @@
       if (document.getElementById('inKhach')) document.getElementById('inKhach').value = kh.tenKH || '';
       if (document.getElementById('inLienHe')) document.getElementById('inLienHe').value = kh.infoKH || '';
       updatePreview();
-      window.datLaiNoiDungMacDinh(false);
     };
 
     window.chonBankTuSheet = function() {
@@ -2096,12 +2115,26 @@
       if (document.getElementById('inNgay') && !document.getElementById('inNgay').value) {
         document.getElementById('inNgay').value = new Date().toLocaleDateString('vi-VN');
       }
-      // Khôi phục Logo & Watermark đã lưu từ lần trước
+      // Khôi phục Logo & Watermark (Nếu ảnh Watermark cũ chưa làm mờ PNG thì tự động chuyển đổi sang PNG mờ 12%)
       try {
         const savedLogo = localStorage.getItem('argon_saved_logo');
         if (savedLogo) apDungLogo(savedLogo);
+
         const savedWm = localStorage.getItem('argon_saved_wm');
-        if (savedWm) apDungWatermark(savedWm);
+        const isBaked = localStorage.getItem('argon_saved_wm_baked');
+        if (savedWm) {
+          if (isBaked === '1') {
+            apDungWatermark(savedWm);
+          } else {
+            chuyenDataUrlQuaCanvas(savedWm, 650, true, 0.12, function(bakedUrl) {
+              apDungWatermark(bakedUrl);
+              try {
+                localStorage.setItem('argon_saved_wm', bakedUrl);
+                localStorage.setItem('argon_saved_wm_baked', '1');
+              } catch (e) {}
+            });
+          }
+        }
       } catch (e) {}
 
       taiDuLieuMasterTuFirestore();
