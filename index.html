@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Hệ Thống Báo Giá</title>
+  <title>SAP S/4HANA Morning Horizon — GOODS LINK ERP</title>
 
   <!-- 1. THƯ VIỆN FIREBASE SDK (COMPAT) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -22,25 +22,580 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    console.log("🔥 Firebase Firestore đã sẵn sàng kết nối!");
+    console.log("🔥 SAP HANA Cloud / Firebase Firestore Connected!");
   </script>
 
   <!-- 3. CÁC LINK CSS & SCRIPT GIAO DIỆN -->
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=72:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
   
   <link rel="stylesheet" href="UI_Styles.css">
 
-  <!-- 4. BỘ CSS HIỂN THỊ ẢNH CỠ LỚN, WATERMARK XUYÊN THẤU & TỐI ƯU MOBILE/TABLET -->
+  <!-- 4. BỘ GIAO DIỆN SAPUI5 MORNING HORIZON & JOULE COPILOT -->
   <style>
+    :root {
+      --sap-brand: #0064d9;
+      --sap-brand-hover: #0054b4;
+      --sap-brand-light: #e8f3ff;
+      --sap-bg: #f5f6f7;
+      --sap-surface: #ffffff;
+      --sap-border: #d9d9d9;
+      --sap-text: #1d2d3e;
+      --sap-muted: #556b82;
+      --sap-success: #256f3a;
+      --sap-success-bg: #f1fdf6;
+      --sap-danger: #aa0808;
+      --sap-danger-bg: #fff1f1;
+      --sap-warning: #e76500;
+      --sap-warning-bg: #fff8f1;
+      --joule-grad: linear-gradient(160deg, #4f2be8 0%, #6828e0 48%, #9b0fc2 100%);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--sap-bg) !important;
+      color: var(--sap-text);
+      overflow-x: hidden;
+    }
+
+    /* =====================================================
+       1. SAP SHELL BAR TRÊN CÙNG (MORNING HORIZON)
+       ===================================================== */
+    .sap-shell-bar {
+      height: 48px;
+      background: #ffffff;
+      border-bottom: 1px solid var(--sap-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    }
+
+    .sap-shell-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sap-logo-badge {
+      background: linear-gradient(135deg, #008fd3 0%, #0054b4 100%);
+      color: #fff;
+      font-weight: 900;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+      padding: 4px 10px 4px 8px;
+      clip-path: polygon(0 0, 100% 0, 86% 100%, 0% 100%);
+      display: inline-flex;
+      align-items: center;
+      user-select: none;
+    }
+
+    .sap-shell-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--sap-text);
+    }
+
+    .sap-shell-center {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--sap-brand);
+      background: var(--sap-brand-light);
+      padding: 4px 14px;
+      border-radius: 16px;
+      border: 1px solid #b8daff;
+    }
+
+    .sap-shell-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sap-icon-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--sap-text);
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .sap-icon-btn:hover {
+      background: var(--sap-brand-light);
+      color: var(--sap-brand);
+      border-color: #b8daff;
+    }
+
+    .sap-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #d3e6f8;
+      color: #004085;
+      font-size: 12px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #9fcdff;
+    }
+
+    /* =====================================================
+       2. BỐ CỤC CHÍNH SAP (SIDEBAR TRÁI + WORKSPACE GIỮA)
+       ===================================================== */
+    .sap-master-layout {
+      display: flex;
+      height: calc(100vh - 48px);
+      width: 100%;
+      overflow: hidden;
+    }
+
+    /* Cột Menu Trái SAPUI5 Controls */
+    .sap-side-nav {
+      width: 225px;
+      min-width: 225px;
+      background: #ffffff;
+      border-right: 1px solid var(--sap-border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      user-select: none;
+      z-index: 100;
+      transition: all 0.2s ease;
+    }
+    .sap-side-nav.collapsed {
+      width: 0;
+      min-width: 0;
+      overflow: hidden;
+      border-right: none;
+    }
+
+    .sap-side-header {
+      padding: 12px 14px;
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--sap-text);
+      border-bottom: 1px solid #eceef0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sap-side-section {
+      padding: 8px 14px 4px 14px;
+      font-size: 10.5px;
+      font-weight: 800;
+      color: var(--sap-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .sap-nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 14px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--sap-text);
+      border: none;
+      border-bottom: 1px solid #f2f4f6;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.15s;
+    }
+    .sap-nav-item:hover {
+      background: #f5f9ff;
+    }
+    .sap-nav-item.active {
+      background: var(--sap-brand-light);
+      color: var(--sap-brand);
+      font-weight: 800;
+    }
+    .sap-nav-item.active::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3.5px;
+      background: var(--sap-brand);
+    }
+
+    /* Vùng Nội Dung Trung Tâm */
+    .sap-center-stage {
+      flex: 1;
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      background: var(--sap-bg);
+    }
+
+    /* Thanh Sub-Header (Segmented Preview Bar của SAP) */
+    .sap-sub-toolbar {
+      height: 44px;
+      min-height: 44px;
+      background: #ffffff;
+      border-bottom: 1px solid var(--sap-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      gap: 10px;
+    }
+
+    .sap-segmented-group {
+      display: inline-flex;
+      background: #f0f2f4;
+      padding: 3px;
+      border-radius: 8px;
+      border: 1px solid #d5dadd;
+    }
+
+    .sap-seg-btn {
+      border: none;
+      background: transparent;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--sap-muted);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .sap-seg-btn.active {
+      background: #ffffff;
+      color: var(--sap-brand);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    /* =====================================================
+       3. HỆ THỐNG NÚT BẤM SEMANTIC PILLS CHUẨN SAP HORIZON
+       ===================================================== */
+    .sap-pill-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .sap-btn,
+    .btn-argon,
+    .preset-chip,
+    .btn-mini-save {
+      border-radius: 18px !important;
+      font-size: 12px !important;
+      font-weight: 700 !important;
+      padding: 6px 14px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 5px !important;
+      cursor: pointer !important;
+      transition: all 0.15s ease !important;
+    }
+
+    /* Emphasized (Xanh SAP đậm) */
+    .btn-primary-argon,
+    .sap-btn-emphasized {
+      background: var(--sap-brand) !important;
+      color: #ffffff !important;
+      border: 1px solid var(--sap-brand) !important;
+      box-shadow: 0 1px 2px rgba(0, 100, 217, 0.2) !important;
+    }
+    .btn-primary-argon:hover,
+    .sap-btn-emphasized:hover {
+      background: var(--sap-brand-hover) !important;
+    }
+
+    /* Accept / Success (Xanh lá SAP) */
+    .btn-success-argon,
+    .sap-btn-accept {
+      background: var(--sap-success) !important;
+      color: #ffffff !important;
+      border: 1px solid var(--sap-success) !important;
+    }
+
+    /* Outlined Accept (Viền xanh lá giống mẫu SAP) */
+    .btn-mini-save,
+    .sap-btn-accept-outline {
+      background: var(--sap-success-bg) !important;
+      color: var(--sap-success) !important;
+      border: 1.5px solid var(--sap-success) !important;
+      padding: 3px 10px !important;
+      font-size: 11px !important;
+    }
+
+    /* Reject / Negative (Đỏ SAP) */
+    .btn-danger-argon,
+    .sap-btn-reject {
+      background: var(--sap-danger-bg) !important;
+      color: var(--sap-danger) !important;
+      border: 1.5px solid var(--sap-danger) !important;
+    }
+    .btn-danger-argon:hover {
+      background: var(--sap-danger) !important;
+      color: #ffffff !important;
+    }
+
+    /* Attention / Critical (Cam SAP) */
+    .sap-btn-critical {
+      background: var(--sap-warning) !important;
+      color: #ffffff !important;
+      border: 1.5px solid var(--sap-warning) !important;
+    }
+
+    /* Default Pill (Xanh viền mảnh) */
+    .preset-chip,
+    .btn-neutral-argon {
+      background: #ffffff !important;
+      color: var(--sap-brand) !important;
+      border: 1.5px solid var(--sap-brand) !important;
+      padding: 3px 10px !important;
+      font-size: 11px !important;
+    }
+    .preset-chip:hover,
+    .btn-neutral-argon:hover {
+      background: var(--sap-brand-light) !important;
+    }
+
+    /* Thẻ Card chuẩn SAPUI5 Object Page */
+    .argon-card {
+      background: #ffffff !important;
+      border: 1px solid #e5e7eb !important;
+      border-radius: 10px !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+      padding: 14px !important;
+      margin-bottom: 14px !important;
+    }
+
+    .argon-hero-header {
+      background: #ffffff !important;
+      color: var(--sap-text) !important;
+      border-bottom: 1px solid var(--sap-border) !important;
+      padding: 12px 14px !important;
+    }
+    .argon-hero-header .brand-title {
+      color: var(--sap-text) !important;
+      font-size: 14px !important;
+    }
+    .argon-hero-header .badge-argon {
+      background: var(--sap-brand-light) !important;
+      color: var(--sap-brand) !important;
+      border: 1px solid #b8daff !important;
+    }
+    .mode-switch {
+      background: #f0f2f4 !important;
+      padding: 3px !important;
+      border-radius: 20px !important;
+      border: 1px solid #d5dadd !important;
+    }
+    .mode-btn {
+      color: var(--sap-muted) !important;
+      border-radius: 16px !important;
+      font-weight: 700 !important;
+    }
+    .mode-btn.active {
+      background: var(--sap-brand) !important;
+      color: #ffffff !important;
+    }
+
+    /* Ô nhập liệu chuẩn SAPUI5 Input */
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+      border: 1px solid #89919a !important;
+      border-radius: 6px !important;
+      background: #ffffff !important;
+      color: var(--sap-text) !important;
+      transition: border-color 0.15s, box-shadow 0.15s !important;
+    }
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--sap-brand) !important;
+      box-shadow: 0 0 0 2px rgba(0, 100, 217, 0.18) !important;
+      outline: none !important;
+    }
+
+    /* =====================================================
+       4. TRỢ LÝ ẢO SAP JOULE COPILOT (PANEL TÍM BÊN PHẢI)
+       ===================================================== */
+    .sap-joule-drawer {
+      width: 310px;
+      min-width: 310px;
+      height: calc(100vh - 68px);
+      margin: 10px 10px 10px 0;
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: 0 8px 28px rgba(34, 15, 117, 0.22);
+      border: 1px solid #d8c8ff;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 900;
+    }
+    .sap-joule-drawer.open {
+      display: flex;
+    }
+
+    .joule-hero {
+      background: var(--joule-grad);
+      color: #ffffff;
+      padding: 14px 16px 20px 16px;
+      position: relative;
+    }
+    .joule-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 18px;
+    }
+    .joule-diamond-wrap {
+      text-align: center;
+      margin: 10px 0 14px 0;
+    }
+    .joule-diamond-icon {
+      font-size: 54px;
+      line-height: 1;
+      color: #ffffff;
+      filter: drop-shadow(0 4px 12px rgba(255,255,255,0.35));
+    }
+    .joule-greeting {
+      font-size: 13px;
+      opacity: 0.92;
+      margin-bottom: 4px;
+    }
+    .joule-question {
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 12px;
+    }
+    .joule-badge-btn {
+      background: #ffffff;
+      color: #4f2be8;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .joule-chat-body {
+      flex: 1;
+      padding: 12px;
+      overflow-y: auto;
+      background: #faf9fe;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .joule-msg {
+      background: #ffffff;
+      border: 1px solid #e4dcff;
+      border-radius: 10px;
+      padding: 9px 11px;
+      font-size: 12px;
+      color: var(--sap-text);
+      line-height: 1.45;
+    }
+    .joule-quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .joule-chip {
+      background: #f1ecff;
+      color: #5227cc;
+      border: 1px solid #d0bfff;
+      padding: 5px 10px;
+      border-radius: 14px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .joule-chip:hover {
+      background: #5227cc;
+      color: #ffffff;
+    }
+
+    .joule-footer {
+      padding: 10px 12px;
+      background: #ffffff;
+      border-top: 1px solid #eceef0;
+    }
+    .joule-input-box {
+      display: flex;
+      align-items: center;
+      border: 1.5px solid #6828e0;
+      border-radius: 22px;
+      padding: 3px 6px 3px 12px;
+      background: #ffffff;
+    }
+    .joule-input-box input {
+      border: none !important;
+      box-shadow: none !important;
+      flex: 1;
+      font-size: 12px !important;
+      padding: 5px 0 !important;
+    }
+    .joule-send-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: none;
+      background: #6828e0;
+      color: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    /* =====================================================
+       5. ĐẢM BẢO HIỂN THỊ TỜ A4, ẢNH LỚN & WATERMARK PDF
+       ===================================================== */
     .kp-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
     .kp-main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
     .master-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 25px; }
-    .kp-welcome-banner { background: linear-gradient(135deg, #001737 0%, #1e293b 100%); color: #fff; padding: 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 12px; }
+    .kp-welcome-banner { background: linear-gradient(135deg, #004085 0%, #0064d9 100%); color: #fff; padding: 18px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 12px; }
 
-    /* Đảm bảo khung giấy A4 luôn là mốc tọa độ cho Watermark */
+    #viewStudio.app-workspace {
+      height: calc(100vh - 92px) !important;
+    }
+    #panelRightScroll {
+      background: #dfe3e8 !important;
+    }
+
     #a4Paper {
       position: relative !important;
       overflow: hidden !important;
@@ -52,16 +607,11 @@
       object-fit: contain !important;
       display: none;
     }
-    /* Ghi đè toàn bộ CSS cũ của .watermark-overlay để hiển thị rõ nét trên cả màn hình và PDF */
     #a4Paper .watermark-overlay,
     .watermark-overlay {
       position: absolute !important;
-      top: 0 !important;
-      left: 0 !important;
-      right: 0 !important;
-      bottom: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
+      top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+      width: 100% !important; height: 100% !important;
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
@@ -86,7 +636,7 @@
       z-index: 2 !important;
     }
 
-    /* KHUNG ẢNH SẢN PHẨM TO CỠ KHUNG MÀU ĐỎ (160px x 145px) */
+    /* KHUNG ẢNH SẢN PHẨM TO CỠ KHUNG ĐỎ (160px x 145px) */
     #a4Paper .modern-table td img.pdf-product-img,
     .modern-table td img.pdf-product-img,
     .pdf-product-img {
@@ -103,580 +653,846 @@
       margin: 4px auto !important;
     }
 
+    /* Hộp xác nhận 1 chạm khi mở khay chọn App trên Mobile */
+    #quickShareConfirmModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      z-index: 99999;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .quick-share-card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 370px;
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25);
+      text-align: center;
+    }
+
+    /* =====================================================
+       6. TỐI ƯU RESPONSIVE MOBILE & TABLET
+       ===================================================== */
     @media screen and (max-width: 1024px) {
       .kp-grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
       .kp-main-grid { grid-template-columns: 1fr !important; }
       .master-grid-3 { grid-template-columns: 1fr 1fr !important; }
+      .sap-side-nav {
+        position: fixed;
+        left: 0;
+        top: 48px;
+        bottom: 0;
+        box-shadow: 4px 0 16px rgba(0,0,0,0.15);
+      }
     }
 
     @media screen and (max-width: 768px) {
-      body { overflow-x: hidden; }
-      .kapella-top-nav { flex-wrap: wrap !important; height: auto !important; padding: 8px 10px !important; gap: 8px !important; }
-      .kapella-brand { font-size: 13px !important; flex: 1; min-width: 180px; }
-      .kapella-brand span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 210px; display: inline-block; }
-      .kapella-nav-tabs { order: 3; width: 100% !important; display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 5px !important; margin-top: 2px; }
-      .kapella-tab-btn { padding: 7px 4px !important; font-size: 11px !important; justify-content: center !important; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      #viewDashboard, #manHinhQuanLyMaster { padding: 12px !important; padding-bottom: 50px !important; height: calc(100vh - 96px) !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
+      .sap-shell-center {
+        display: none;
+      }
+      .sap-sub-toolbar {
+        overflow-x: auto;
+        padding: 0 10px;
+      }
+      #viewDashboard, #manHinhQuanLyMaster {
+        padding: 12px !important;
+        padding-bottom: 60px !important;
+        height: calc(100vh - 92px) !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+      }
       .kp-welcome-banner { flex-direction: column; align-items: flex-start !important; padding: 15px !important; }
       .kp-grid-4 { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
       .kp-main-grid { grid-template-columns: 1fr !important; gap: 15px !important; }
-      .kp-search-box { flex-direction: column; align-items: stretch !important; gap: 8px; }
-      .kp-search-box input { width: 100% !important; }
       .master-grid-3 { grid-template-columns: 1fr !important; gap: 16px !important; }
-      #viewStudio.app-workspace { flex-direction: column !important; height: calc(100vh - 148px) !important; overflow: hidden !important; }
-      #viewStudio .panel-left, #viewStudio .panel-right { width: 100% !important; max-width: 100% !important; height: 100% !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
-      #viewStudio .panel-scroll-body { padding-bottom: 80px !important; }
-      .preview-toolbar { flex-wrap: wrap !important; gap: 6px !important; padding: 8px !important; justify-content: space-between !important; }
-      .a4-wrapper { transform-origin: top center !important; margin: 0 auto !important; }
-      #panelRightScroll { padding: 8px 4px 80px 4px !important; overflow-x: hidden !important; }
-      input[type="text"], input[type="number"], select, textarea { font-size: 16px !important; }
-      .mobile-bottom-nav { display: flex !important; position: fixed; bottom: 0; left: 0; right: 0; height: 52px; background: #ffffff; border-top: 1px solid #cbd5e1; z-index: 999; box-shadow: 0 -2px 10px rgba(0,0,0,0.06); }
-      .mob-nav-btn { flex: 1; border: none; background: transparent; font-weight: 700; font-size: 13px; color: #64748b; cursor: pointer; }
-      .mob-nav-btn.active { color: #464dee; background: #eef2ff; border-top: 3px solid #464dee; }
+
+      #viewStudio.app-workspace {
+        flex-direction: column !important;
+        height: calc(100vh - 144px) !important;
+        overflow: hidden !important;
+      }
+      #viewStudio .panel-left,
+      #viewStudio .panel-right {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+      }
+      #viewStudio .panel-scroll-body {
+        padding-bottom: 85px !important;
+      }
+      #panelRightScroll {
+        padding: 10px 6px 95px 6px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      #a4Wrapper {
+        width: 100% !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        display: block !important;
+        transform: none !important;
+      }
+      #a4Paper {
+        width: 794px !important;
+        min-width: 794px !important;
+        min-height: 1123px !important;
+        transform-origin: top left !important;
+        margin: 0 !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18) !important;
+      }
+
+      input[type="text"], input[type="number"], select, textarea {
+        font-size: 16px !important;
+      }
+
+      .mobile-bottom-nav {
+        display: flex !important;
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        height: 52px;
+        background: #ffffff;
+        border-top: 1px solid #cbd5e1;
+        z-index: 999;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.06);
+      }
+      .mob-nav-btn {
+        flex: 1;
+        border: none;
+        background: transparent;
+        font-weight: 700;
+        font-size: 13px;
+        color: #64748b;
+        cursor: pointer;
+      }
+      .mob-nav-btn.active {
+        color: var(--sap-brand);
+        background: var(--sap-brand-light);
+        border-top: 3px solid var(--sap-brand);
+      }
+
+      .sap-joule-drawer {
+        position: fixed;
+        right: 8px;
+        top: 54px;
+        bottom: 60px;
+        width: calc(100vw - 16px);
+        max-width: 340px;
+        height: auto;
+        margin: 0;
+      }
     }
   </style>
 </head>
 <body>
 
-  <!-- THANH ĐIỀU HƯỚNG NGANG KAPELLA -->
-  <div class="kapella-top-nav">
-    <div class="kapella-brand">
-      <i class="mdi mdi-cube-send" style="font-size:22px;"></i>
-      <span>GOODS LINK ERP</span>
-    </div>
-    <div class="kapella-nav-tabs">
-      <button class="kapella-tab-btn" id="tabBtnDash" onclick="chuyenManHinhKapella('DASH')">📊 Tổng Quan</button>
-      <button class="kapella-tab-btn active" id="tabBtnStudio" onclick="chuyenManHinhKapella('STUDIO')">⚡ Báo Giá / PI</button>
-      <button class="kapella-tab-btn" id="tabBtnMaster" onclick="chuyenManHinhKapella('MASTER')">📦 Database & CRM</button>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <button onclick="taoDonMoi(); chuyenManHinhKapella('STUDIO');" style="background:#0ddbb9;color:#fff;border:none;padding:6px 10px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
-        + Tạo Đơn Mới
+  <!-- ========================================================= -->
+  <!-- 1. THANH SAP SHELL BAR TRÊN CÙNG (MORNING HORIZON)         -->
+  <!-- ========================================================= -->
+  <header class="sap-shell-bar">
+    <div class="sap-shell-left">
+      <button class="sap-icon-btn" onclick="batTatMenuTraiSAP()" title="Ẩn/Hiện cây điều hướng SAP">
+        <i class="mdi mdi-menu"></i>
       </button>
+      <div class="sap-logo-badge">SAP</div>
+      <span class="sap-shell-title">Goods Link ERP</span>
     </div>
-  </div>
 
-  <!-- ========================================================= -->
-  <!-- MÀN HÌNH 1: KAPELLA DASHBOARD                              -->
-  <!-- ========================================================= -->
-  <div id="viewDashboard" style="display:none; padding:20px; background:#f8fafc; min-height:85vh;">
-    <div class="kp-welcome-banner">
-      <div>
-        <h3 style="margin:0 0 4px 0;font-size:17px;font-weight:800;">DASHBOARD</h3>
-             </div>
-      <button onclick="taiDanhSachDonLuuApp()" style="background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.4);padding:7px 14px;border-radius:6px;cursor:pointer;font-weight:700;font-size:12px;white-space:nowrap;">
-        🔄 Làm mới dữ liệu
+    <div class="sap-shell-center" id="sapShellBreadcrumb">
+      Custom Morning Horizon — Báo Giá &amp; Xuất Kho
+    </div>
+
+    <div class="sap-shell-right">
+      <button class="sap-btn sap-btn-emphasized" onclick="taoDonMoi(); chuyenManHinhKapella('STUDIO');" style="padding:5px 12px !important;">
+        <i class="mdi mdi-plus-circle-outline"></i> Tạo Đơn Mới
       </button>
+      <button class="sap-icon-btn" onclick="batTatJouleCopilot()" title="Mở trợ lý ảo SAP Joule AI" style="color:#6828e0;background:#f3efff;border-color:#d8c8ff;">
+        <i class="mdi mdi-diamond-stone"></i>
+      </button>
+      <div class="sap-avatar" title="Huỳnh Bảo Minh — Goods Link JSC">BM</div>
     </div>
-
-    <div class="kp-grid-4">
-      <div class="kp-card" style="background:#fff; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-        <div class="kp-stat-title" style="font-size:12px; color:#64748b; font-weight:700;">☁️ Tổng Đơn Lưu Cloud</div>
-        <div class="kp-stat-val" id="kpTotalOrders" style="font-size:22px; font-weight:800; color:#0f172a; margin:8px 0;">0</div>
-        <div class="kp-progress" style="background:#e2e8f0; height:6px; border-radius:3px;"><div class="kp-progress-bar" style="width:100%;background:#464dee; height:6px; border-radius:3px;"></div></div>
-      </div>
-      <div class="kp-card" style="background:#fff; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-        <div class="kp-stat-title" style="font-size:12px; color:#64748b; font-weight:700;">🌐 Báo Giá Quốc Tế (EN)</div>
-        <div class="kp-stat-val" id="kpCountEN" style="font-size:22px; font-weight:800; color:#0ddbb9; margin:8px 0;">0</div>
-        <div class="kp-progress" style="background:#e2e8f0; height:6px; border-radius:3px;"><div class="kp-progress-bar" id="kpBarEN" style="width:0%;background:#0ddbb9; height:6px; border-radius:3px;"></div></div>
-      </div>
-      <div class="kp-card" style="background:#fff; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-        <div class="kp-stat-title" style="font-size:12px; color:#64748b; font-weight:700;">🇻🇳 Nội Địa & Xuất Kho</div>
-        <div class="kp-stat-val" id="kpCountVN" style="font-size:22px; font-weight:800; color:#f6881f; margin:8px 0;">0</div>
-        <div class="kp-progress" style="background:#e2e8f0; height:6px; border-radius:3px;"><div class="kp-progress-bar" id="kpBarVN" style="width:0%;background:#f6881f; height:6px; border-radius:3px;"></div></div>
-      </div>
-      <div class="kp-card" style="background:#fff; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-        <div class="kp-stat-title" style="font-size:12px; color:#64748b; font-weight:700;">📦 Danh Mục SP & KH</div>
-        <div class="kp-stat-val" id="kpCountMaster" style="font-size:18px; font-weight:800; color:#ee5b5b; margin:8px 0;">0 SP / 0 KH</div>
-        <div class="kp-progress" style="background:#e2e8f0; height:6px; border-radius:3px;"><div class="kp-progress-bar" style="width:85%;background:#ee5b5b; height:6px; border-radius:3px;"></div></div>
-      </div>
-    </div>
-
-    <div class="kp-main-grid">
-      <div class="kp-card" style="background:#fff; padding:16px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05); overflow:hidden;">
-        <div class="kp-search-box" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <div style="font-weight:800;font-size:14px;color:#001737;">📋 Danh Sách Đơn Hàng Gần Đây</div>
-          <input type="text" id="kpSearchOrder" placeholder="🔍 Tìm mã đơn hoặc tên khách..." oninput="renderKapellaDashboard()" style="width:240px;padding:6px 10px;font-size:12px;border:1px solid #cbd5e1;border-radius:6px;box-sizing:border-box;">
-        </div>
-        <div style="max-height:360px;overflow-y:auto;overflow-x:auto;">
-          <table class="kp-table" style="width:100%; min-width:520px; border-collapse:collapse; font-size:13px;">
-            <thead>
-              <tr style="border-bottom:2px solid #e2e8f0; text-align:left; color:#475569; background:#f8fafc;">
-                <th style="padding:8px;">Mã chứng từ</th>
-                <th style="padding:8px;">Phân loại</th>
-                <th style="padding:8px;">Khách hàng / Đối tác</th>
-                <th style="padding:8px;">Ngày lập</th>
-                <th style="padding:8px;text-align:right;">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody id="kpRecentOrdersBody">
-              <tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:20px;">Đang tải dữ liệu...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div class="kp-card" style="background:#fff; padding:16px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-        <div style="font-weight:800;font-size:14px;color:#001737;margin-bottom:12px;">📈 Tỷ Trọng Chứng Từ</div>
-        <div style="height:240px;display:flex;align-items:center;justify-content:center;"><canvas id="kpOrderChart"></canvas></div>
-      </div>
-    </div>
-  </div>
+  </header>
 
   <!-- ========================================================= -->
-  <!-- MÀN HÌNH 2: STUDIO SOẠN BÁO GIÁ & XEM TRƯỚC A4            -->
+  <!-- 2. KHUNG BỐ CỤC CHÍNH SAP (SIDEBAR + MAIN + JOULE AI)     -->
   <!-- ========================================================= -->
-  <div class="app-workspace" id="viewStudio">
+  <div class="sap-master-layout">
 
-    <!-- CỘT TRÁI: FORM NHẬP LIỆU -->
-    <div class="panel-left" id="panelLeftForm">
-      <div class="argon-hero-header">
-        <div class="brand-bar">
-          <h2 class="brand-title">⚡ ARGON STUDIO <span class="badge-argon">MODULAR v5.0</span></h2>
-          <button onclick="taoDonMoi()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">+ Đơn mới</button>
+    <!-- CỘT TRÁI: SAPUI5 CONTROLS & MODULES NAVIGATION -->
+    <aside class="sap-side-nav" id="sapSideNav">
+      <div class="sap-side-header">
+        <span>SAPUI5 Modules</span>
+        <i class="mdi mdi-layers-triple-outline" style="color:var(--sap-brand);"></i>
+      </div>
+
+      <div class="sap-side-section">Phân Hệ Chính</div>
+      <button class="sap-nav-item" id="tabBtnDash" onclick="chuyenManHinhKapella('DASH')">
+        <span><i class="mdi mdi-view-dashboard-outline" style="margin-right:6px;"></i> Tổng Quan (Launchpad)</span>
+        <i class="mdi mdi-chevron-right"></i>
+      </button>
+      <button class="sap-nav-item active" id="tabBtnStudio" onclick="chuyenManHinhKapella('STUDIO')">
+        <span><i class="mdi mdi-file-document-edit-outline" style="margin-right:6px;"></i> Soạn Báo Giá / PI</span>
+        <i class="mdi mdi-chevron-right"></i>
+      </button>
+      <button class="sap-nav-item" id="tabBtnMaster" onclick="chuyenManHinhKapella('MASTER')">
+        <span><i class="mdi mdi-database-cog-outline" style="margin-right:6px;"></i> Database &amp; CRM</span>
+        <i class="mdi mdi-chevron-right"></i>
+      </button>
+
+      <div class="sap-side-section" style="margin-top:8px;">Loại Chứng Từ (Studio)</div>
+      <button class="sap-nav-item" id="sideModeVN" onclick="chuyenManHinhKapella('STUDIO'); doiCheDo('BG_VN');">
+        <span>🇻🇳 Báo Giá Nội Địa (VN)</span>
+      </button>
+      <button class="sap-nav-item" id="sideModeEN" onclick="chuyenManHinhKapella('STUDIO'); doiCheDo('BG_EN');">
+        <span>🌐 Quotation / PI (EN)</span>
+      </button>
+      <button class="sap-nav-item" id="sideModeXK" onclick="chuyenManHinhKapella('STUDIO'); doiCheDo('XK');">
+        <span>📦 Phiếu Xuất Kho</span>
+      </button>
+
+      <div class="sap-side-section" style="margin-top:8px;">Tác Vụ Nhanh (Semantic)</div>
+      <div style="padding:10px 12px;display:flex;flex-direction:column;gap:8px;">
+        <button class="sap-btn sap-btn-emphasized" onclick="xuatPDF()" style="width:100%;justify-content:flex-start !important;">
+          <i class="mdi mdi-printer-outline"></i> Xuất &amp; Tải File PDF
+        </button>
+        <button class="sap-btn sap-btn-accept" onclick="luuVaoAppSheet()" style="width:100%;justify-content:flex-start !important;">
+          <i class="mdi mdi-cloud-upload-outline"></i> Lưu Đơn Lên Cloud
+        </button>
+        <button class="sap-btn sap-btn-critical" onclick="guiEmailChoKhachHang()" style="width:100%;justify-content:flex-start !important;">
+          <i class="mdi mdi-email-fast-outline"></i> Gửi Mail Kèm PDF
+        </button>
+      </div>
+    </aside>
+
+    <!-- VÙNG TRUNG TÂM SAP WORKSPACE -->
+    <main class="sap-center-stage">
+
+      <!-- Thanh công cụ phụ chuẩn SAP Horizon Preview Header -->
+      <div class="sap-sub-toolbar">
+        <div class="sap-segmented-group">
+          <button class="sap-seg-btn" id="segBtnDash" onclick="chuyenManHinhKapella('DASH')">📊 Dashboard</button>
+          <button class="sap-seg-btn active" id="segBtnStudio" onclick="chuyenManHinhKapella('STUDIO')">⚡ Studio (Form &amp; A4)</button>
+          <button class="sap-seg-btn" id="segBtnMaster" onclick="chuyenManHinhKapella('MASTER')">📦 Master Data</button>
         </div>
-        <div class="mode-switch">
-          <button class="mode-btn active" id="btnBG_VN" onclick="doiCheDo('BG_VN')">🇻🇳 Báo Giá (VN)</button>
-          <button class="mode-btn" id="btnBG_EN" onclick="doiCheDo('BG_EN')">🌐 Quote / PI (EN)</button>
-          <button class="mode-btn" id="btnXK" onclick="doiCheDo('XK')">📦 Xuất Kho</button>
+
+        <div class="sap-pill-bar">
+          <span style="font-size:11.5px;color:var(--sap-muted);font-weight:700;align-self:center;margin-right:4px;">SAP Semantic Actions:</span>
+          <button class="sap-btn sap-btn-accept-outline" onclick="luuDonNháp()" title="Lưu nháp">
+            <i class="mdi mdi-check-circle-outline"></i> Lưu Nháp
+          </button>
+          <button class="sap-btn sap-btn-accept" onclick="luuVaoAppSheet()" title="Lưu lên Firebase Cloud">
+            <i class="mdi mdi-cloud-check-outline"></i> Lưu Cloud
+          </button>
+          <button class="sap-btn sap-btn-emphasized" onclick="xuatPDF()" title="Tải xuống PDF chuẩn A4">
+            <i class="mdi mdi-file-pdf-box"></i> Tải PDF
+          </button>
         </div>
       </div>
 
-      <div class="panel-scroll-body">
-        <!-- KHO CLOUD -->
-        <div class="argon-card">
-          <div class="argon-card-header"><div class="argon-card-title" style="color:var(--argon-primary);">☁️ Kho Đơn Hàng Lưu (Cloud)</div></div>
-          <div class="form-group"><select id="savedOrdersSelect"><option value="">-- Đang tải... --</option></select></div>
-          <div class="row">
-            <button class="btn-argon btn-primary-argon" onclick="taiDonTuApp()">📂 Mở đơn</button>
-            <button class="btn-argon btn-danger-argon" onclick="xoaDonTrongApp()" style="width:90px;">🗑️ Xóa</button>
+      <!-- ========================================================= -->
+      <!-- MÀN HÌNH 1: SAP FIORI LAUNCHPAD DASHBOARD                 -->
+      <!-- ========================================================= -->
+      <div id="viewDashboard" style="display:none; padding:20px; background:var(--sap-bg); height:calc(100vh - 92px); overflow-y:auto;">
+        <div class="kp-welcome-banner">
+          <div>
+            <h3 style="margin:0 0 4px 0;font-size:17px;font-weight:800;">SAP S/4HANA Launchpad — Quản Trị Báo Giá &amp; Ngoại Thương</h3>
+            <div style="font-size:12px;opacity:0.92;">Đồng bộ thời gian thực với Firebase Firestore (Goods Link Joint Stock Company)</div>
+          </div>
+          <button onclick="taiDanhSachDonLuuApp()" class="sap-btn" style="background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.5);">
+            🔄 Làm mới dữ liệu
+          </button>
+        </div>
+
+        <div class="kp-grid-4">
+          <div class="kp-card" style="background:#fff; padding:16px; border-radius:10px; border:1px solid var(--sap-border);">
+            <div class="kp-stat-title" style="font-size:12px; color:var(--sap-muted); font-weight:700;">☁️ Tổng Đơn Lưu Cloud</div>
+            <div class="kp-stat-val" id="kpTotalOrders" style="font-size:24px; font-weight:800; color:var(--sap-brand); margin:8px 0;">0</div>
+            <div class="kp-progress" style="background:#e2e8f0; height:6px; border-radius:3px;"><div class="kp-progress-bar" style="width:100%;background:var(--sap-brand); height:6px; border-radius:3px;"></div></div>
+          </div>
+          <div class="kp-card" style="background:#fff; padding:16px; border-radius:10px; border:1px solid var(--sap-border);">
+            <div class="kp-stat-title" style="font-size:12px; color:var(--sap-muted); font-weight:700;">🌐 Báo Giá Quốc Tế (EN)</div>
+            <div class="kp-stat-val" id="kpCountEN" style="font-size:24px; font-weight:800; color:var(--sap-success); margin:8px 0;">0</div>
+            <div class="kp-progress" style="background:#e2e8f0; height:6px; border-radius:3px;"><div class="kp-progress-bar" id="kpBarEN" style="width:0%;background:var(--sap-success); height:6px; border-radius:3px;"></div></div>
+          </div>
+          <div class="kp-card" style="background:#fff; padding:16px; border-radius:10px; border:1px solid var(--sap-border);">
+            <div class="kp-stat-title" style="font-size:12px; color:var(--sap-muted); font-weight:700;">🇻🇳 Nội Địa &amp; Xuất Kho</div>
+            <div class="kp-stat-val" id="kpCountVN" style="font-size:24px; font-weight:800; color:var(--sap-warning); margin:8px 0;">0</div>
+            <div class="kp-progress" style="background:#e2e8f0; height:6px; border-radius:3px;"><div class="kp-progress-bar" id="kpBarVN" style="width:0%;background:var(--sap-warning); height:6px; border-radius:3px;"></div></div>
+          </div>
+          <div class="kp-card" style="background:#fff; padding:16px; border-radius:10px; border:1px solid var(--sap-border);">
+            <div class="kp-stat-title" style="font-size:12px; color:var(--sap-muted); font-weight:700;">📦 Danh Mục SP &amp; KH</div>
+            <div class="kp-stat-val" id="kpCountMaster" style="font-size:20px; font-weight:800; color:#6828e0; margin:8px 0;">0 SP / 0 KH</div>
+            <div class="kp-progress" style="background:#e2e8f0; height:6px; border-radius:3px;"><div class="kp-progress-bar" style="width:85%;background:#6828e0; height:6px; border-radius:3px;"></div></div>
           </div>
         </div>
 
-        <!-- 1. KHÁCH HÀNG & CHỨNG TỪ -->
-        <div class="argon-card">
-          <div class="argon-card-header">
-            <div class="argon-card-title">👤 1. Thông Tin Khách Hàng & Đơn</div>
-            <button class="btn-mini-save" onclick="luuKhachHangTuStudio()">➕ Lưu KH vào Database</button>
-          </div>
-
-          <div id="divTitleENSelect" style="display:none;">
-            <div class="pi-switch-banner">
-              <div>
-                <div style="font-size:12px;font-weight:800;color:#d9460f;">⚡ Chế độ Proforma Invoice (PI)</div>
-                <div style="font-size:10.5px;color:#64748b;">Mở cột Amount, đọc số & Bank T/T</div>
-              </div>
-              <input type="checkbox" id="chkIsPI" onchange="batTatCheDoPI()" style="width:18px;height:18px;cursor:pointer;">
+        <div class="kp-main-grid">
+          <div class="kp-card" style="background:#fff; padding:16px; border-radius:10px; border:1px solid var(--sap-border); overflow:hidden;">
+            <div class="kp-search-box" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <div style="font-weight:800;font-size:14px;color:var(--sap-text);">📋 Danh Sách Đơn Hàng Cloud Gần Đây</div>
+              <input type="text" id="kpSearchOrder" placeholder="🔍 Tìm mã đơn hoặc tên khách..." oninput="renderKapellaDashboard()" style="width:240px;padding:6px 10px;font-size:12px;">
             </div>
-            <div class="form-group" id="divQuoteTitleDropdown">
-              <label>Tiêu đề báo giá tiếng Anh</label>
-              <select id="inTitleEN" onchange="updatePreview()">
-                <option value="COCONUT QUOTATION">COCONUT QUOTATION</option>
-                <option value="QUOTATION">QUOTATION</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group"><select id="khSelect" onchange="chonKhachHangCRM()"><option value="">-- Chọn khách hàng lưu sẵn --</option></select></div>
-          <div class="form-group"><label id="lblTenKhachInput">Tên khách hàng / Đối tác</label><input type="text" id="inKhach" placeholder="Nhập tên công ty / đối tác..." oninput="updatePreview()"></div>
-          <div class="form-group"><label id="lblLienHeInput">Người liên hệ / Phone / Attn</label><input type="text" id="inLienHe" placeholder="SĐT, Email, Người nhận..." oninput="updatePreview()"></div>
-
-          <div id="rowXkExtraFields" style="display:none;">
-            <div class="row">
-              <div class="form-group col"><label>Địa điểm xuất kho</label><input type="text" id="inDiaDiemXK" oninput="updatePreview()"></div>
-              <div class="form-group col"><label>Biển số xe</label><input type="text" id="inBienSoXe" oninput="updatePreview()"></div>
+            <div style="max-height:360px;overflow-y:auto;overflow-x:auto;">
+              <table class="kp-table" style="width:100%; min-width:520px; border-collapse:collapse; font-size:13px;">
+                <thead>
+                  <tr style="border-bottom:2px solid #e2e8f0; text-align:left; color:var(--sap-muted); background:#f8fafc;">
+                    <th style="padding:8px;">Mã chứng từ</th>
+                    <th style="padding:8px;">Phân loại</th>
+                    <th style="padding:8px;">Khách hàng / Đối tác</th>
+                    <th style="padding:8px;">Ngày lập</th>
+                    <th style="padding:8px;text-align:right;">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="kpRecentOrdersBody">
+                  <tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:20px;">Đang tải dữ liệu...</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
-
-          <div class="row">
-            <div class="form-group col"><label id="lblMaInput">Số chứng từ</label><input type="text" id="inMa" value="QUO-2026-001" oninput="updatePreview()"></div>
-            <div class="form-group col"><label id="lblNgayInput">Ngày lập</label><input type="text" id="inNgay" oninput="updatePreview()"></div>
-          </div>
-
-          <div class="row" id="rowEnExtra" style="display:none;">
-            <div class="form-group col"><label>Prepared by</label><input type="text" id="inPreparedBy" oninput="updatePreview()"></div>
-            <div class="form-group col"><label>Valid until</label><input type="text" id="inValidUntil" oninput="updatePreview()"></div>
-          </div>
-
-          <!-- BỘ CHỌN INCOTERMS & LOGISTICS THÔNG MINH -->
-          <div id="divIncotermBuilder" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;padding:8px;border-radius:6px;margin-bottom:10px;">
-            <label style="color:#15803d;font-weight:800;font-size:11px;margin-bottom:6px;display:block;">🚢 Tạo nhanh Incoterms & Logistics</label>
-            <div class="row" style="gap:6px;margin-bottom:6px;">
-              <select id="selIncoterm" style="width:32%;font-size:11px;padding:4px;"><option value="EXW">EXW</option><option value="FOB">FOB</option><option value="CNF">CFR</option><option value="CIF">CIF</option><option value="DDP">DDP</option></select>
-              <input type="text" id="inPortName" placeholder="Cảng (VD: SHANGHAI)" style="width:68%;font-size:11px;padding:4px 6px;">
-            </div>
-            <div class="row" style="gap:6px;">
-              <input type="text" id="inLeadTime" placeholder="Lead time (VD: 7 days)" style="width:72%;font-size:11px;padding:4px 6px;">
-              <button type="button" onclick="chenIncotermThongMinh()" style="width:28%;background:#16a34a;color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;">+ Chèn</button>
-            </div>
-          </div>
-
-          <!-- GHI CHÚ & CHỌN NHANH -->
-          <div class="form-group">
-            <label>Ghi chú & Điều khoản</label>
-            <div class="preset-bar" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
-              <span class="preset-chip" onclick="chenMauNhanh('inDieuKhoan', 'The above rates are CNF SHANGHAI')" style="background:#e2e8f0; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">+ CNF SHANGHAI</span>
-              <span class="preset-chip" onclick="chenMauNhanh('inDieuKhoan', 'The above rates are FOB HO CHI MINH CITY')" style="background:#e2e8f0; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">+ FOB HCMC</span>
-              <span class="preset-chip" onclick="chenMauNhanh('inDieuKhoan', 'Giao hàng trong vòng 3 ngày kể từ khi nhận cọc.')" style="background:#e2e8f0; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">+ Giao nhanh 3 ngày</span>
-            </div>
-            <textarea id="inDieuKhoan" rows="2" placeholder="Nhập ghi chú hoặc điều khoản..." oninput="updatePreview()"></textarea>
-          </div>
-
-          <div class="form-group" id="divEnNoteGroup" style="display:none;">
-            <label style="color:var(--argon-primary);">🌐 Câu Note Liên Hệ</label>
-            <textarea id="inEnNote" rows="2" placeholder="Please contact us via information..." oninput="updatePreview()"></textarea>
-          </div>
-
-          <!-- THANH TOÁN & CHỌN NHANH -->
-          <div class="form-group" id="divPaymentTermInput">
-            <label id="lblPaymentTermInput">Phương thức thanh toán</label>
-            <div class="preset-bar" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
-              <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'Thanh toán 100% bằng chuyển khoản hoặc tiền mặt ngay khi nhận hàng.')" style="background:#e2e8f0; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">+ TT 100% (VN)</span>
-              <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'Đặt cọc 50% ngay sau khi xác nhận đơn hàng, 50% còn lại thanh toán trước khi giao hàng.')" style="background:#e2e8f0; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">+ Cọc 50-50 (VN)</span>
-              <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'The buyer shall deposit 30% of the total contract value upon signing the contract. The remaining 70% shall be paid within 3 days upon receipt of the copy documents via email.')" style="background:#e2e8f0; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">+ T/T 30-70 (EN)</span>
-              <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'The buyer shall deposit 50% of the total contract value upon signing the contract. The remaining 50% shall be paid within 3 days upon receipt of the copy documents via email.')" style="background:#e2e8f0; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">+ T/T 50-50 (EN)</span>
-
-            </div>
-            <textarea id="inPaymentTerm" rows="2" placeholder="Nhập điều khoản / phương thức thanh toán..." oninput="updatePreview()"></textarea>
-          </div>
-
-          <!-- NGÂN HÀNG T/T -->
-          <div class="form-group" id="divBankInfoInput" style="display:none;">
-            <label style="color:var(--argon-primary);">🏦 Thông tin Ngân hàng Quốc tế</label>
-            <select id="bankSelect" onchange="chonBankTuSheet()" style="margin-bottom:6px;"><option value="">-- Chọn Bank từ Database --</option></select>
-            <textarea id="inBankInfo" rows="3" placeholder="Chọn ngân hàng ở trên hoặc tự nhập..." oninput="updatePreview()"></textarea>
-          </div>
-        </div>
-
-        <!-- 2. HÀNG HÓA -->
-        <div class="argon-card">
-          <div class="argon-card-header">
-            <div class="argon-card-title">📦 2. Chi Tiết Hàng Hóa</div>
-            <button class="btn-mini-save" onclick="luuSanPhamTuStudio()">➕ Lưu SP vào Database</button>
-          </div>
-
-          <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;background:#f8fafc;padding:8px;border-radius:6px;">
-            <label id="lblToggleTotal" style="display:flex;align-items:center;gap:4px;margin:0;font-size:11px;color:#059669;cursor:pointer;"><input type="checkbox" id="chkShowTotal" checked onchange="renderTable()"> Hiện Tổng cộng</label>
-            <label id="lblToggleWords" style="display:flex;align-items:center;gap:4px;margin:0;font-size:11px;color:#d9460f;cursor:pointer;"><input type="checkbox" id="chkShowWords" checked onchange="renderTable()"> Đọc số thành chữ</label>
-            <label style="display:flex;align-items:center;gap:4px;margin:0;font-size:11px;color:var(--argon-primary);cursor:pointer;"><input type="checkbox" id="chkShowImage" checked onchange="renderTable()"> Hiện cột Ảnh</label>
-          </div>
-
-          <div class="row" id="rowEnOptions" style="display:none;margin-bottom:10px;">
-            <div class="form-group col">
-              <label>Loại Volume</label>
-              <select id="inVolumeType" onchange="renderTable()"><option value="(CTNS/40RF)">(CTNS/40RF)</option><option value="(CTNS/20RF)">(CTNS/20RF)</option></select>
-            </div>
-            <div class="form-group col">
-              <label>Tiền tệ</label>
-              <select id="inCurrency" onchange="renderTable()">
-                <option value="USD">USD ($)</option><option value="EUR">EUR (€)</option><option value="GBP">GBP (£)</option><option value="CNY">CNY (¥)</option><option value="VND">VNĐ</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Chọn sản phẩm từ Database</label>
-            <select id="spSelect" onchange="chonSPDatabase()"><option value="">-- Chọn sản phẩm từ Database --</option></select>
-          </div>
-          <div class="form-group"><label>Tên / Mô tả quy cách</label><textarea id="inTenSP" rows="2"></textarea></div>
-
-          <div class="row">
-            <div class="form-group col"><label>Mã SP</label><input type="text" id="inMaSPMoi" placeholder="Tự động"></div>
-            <div class="form-group col"><label>ĐVT</label><input type="text" id="inDVT" value="CTN" oninput="renderTable()"></div>
-            <div class="form-group col"><label>Số lượng</label><input type="number" id="inSL" value="1" min="0" step="any"></div>
-          </div>
-
-          <div class="row" id="rowPriceAndVat">
-            <div class="form-group col" id="divGiaGroup"><label>Đơn giá</label><input type="number" id="inGia" value="0" step="any"></div>
-            <div class="form-group col" id="divVATGroup">
-              <label>Thuế VAT</label>
-              <select id="inVAT"><option value="8" selected>8%</option><option value="10">10%</option><option value="5">5%</option><option value="0">0%</option><option value="KKKNT">KKKNT</option></select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Ảnh sản phẩm</label>
-            <input type="file" id="inSpFile" accept="image/png, image/jpeg, image/webp" onchange="loadSpImage(this)">
-            <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
-              <img id="spPreviewLeft" style="height:86px;width:96px;object-fit:cover;display:none;border-radius:8px;border:1px solid #cbd5e1;background:#fff;">
-              <button type="button" id="btnClearSpImg" onclick="xoaAnhSpTam()" style="display:none;background:#ef4444;color:#fff;border:none;padding:5px 10px;border-radius:4px;font-size:11px;cursor:pointer;">Xóa ảnh SP</button>
-            </div>
-          </div>
-
-          <button class="btn-argon btn-primary-argon" id="btnAddCartMain" onclick="themVaoGio()">+ Thêm Sản Phẩm Vào Đơn</button>
-
-          <div style="margin-top:12px;max-height:210px;overflow-y:auto;">
-            <table class="cart-mini-table">
-              <thead><tr><th>Sản phẩm</th><th width="45">SL</th><th width="55">Ảnh</th><th width="110" style="text-align:right;">Thao tác</th></tr></thead>
-              <tbody id="cartMiniBody"><tr><td colspan="4" style="text-align:center;color:var(--argon-muted);">Chưa có sản phẩm</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- 3. LOGO & WATERMARK -->
-        <div class="argon-card">
-          <div class="argon-card-header"><div class="argon-card-title">🎨 3. Logo & Watermark</div></div>
-          <div class="row">
-            <div class="form-group col">
-              <label>Logo Công ty</label>
-              <input type="file" id="inLogoFile" accept="image/png, image/jpeg, image/webp" onchange="loadLogo(this)">
-              <button type="button" onclick="xoaLogo()" id="btnXoaLogo" style="display:none;margin-top:5px;background:var(--argon-danger);color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Xóa Logo</button>
-            </div>
-            <div class="form-group col">
-              <label>Watermark</label>
-              <input type="file" id="inWmFile" accept="image/png, image/jpeg, image/webp" onchange="loadWatermark(this)">
-              <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
-                <span style="font-size:10.5px;color:#475569;font-weight:700;">Độ đậm:</span>
-                <input type="range" id="wmOpacitySlider" min="8" max="45" value="20" oninput="doiDoDamWatermark(this.value)" style="flex:1;cursor:pointer;">
-                <span id="wmOpacityLabel" style="font-size:10.5px;font-weight:700;color:#0d9488;">20%</span>
-              </div>
-              <button type="button" onclick="xoaWatermark()" id="btnXoaWm" style="display:none;margin-top:5px;background:var(--argon-danger);color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Xóa Watermark</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 4. CẤU HÌNH GỬI MAIL -->
-        <div class="argon-card" style="border:1.5px solid var(--argon-primary);">
-          <div class="argon-card-header">
-            <div class="argon-card-title" style="color:var(--argon-primary);">📧 4. Cấu Hình Gửi Mail Khách Hàng</div>
-            <button class="btn-mini-save" onclick="datLaiNoiDungMacDinh(true)">🔄 Tạo mẫu (VN/EN)</button>
-          </div>
-          <div class="form-group"><label>Email khách hàng nhận file PDF</label><input type="text" id="inEmailKhach" placeholder="e.g. customer@example.com"></div>
-          <div class="form-group"><label>Thông tin liên hệ của bạn </label><input type="text" id="inThongTinLienHeMail" placeholder="e.g." oninput="capNhatLienHeVaoA4()"></div>
-          <div class="form-group"><label>Tiêu đề thư </label><input type="text" id="inEmailSubject" placeholder="Tiêu đề email..."></div>
-          <div class="form-group"><label>Nội dung lời nhắn</label><textarea id="inEmailBody" rows="5" placeholder="Nội dung email..."></textarea></div>
-        </div>
-
-        <!-- THAO TÁC HỆ THỐNG -->
-        <div class="argon-card" style="background:#f1f5f9;">
-          <div class="argon-card-header"><div class="argon-card-title">⚡ Thao Tác Hệ Thống</div></div>
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <div class="row">
-              <button class="btn-argon btn-neutral-argon" onclick="luuDonNháp()">💾 Lưu Nháp</button>
-              <button class="btn-argon btn-success-argon" onclick="luuVaoAppSheet()">☁️ Lưu Cloud</button>
-            </div>
-            <div class="row">
-              <button class="btn-argon btn-primary-argon" onclick="xuatPDF()" style="flex:1;">🖨️ Tải PDF</button>
-              <button class="btn-argon" onclick="guiEmailChoKhachHang()" style="flex:1;background:linear-gradient(87deg,#fb6340 0,#fbb140 100%);color:#fff;">📧 Tải PDF & Gửi Mail</button>
-            </div>
+          <div class="kp-card" style="background:#fff; padding:16px; border-radius:10px; border:1px solid var(--sap-border);">
+            <div style="font-weight:800;font-size:14px;color:var(--sap-text);margin-bottom:12px;">📈 Tỷ Trọng Chứng Từ</div>
+            <div style="height:240px;display:flex;align-items:center;justify-content:center;"><canvas id="kpOrderChart"></canvas></div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- CỘT PHẢI: XEM TRƯỚC TỜ A4 -->
-    <div class="panel-right" id="panelRightScroll">
-      <div class="preview-toolbar">
-        <div class="toolbar-item">
-          <span>✨ Mẫu:</span>
-          <select id="pdfThemeSelect" onchange="doiGiaoDienPDF(this.value)" style="width:auto;padding:4px 8px;font-weight:700;">
-            <option value="theme-executive">💎 Executive</option>
-            <option value="theme-dark-banner">🔥 Modern Dark</option>
-            <option value="theme-split-pro">⚡ Split Bold</option>
-            <option value="theme-luxury-grid">👑 Luxury Grid</option>
-            <option value="theme-minimal">🌿 Minimalist</option>
-            <option value="theme-classic">🏛️ Classic Box</option>
-          </select>
-        </div>
-        <div class="toolbar-item">
-          <span>🔍 Zoom:</span>
-          <select id="zoomSelectBox" onchange="doiTyLeZoom(this.value)" style="width:auto;padding:4px 8px;font-weight:700;">
-            <option value="1">100%</option><option value="0.85">85%</option><option value="0.5">50% (Mobile)</option>
-          </select>
-        </div>
-        <div class="toolbar-item" style="display:flex;align-items:center;gap:4px;">
-          <input type="color" id="liveColorPicker" value="#007a3d" oninput="dongBoMauTuPicker(this.value)" class="color-dot" title="Chọn màu trực quan">
-          <input type="text" id="liveColorHex" value="#007A3D" maxlength="7" placeholder="#000000" oninput="dongBoMauTuText(this.value)" style="width:68px;padding:3px 5px;font-size:11px;font-weight:700;font-family:monospace;text-transform:uppercase;border:1px solid #cbd5e1;border-radius:4px;text-align:center;">
-        </div>
-        <button onclick="xuatPDF()" style="background:var(--argon-primary);color:#fff;border:none;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;">🖨️ Tải PDF</button>
-      </div>
+      <!-- ========================================================= -->
+      <!-- MÀN HÌNH 2: STUDIO SOẠN BÁO GIÁ & XEM TRƯỚC A4            -->
+      <!-- ========================================================= -->
+      <div class="app-workspace" id="viewStudio">
 
-      <div class="a4-wrapper" id="a4Wrapper">
-        <div class="a4-paper theme-executive" id="a4Paper">
-          <div class="a4-top-accent"></div>
-          <div class="watermark-overlay"><img id="watermarkImg" src="" alt="Watermark"></div>
+        <!-- CỘT TRÁI: FORM NHẬP LIỆU CHUẨN SAP OBJECT PAGE -->
+        <div class="panel-left" id="panelLeftForm">
+          <div class="argon-hero-header">
+            <div class="brand-bar">
+              <h2 class="brand-title">⚡ SAP Quotation Studio <span class="badge-argon">HORIZON UI</span></h2>
+              <button class="sap-btn sap-btn-emphasized" onclick="taoDonMoi()" style="padding:4px 10px !important;font-size:11px !important;">+ Đơn mới</button>
+            </div>
+            <div class="mode-switch">
+              <button class="mode-btn active" id="btnBG_VN" onclick="doiCheDo('BG_VN')">🇻🇳 Báo Giá (VN)</button>
+              <button class="mode-btn" id="btnBG_EN" onclick="doiCheDo('BG_EN')">🌐 Quote / PI (EN)</button>
+              <button class="mode-btn" id="btnXK" onclick="doiCheDo('XK')">📦 Xuất Kho</button>
+            </div>
+          </div>
 
-          <div class="a4-content-body">
-            <div class="header-top">
-              <div><img id="sysLogo" src="" alt="Logo" class="company-logo"></div>
-              <div class="company-info">
-                <div class="company-name" id="sysTen">CÔNG TY CỔ PHẦN GOODS LINK</div>
-                <div class="company-desc"><span id="sysDiaChi">TP. Hồ Chí Minh, Việt Nam</span><br><span id="sysLienHeCty"></span></div>
+          <div class="panel-scroll-body">
+            <!-- KHO CLOUD -->
+            <div class="argon-card">
+              <div class="argon-card-header"><div class="argon-card-title" style="color:var(--sap-brand);">☁️ Kho Đơn Hàng Lưu (Cloud)</div></div>
+              <div class="form-group"><select id="savedOrdersSelect"><option value="">-- Đang tải... --</option></select></div>
+              <div class="row">
+                <button class="btn-argon btn-primary-argon" onclick="taiDonTuApp()">📂 Mở đơn</button>
+                <button class="btn-argon btn-danger-argon" onclick="xoaDonTrongApp()" style="width:95px;">🗑️ Xóa</button>
               </div>
             </div>
 
-            <div class="executive-banner">
-              <div class="client-card">
-                <div class="info-label" id="lblKhachTitle">KÍNH GỬI KHÁCH HÀNG:</div>
-                <div class="info-client-name" id="preKhach">...</div>
-                <div class="info-client-contact" id="boxClientTel" style="display:none;"><span id="lblTelPrefix" style="color:#475569;font-weight:700;">LIÊN HỆ: </span><span id="preLienHe"></span></div>
-                <div id="boxXkDetails" style="display:none;font-size:12px;margin-top:5px;">
-                  <div id="boxDiaDiemXK" style="display:none;"><b>Địa điểm xuất kho: </b><span id="preDiaDiemXK"></span></div>
-                  <div id="boxBienSoXe" style="display:none;"><b>Biển số xe: </b><span id="preBienSoXe"></span></div>
+            <!-- 1. KHÁCH HÀNG & CHỨNG TỪ -->
+            <div class="argon-card">
+              <div class="argon-card-header">
+                <div class="argon-card-title">👤 1. Object Header — Khách Hàng &amp; Đơn</div>
+                <button class="btn-mini-save" onclick="luuKhachHangTuStudio()">➕ Lưu KH</button>
+              </div>
+
+              <div id="divTitleENSelect" style="display:none;">
+                <div class="pi-switch-banner">
+                  <div>
+                    <div style="font-size:12px;font-weight:800;color:var(--sap-warning);">⚡ Chế độ Proforma Invoice (PI)</div>
+                    <div style="font-size:10.5px;color:var(--sap-muted);">Mở cột Amount, đọc số &amp; Bank T/T</div>
+                  </div>
+                  <input type="checkbox" id="chkIsPI" onchange="batTatCheDoPI()" style="width:18px;height:18px;cursor:pointer;">
                 </div>
-                <div class="info-sub-greeting" id="preGreeting" style="display:none;">We are pleased to quote as follows:</div>
+                <div class="form-group" id="divQuoteTitleDropdown">
+                  <label>Tiêu đề báo giá tiếng Anh</label>
+                  <select id="inTitleEN" onchange="updatePreview()">
+                    <option value="COCONUT QUOTATION">COCONUT QUOTATION</option>
+                    <option value="QUOTATION">QUOTATION</option>
+                  </select>
+                </div>
               </div>
 
-              <div class="doc-badge-card">
-                <h1 class="doc-title" id="docTitleMain">BẢNG BÁO GIÁ</h1>
-                <table class="meta-table">
-                  <tr><td class="meta-label" id="lblMaType">Mã số:</td><td class="meta-value" id="preMa">QUO-2026-001</td></tr>
-                  <tr><td class="meta-label" id="lblNgayType">Ngày lập:</td><td class="meta-value" id="preNgay"></td></tr>
-                  <tr id="boxValidUntil" style="display:none;"><td class="meta-label">Valid until:</td><td class="meta-value" id="preValidUntil"></td></tr>
-                  <tr id="boxPreparedBy" style="display:none;"><td class="meta-label">Prepared by:</td><td class="meta-value" id="prePreparedBy"></td></tr>
+              <div class="form-group"><select id="khSelect" onchange="chonKhachHangCRM()"><option value="">-- Chọn khách hàng lưu sẵn --</option></select></div>
+              <div class="form-group"><label id="lblTenKhachInput">Tên khách hàng / Đối tác</label><input type="text" id="inKhach" placeholder="Nhập tên công ty / đối tác..." oninput="updatePreview()"></div>
+              <div class="form-group"><label id="lblLienHeInput">Người liên hệ / Phone / Attn</label><input type="text" id="inLienHe" placeholder="SĐT, Email, Người nhận..." oninput="updatePreview()"></div>
+
+              <div id="rowXkExtraFields" style="display:none;">
+                <div class="row">
+                  <div class="form-group col"><label>Địa điểm xuất kho</label><input type="text" id="inDiaDiemXK" oninput="updatePreview()"></div>
+                  <div class="form-group col"><label>Biển số xe</label><input type="text" id="inBienSoXe" oninput="updatePreview()"></div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="form-group col"><label id="lblMaInput">Số chứng từ</label><input type="text" id="inMa" value="QUO-2026-001" oninput="updatePreview()"></div>
+                <div class="form-group col"><label id="lblNgayInput">Ngày lập</label><input type="text" id="inNgay" oninput="updatePreview()"></div>
+              </div>
+
+              <div class="row" id="rowEnExtra" style="display:none;">
+                <div class="form-group col"><label>Prepared by</label><input type="text" id="inPreparedBy" oninput="updatePreview()"></div>
+                <div class="form-group col"><label>Valid until</label><input type="text" id="inValidUntil" oninput="updatePreview()"></div>
+              </div>
+
+              <!-- BỘ CHỌN INCOTERMS & LOGISTICS THÔNG MINH -->
+              <div id="divIncotermBuilder" style="display:none;background:var(--sap-brand-light);border:1px solid #b8daff;padding:8px;border-radius:8px;margin-bottom:10px;">
+                <label style="color:var(--sap-brand);font-weight:800;font-size:11px;margin-bottom:6px;display:block;">🚢 Tạo nhanh Incoterms &amp; Logistics</label>
+                <div class="row" style="gap:6px;margin-bottom:6px;">
+                  <select id="selIncoterm" style="width:32%;font-size:11px;padding:4px;"><option value="EXW">EXW</option><option value="FOB">FOB</option><option value="CNF">CFR</option><option value="CIF">CIF</option><option value="DDP">DDP</option></select>
+                  <input type="text" id="inPortName" placeholder="Cảng (VD: SHANGHAI)" style="width:68%;font-size:11px;padding:4px 6px;">
+                </div>
+                <div class="row" style="gap:6px;">
+                  <input type="text" id="inLeadTime" placeholder="Lead time (VD: 7 days)" style="width:72%;font-size:11px;padding:4px 6px;">
+                  <button type="button" class="sap-btn sap-btn-emphasized" onclick="chenIncotermThongMinh()" style="width:28%;padding:4px 8px !important;">+ Chèn</button>
+                </div>
+              </div>
+
+              <!-- GHI CHÚ & CHỌN NHANH -->
+              <div class="form-group">
+                <label>Ghi chú &amp; Điều khoản</label>
+                <div class="preset-bar" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+                  <span class="preset-chip" onclick="chenMauNhanh('inDieuKhoan', 'The above rates are CNF SHANGHAI')">+ CNF SHANGHAI</span>
+                  <span class="preset-chip" onclick="chenMauNhanh('inDieuKhoan', 'The above rates are FOB HO CHI MINH CITY')">+ FOB HCMC</span>
+                  <span class="preset-chip" onclick="chenMauNhanh('inDieuKhoan', 'Giao hàng trong vòng 3 ngày kể từ khi nhận cọc.')">+ Giao nhanh 3 ngày</span>
+                </div>
+                <textarea id="inDieuKhoan" rows="2" placeholder="Nhập ghi chú hoặc điều khoản..." oninput="updatePreview()"></textarea>
+              </div>
+
+              <div class="form-group" id="divEnNoteGroup" style="display:none;">
+                <label style="color:var(--sap-brand);">🌐 Câu Note Liên Hệ (PDF Tiếng Anh)</label>
+                <textarea id="inEnNote" rows="2" placeholder="Please contact us via information..." oninput="updatePreview()"></textarea>
+              </div>
+
+              <!-- THANH TOÁN & CHỌN NHANH -->
+              <div class="form-group" id="divPaymentTermInput">
+                <label id="lblPaymentTermInput">Phương thức thanh toán</label>
+                <div class="preset-bar" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+                  <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'Thanh toán 100% bằng chuyển khoản hoặc tiền mặt ngay khi nhận hàng.')">+ TT 100% (VN)</span>
+                  <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'Đặt cọc 50% ngay sau khi xác nhận đơn hàng, 50% còn lại thanh toán trước khi giao hàng.')">+ Cọc 50-50 (VN)</span>
+                  <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'The buyer shall deposit 30% of the total contract value upon signing the contract. The remaining 70% shall be paid within 3 days upon receipt of the copy documents via email.')">+ T/T 30-70 (EN)</span>
+                </div>
+                <textarea id="inPaymentTerm" rows="2" placeholder="Nhập điều khoản / phương thức thanh toán..." oninput="updatePreview()"></textarea>
+              </div>
+
+              <!-- NGÂN HÀNG T/T -->
+              <div class="form-group" id="divBankInfoInput" style="display:none;">
+                <label style="color:var(--sap-brand);">🏦 Thông tin Ngân hàng Quốc tế (PI)</label>
+                <select id="bankSelect" onchange="chonBankTuSheet()" style="margin-bottom:6px;"><option value="">-- Chọn Bank từ Database --</option></select>
+                <textarea id="inBankInfo" rows="3" placeholder="Chọn ngân hàng ở trên hoặc tự nhập..." oninput="updatePreview()"></textarea>
+              </div>
+            </div>
+
+            <!-- 2. HÀNG HÓA -->
+            <div class="argon-card">
+              <div class="argon-card-header">
+                <div class="argon-card-title">📦 2. Line Items — Chi Tiết Hàng Hóa</div>
+                <button class="btn-mini-save" onclick="luuSanPhamTuStudio()">➕ Lưu SP</button>
+              </div>
+
+              <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;background:#f8fafc;padding:8px;border-radius:6px;border:1px solid #e2e8f0;">
+                <label id="lblToggleTotal" style="display:flex;align-items:center;gap:4px;margin:0;font-size:11px;color:var(--sap-success);cursor:pointer;font-weight:700;"><input type="checkbox" id="chkShowTotal" checked onchange="renderTable()"> Hiện Tổng cộng</label>
+                <label id="lblToggleWords" style="display:flex;align-items:center;gap:4px;margin:0;font-size:11px;color:var(--sap-warning);cursor:pointer;font-weight:700;"><input type="checkbox" id="chkShowWords" checked onchange="renderTable()"> Đọc số thành chữ</label>
+                <label style="display:flex;align-items:center;gap:4px;margin:0;font-size:11px;color:var(--sap-brand);cursor:pointer;font-weight:700;"><input type="checkbox" id="chkShowImage" checked onchange="renderTable()"> Hiện cột Ảnh</label>
+              </div>
+
+              <div class="row" id="rowEnOptions" style="display:none;margin-bottom:10px;">
+                <div class="form-group col">
+                  <label>Loại Volume</label>
+                  <select id="inVolumeType" onchange="renderTable()"><option value="(CTNS/40RF)">(CTNS/40RF)</option><option value="(CTNS/20RF)">(CTNS/20RF)</option></select>
+                </div>
+                <div class="form-group col">
+                  <label>Tiền tệ</label>
+                  <select id="inCurrency" onchange="renderTable()">
+                    <option value="USD">USD ($)</option><option value="EUR">EUR (€)</option><option value="GBP">GBP (£)</option><option value="CNY">CNY (¥)</option><option value="VND">VNĐ</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Chọn sản phẩm từ Database</label>
+                <select id="spSelect" onchange="chonSPDatabase()"><option value="">-- Chọn sản phẩm từ Database --</option></select>
+              </div>
+              <div class="form-group"><label>Tên / Mô tả quy cách</label><textarea id="inTenSP" rows="2"></textarea></div>
+
+              <div class="row">
+                <div class="form-group col"><label>Mã SP</label><input type="text" id="inMaSPMoi" placeholder="Tự động"></div>
+                <div class="form-group col"><label>ĐVT</label><input type="text" id="inDVT" value="CTN" oninput="renderTable()"></div>
+                <div class="form-group col"><label>Số lượng</label><input type="number" id="inSL" value="1" min="0" step="any"></div>
+              </div>
+
+              <div class="row" id="rowPriceAndVat">
+                <div class="form-group col" id="divGiaGroup"><label>Đơn giá</label><input type="number" id="inGia" value="0" step="any"></div>
+                <div class="form-group col" id="divVATGroup">
+                  <label>Thuế VAT</label>
+                  <select id="inVAT"><option value="8" selected>8%</option><option value="10">10%</option><option value="5">5%</option><option value="0">0%</option><option value="KKKNT">KKKNT</option></select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Ảnh sản phẩm (HD Lớn 160x145px)</label>
+                <input type="file" id="inSpFile" accept="image/png, image/jpeg, image/webp" onchange="loadSpImage(this)">
+                <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
+                  <img id="spPreviewLeft" style="height:86px;width:96px;object-fit:cover;display:none;border-radius:8px;border:1px solid #cbd5e1;background:#fff;">
+                  <button type="button" id="btnClearSpImg" class="sap-btn sap-btn-reject" onclick="xoaAnhSpTam()" style="display:none;padding:4px 10px !important;font-size:11px !important;">Xóa ảnh SP</button>
+                </div>
+              </div>
+
+              <button class="btn-argon btn-primary-argon" id="btnAddCartMain" onclick="themVaoGio()" style="width:100%;">+ Thêm Sản Phẩm Vào Đơn</button>
+
+              <div style="margin-top:12px;max-height:210px;overflow-y:auto;">
+                <table class="cart-mini-table">
+                  <thead><tr><th>Sản phẩm</th><th width="45">SL</th><th width="55">Ảnh</th><th width="110" style="text-align:right;">Thao tác</th></tr></thead>
+                  <tbody id="cartMiniBody"><tr><td colspan="4" style="text-align:center;color:var(--sap-muted);">Chưa có sản phẩm</td></tr></tbody>
                 </table>
               </div>
             </div>
 
-            <table class="modern-table"><thead><tr id="tableHeaderRow"></tr></thead><tbody id="preTable"></tbody></table>
-
-            <div class="amount-in-words-box" id="boxAmountInWords">
-              <span id="lblAmountInWordsPrefix" style="font-weight:800;color:var(--doc-primary);">Số tiền bằng chữ: </span>
-              <span id="preAmountInWords" style="font-weight:700;font-style:italic;"></span>
+            <!-- 3. LOGO & WATERMARK -->
+            <div class="argon-card">
+              <div class="argon-card-header"><div class="argon-card-title">🎨 3. Logo &amp; Watermark (In trực tiếp vào PDF)</div></div>
+              <div class="row">
+                <div class="form-group col">
+                  <label>Logo Công ty</label>
+                  <input type="file" id="inLogoFile" accept="image/png, image/jpeg, image/webp" onchange="loadLogo(this)">
+                  <button type="button" onclick="xoaLogo()" id="btnXoaLogo" class="sap-btn sap-btn-reject" style="display:none;margin-top:5px;padding:3px 8px !important;font-size:10px !important;">Xóa Logo</button>
+                </div>
+                <div class="form-group col">
+                  <label>Watermark chìm (Tự tách nền trắng)</label>
+                  <input type="file" id="inWmFile" accept="image/png, image/jpeg, image/webp" onchange="loadWatermark(this)">
+                  <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+                    <span style="font-size:10.5px;color:#475569;font-weight:700;">Độ đậm:</span>
+                    <input type="range" id="wmOpacitySlider" min="8" max="45" value="20" oninput="doiDoDamWatermark(this.value)" style="flex:1;cursor:pointer;">
+                    <span id="wmOpacityLabel" style="font-size:10.5px;font-weight:700;color:var(--sap-brand);">20%</span>
+                  </div>
+                  <button type="button" onclick="xoaWatermark()" id="btnXoaWm" class="sap-btn sap-btn-reject" style="display:none;margin-top:5px;padding:3px 8px !important;font-size:10px !important;">Xóa Watermark</button>
+                </div>
+              </div>
             </div>
 
-            <div class="terms-section" id="termsSectionBox" style="display:none;">
-              <div class="terms-block" id="boxNotesSection" style="display:none;"><div class="terms-title" id="lblNotesHeader">ĐIỀU KHOẢN & GHI CHÚ:</div><div class="terms-content" id="preDieuKhoan"></div></div>
-              <div class="terms-block" id="boxPaymentTermPre" style="display:none;"><div class="terms-title" id="lblPaymentHeader">PHƯƠNG THỨC THANH TOÁN:</div><div class="terms-content" id="prePaymentTerm"></div></div>
-              <div class="terms-block" id="boxBankInfoPre" style="display:none;border-top:1px dashed #cbd5e1;padding-top:8px;"><div class="terms-title">BANKING INFORMATION FOR T/T:</div><div class="terms-content" id="preBankInfo" style="font-weight:700;"></div></div>
+            <!-- 4. CẤU HÌNH GỬI MAIL -->
+            <div class="argon-card" style="border:1.5px solid var(--sap-brand) !important;">
+              <div class="argon-card-header">
+                <div class="argon-card-title" style="color:var(--sap-brand);">📧 4. Cấu Hình Gửi Mail Khách Hàng</div>
+                <button class="btn-mini-save" onclick="datLaiNoiDungMacDinh(true)">🔄 Tạo mẫu (VN/EN)</button>
+              </div>
+
+              <!-- Ô CHỌN APP GỬI MAIL TÍCH HỢP SẴN -->
+              <div class="form-group" style="background:var(--sap-brand-light);border:1px solid #b8daff;padding:8px 10px;border-radius:8px;margin-bottom:10px;">
+                <label style="color:var(--sap-brand);font-weight:800;font-size:11.5px;margin-bottom:4px;display:block;">
+                  📲 Chọn App gửi Mail (Khi bấm nút Gửi Mail):
+                </label>
+                <select id="inMailAppSelect" style="width:100%;padding:6px 8px;font-weight:700;">
+                  <option value="SHARE_PDF">📎 Đính kèm thẳng File PDF + Nội dung (Chọn App: Gmail, Mail, Zalo...)</option>
+                  <option value="GMAIL_APP">📲 Mở thẳng App Gmail (Điền sẵn Email nhận + Chủ đề + Nội dung)</option>
+                  <option value="MAILTO_DEFAULT">✉️ Mở App Mail mặc định / Outlook (Điền sẵn Email + Chủ đề + Nội dung)</option>
+                  <option value="GMAIL_WEB">💻 Mở Gmail Web trên máy tính (Điền sẵn Email + Chủ đề + Nội dung)</option>
+                </select>
+              </div>
+
+              <div class="form-group"><label>Email khách hàng nhận file PDF</label><input type="text" id="inEmailKhach" placeholder="VD: contact@customer.com"></div>
+              <div class="form-group"><label>Thông tin liên hệ của bạn (Hiển thị trong email &amp; Note A4)</label><input type="text" id="inThongTinLienHeMail" placeholder="VD: Mr. Minh - Phone/WhatsApp: +84 707 253 054 - Email: work.baominh@gmail.com" oninput="capNhatLienHeVaoA4()"></div>
+              <div class="form-group"><label>Tiêu đề thư (Subject — Tự động nhảy theo Số chứng từ)</label><input type="text" id="inEmailSubject" placeholder="Tiêu đề email..."></div>
+              <div class="form-group"><label>Nội dung lời nhắn (Tự động nhảy theo Số chứng từ &amp; Ngày lập)</label><textarea id="inEmailBody" rows="5" placeholder="Nội dung email..."></textarea></div>
             </div>
 
-            <div id="boxEnNotePre" style="display:none;margin-top:12px;font-size:11.5px;font-style:italic;color:#334155;line-height:1.5;"><span id="preEnNote"></span></div>
-
-            <div class="signatures-xk-container" id="sigXKContainer" style="display:none;">
-              <div class="sig-col"><div class="sig-title-xk">Thủ Trưởng Đơn Vị</div><div class="sig-sub-xk">(Ký và ghi rõ họ tên)</div></div>
-              <div class="sig-col"><div class="sig-title-xk">Thủ Kho / Quản Đốc</div><div class="sig-sub-xk">(Ký và ghi rõ họ tên)</div></div>
-              <div class="sig-col"><div class="sig-title-xk">Người Giao Hàng</div><div class="sig-sub-xk">(Ký và ghi rõ họ tên)</div></div>
-              <div class="sig-col"><div class="sig-title-xk">Người Lập Phiếu</div><div class="sig-sub-xk">(Ký và ghi rõ họ tên)</div></div>
-              <div class="sig-col"><div class="sig-title-xk">Người Nhận Hàng</div><div class="sig-sub-xk">(Ký và ghi rõ họ tên)</div></div>
-            </div>
-
-            <div class="signatures-single-container" id="sigSingleContainer">
-              <div style="width:240px;">
-                <div class="sign-title" id="signTitleName">ĐẠI DIỆN CÔNG TY</div>
-                <div style="color:#475569;font-size:11px;margin-bottom:55px;font-style:italic;" id="signSubText">(Ký, đóng dấu & ghi rõ họ tên)</div>
+            <!-- THAO TÁC HỆ THỐNG -->
+            <div class="argon-card" style="background:#f8fafc !important;">
+              <div class="argon-card-header"><div class="argon-card-title">⚡ Thao Tác Hệ Thống (SAP Actions)</div></div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div class="row">
+                  <button class="btn-argon btn-neutral-argon" onclick="luuDonNháp()" style="flex:1;">💾 Lưu Nháp</button>
+                  <button class="btn-argon btn-success-argon" onclick="luuVaoAppSheet()" style="flex:1;">☁️ Lưu Cloud</button>
+                </div>
+                <div class="row">
+                  <button class="btn-argon btn-primary-argon" onclick="xuatPDF()" style="flex:1;">🖨️ Tải PDF</button>
+                  <button class="btn-argon sap-btn-critical" onclick="guiEmailChoKhachHang()" style="flex:1;">📧 Tải PDF &amp; Gửi Mail</button>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-  </div>
+        <!-- CỘT PHẢI: XEM TRƯỚC TỜ A4 -->
+        <div class="panel-right" id="panelRightScroll">
+          <div class="preview-toolbar" style="background:#ffffff;border:1px solid var(--sap-border);">
+            <div class="toolbar-item">
+              <span>✨ Mẫu:</span>
+              <select id="pdfThemeSelect" onchange="doiGiaoDienPDF(this.value)" style="width:auto;padding:4px 8px;font-weight:700;">
+                <option value="theme-executive">💎 Executive</option>
+                <option value="theme-dark-banner">🔥 Modern Dark</option>
+                <option value="theme-split-pro">⚡ Split Bold</option>
+                <option value="theme-luxury-grid">👑 Luxury Grid</option>
+                <option value="theme-minimal">🌿 Minimalist</option>
+                <option value="theme-classic">🏛️ Classic Box</option>
+              </select>
+            </div>
+            <div class="toolbar-item">
+              <span>🔍 Zoom:</span>
+              <select id="zoomSelectBox" onchange="doiTyLeZoom(this.value)" style="width:auto;padding:4px 8px;font-weight:700;">
+                <option value="1">100%</option><option value="0.85">85%</option><option value="0.5">50% (Mobile)</option>
+              </select>
+            </div>
+            <div class="toolbar-item" style="display:flex;align-items:center;gap:4px;">
+              <input type="color" id="liveColorPicker" value="#007a3d" oninput="dongBoMauTuPicker(this.value)" class="color-dot" title="Chọn màu trực quan">
+              <input type="text" id="liveColorHex" value="#007A3D" maxlength="7" placeholder="#000000" oninput="dongBoMauTuText(this.value)" style="width:68px;padding:3px 5px;font-size:11px;font-weight:700;font-family:monospace;text-transform:uppercase;text-align:center;">
+            </div>
+            <button class="sap-btn sap-btn-emphasized" onclick="xuatPDF()" style="padding:5px 12px !important;">🖨️ Tải PDF</button>
+          </div>
 
-  <!-- ========================================================= -->
-  <!-- MÀN HÌNH 3: QUẢN LÝ MASTER DATA & CRM                      -->
-  <!-- ========================================================= -->
-  <div id="manHinhQuanLyMaster" class="main-content-tab" style="display:none; padding:25px; background:#f8fafc; height:calc(100vh - 56px); overflow-y:auto; box-sizing:border-box;">
-    <h2 style="color: #1e293b; margin-bottom: 20px;">⚙️ Quản Lý Nhanh Dữ Liệu & Lịch Sử (Database, CRM, Bank)</h2>
-    
-    <div class="master-grid-3">
-      
-      <!-- 1. THÊM / SỬA SẢN PHẨM -->
-      <div style="background: white; padding: 18px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
-        <h3 style="color: #0d9488; margin-bottom: 14px; font-size: 16px;" id="titleFormSP">➕ Thêm Sản Phẩm Mới</h3>
-        <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Mã SP:</label><input type="text" id="qtMaSP" placeholder="VD: 01" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></div>
-        <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Tên Sản Phẩm:</label><input type="text" id="qtTenSP" placeholder="VD: COCONUT" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></div>
-        <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Mô tả / Quy cách chi tiết:</label><textarea id="qtMoTaSP" rows="2" placeholder="Quy cách, thành phần, tiêu chuẩn xuất khẩu..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></textarea></div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom: 8px;">
-          <div><label style="font-size: 12px; font-weight: 600;">ĐVT:</label><input type="text" id="qtDVT" value="CTN" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></div>
-          <div><label style="font-size: 12px; font-weight: 600;">Đơn Giá:</label><input type="number" id="qtGia" value="0" step="any" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></div>
-        </div>
-        <div style="margin-bottom: 12px;">
-          <label style="font-size: 12px; font-weight: 600;">Ảnh Sản Phẩm Mặc Định (Tùy chọn):</label>
-          <input type="file" id="qtFileSP" accept="image/png, image/jpeg, image/webp" onchange="loadMasterSpImage(this)" style="width: 100%; font-size: 12px;">
-          <img id="qtPreviewSP" style="height:68px; width:68px; object-fit:cover; display:none; margin-top:6px; border-radius:6px; border:1px solid #cbd5e1; background:#fff;">
-        </div>
-        <div style="display:flex; gap:8px;">
-          <button id="btnSaveSP" onclick="themSanPhamNhanh()" style="flex:1; background: #0d9488; color: white; border: none; padding: 11px; border-radius: 6px; font-weight: bold; cursor: pointer;">💾 Lưu Sản Phẩm</button>
-          <button id="btnCancelSP" onclick="huySuaSP()" style="display:none; background: #64748b; color: white; border: none; padding: 11px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;">Hủy</button>
-        </div>
-      </div>
+          <div class="a4-wrapper" id="a4Wrapper">
+            <div class="a4-paper theme-executive" id="a4Paper">
+              <div class="a4-top-accent"></div>
+              <div class="watermark-overlay"><img id="watermarkImg" src="" alt="Watermark"></div>
 
-      <!-- 2. THÊM / SỬA KHÁCH HÀNG -->
-      <div style="background: white; padding: 18px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
-        <h3 style="color: #2563eb; margin-bottom: 14px; font-size: 16px;" id="titleFormKH">👤 Thêm Khách Hàng (CRM)</h3>
-        <div style="margin-bottom: 10px;"><label style="font-size: 12px; font-weight: 600;">Tên Công Ty / Đối Tác:</label><input type="text" id="qtTenKH" placeholder="Nhập tên khách hàng..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></div>
-        <div style="margin-bottom: 15px;"><label style="font-size: 12px; font-weight: 600;">Thông Tin Liên Hệ (Địa chỉ, SĐT, Email, Attn):</label><textarea id="qtInfoKH" rows="5" placeholder="Địa chỉ, SĐT, Email, Người liên hệ..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></textarea></div>
-        <div style="display:flex; gap:8px;">
-          <button id="btnSaveKH" onclick="themKhachHangNhanh()" style="flex:1; background: #2563eb; color: white; border: none; padding: 11px; border-radius: 6px; font-weight: bold; cursor: pointer;">💾 Lưu Khách Hàng</button>
-          <button id="btnCancelKH" onclick="huySuaKH()" style="display:none; background: #64748b; color: white; border: none; padding: 11px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;">Hủy</button>
-        </div>
-      </div>
+              <div class="a4-content-body">
+                <div class="header-top">
+                  <div><img id="sysLogo" src="" alt="Logo" class="company-logo"></div>
+                  <div class="company-info">
+                    <div class="company-name" id="sysTen">CÔNG TY CỔ PHẦN GOODS LINK</div>
+                    <div class="company-desc"><span id="sysDiaChi">TP. Hồ Chí Minh, Việt Nam</span><br><span id="sysLienHeCty"></span></div>
+                  </div>
+                </div>
 
-      <!-- 3. THÊM / SỬA NGÂN HÀNG THANH TOÁN -->
-      <div style="background: white; padding: 18px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
-        <h3 style="color: #ea580c; margin-bottom: 14px; font-size: 16px;" id="titleFormBank">🏦 Thêm Ngân Hàng T/T</h3>
-        <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Tên Ngân Hàng (Bank Name):</label><input type="text" id="qtBankName" placeholder="VD: VIETCOMBANK - HCMC" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></div>
-        <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Tên Tài Khoản (Beneficiary):</label><input type="text" id="qtAccName" placeholder="CONG TY CO PHAN GOODS LINK" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></div>
-        <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Số Tài Khoản (Account No):</label><input type="text" id="qtAccNo" placeholder="Số tài khoản USD / VND..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></div>
-        <div style="margin-bottom: 12px;"><label style="font-size: 12px; font-weight: 600;">Swift Code:</label><input type="text" id="qtSwift" placeholder="VD: BFTVVNVX..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></div>
-        <div style="display:flex; gap:8px;">
-          <button id="btnSaveBank" onclick="themBankNhanh()" style="flex:1; background: #ea580c; color: white; border: none; padding: 11px; border-radius: 6px; font-weight: bold; cursor: pointer;">💾 Lưu Ngân Hàng</button>
-          <button id="btnCancelBank" onclick="huySuaBank()" style="display:none; background: #64748b; color: white; border: none; padding: 11px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;">Hủy</button>
-        </div>
-      </div>
+                <div class="executive-banner">
+                  <div class="client-card">
+                    <div class="info-label" id="lblKhachTitle">KÍNH GỬI KHÁCH HÀNG:</div>
+                    <div class="info-client-name" id="preKhach">...</div>
+                    <div class="info-client-contact" id="boxClientTel" style="display:none;"><span id="lblTelPrefix" style="color:#475569;font-weight:700;">LIÊN HỆ: </span><span id="preLienHe"></span></div>
+                    <div id="boxXkDetails" style="display:none;font-size:12px;margin-top:5px;">
+                      <div id="boxDiaDiemXK" style="display:none;"><b>Địa điểm xuất kho: </b><span id="preDiaDiemXK"></span></div>
+                      <div id="boxBienSoXe" style="display:none;"><b>Biển số xe: </b><span id="preBienSoXe"></span></div>
+                    </div>
+                    <div class="info-sub-greeting" id="preGreeting" style="display:none;">We are pleased to quote as follows:</div>
+                  </div>
 
-    </div>
+                  <div class="doc-badge-card">
+                    <h1 class="doc-title" id="docTitleMain">BẢNG BÁO GIÁ</h1>
+                    <table class="meta-table">
+                      <tr><td class="meta-label" id="lblMaType">Mã số:</td><td class="meta-value" id="preMa">QUO-2026-001</td></tr>
+                      <tr><td class="meta-label" id="lblNgayType">Ngày lập:</td><td class="meta-value" id="preNgay"></td></tr>
+                      <tr id="boxValidUntil" style="display:none;"><td class="meta-label">Valid until:</td><td class="meta-value" id="preValidUntil"></td></tr>
+                      <tr id="boxPreparedBy" style="display:none;"><td class="meta-label">Prepared by:</td><td class="meta-value" id="prePreparedBy"></td></tr>
+                    </table>
+                  </div>
+                </div>
 
-    <!-- BẢNG LỊCH SỬ KÈM THANH CUỘN -->
-    <div class="master-grid-3" style="margin-top:20px; padding-bottom:60px;">
-      
-      <!-- Lịch sử SP -->
-      <div style="background:white; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-        <h4 style="color:#0d9488; margin-bottom:10px; font-size:14px;">📦 Danh sách Sản phẩm đã lưu</h4>
-        <div style="max-height: 360px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 6px;">
-          <table style="width:100%; font-size:12px; border-collapse:collapse;" id="tableHistorySP">
-            <thead>
-              <tr style="border-bottom:2px solid #e2e8f0; text-align:left; background:#f8fafc; position:sticky; top:0;">
-                <th style="padding:8px;">Mã / Tên / Mô tả quy cách</th>
-                <th style="padding:8px; width:80px;">Giá / ĐVT</th>
-                <th style="padding:8px; text-align:right; width:85px;">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
+                <table class="modern-table"><thead><tr id="tableHeaderRow"></tr></thead><tbody id="preTable"></tbody></table>
 
-      <!-- Lịch sử KH -->
-      <div style="background:white; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-        <h4 style="color:#2563eb; margin-bottom:10px; font-size:14px;">👤 Danh sách Khách hàng đã lưu</h4>
-        <div style="max-height: 360px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 6px;">
-          <table style="width:100%; font-size:12px; border-collapse:collapse;" id="tableHistoryKH">
-            <thead>
-              <tr style="border-bottom:2px solid #e2e8f0; text-align:left; background:#f8fafc; position:sticky; top:0;">
-                <th style="padding:8px;">Tên Công Ty & Thông Tin Liên Hệ</th>
-                <th style="padding:8px; text-align:right; width:85px;">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
+                <div class="amount-in-words-box" id="boxAmountInWords">
+                  <span id="lblAmountInWordsPrefix" style="font-weight:800;color:var(--doc-primary);">Số tiền bằng chữ: </span>
+                  <span id="preAmountInWords" style="font-weight:700;font-style:italic;"></span>
+                </div>
 
-      <!-- Lịch sử Bank -->
-      <div style="background:white; padding:15px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-        <h4 style="color:#ea580c; margin-bottom:10px; font-size:14px;">🏦 Danh sách Ngân hàng đã lưu</h4>
-        <div style="max-height: 360px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 6px;">
-          <table style="width:100%; font-size:12px; border-collapse:collapse;" id="tableHistoryBank">
-            <thead>
-              <tr style="border-bottom:2px solid #e2e8f0; text-align:left; background:#f8fafc; position:sticky; top:0;">
-                <th style="padding:8px;">Chi tiết Ngân hàng / Beneficiary / STK / Swift</th>
-                <th style="padding:8px; text-align:right; width:85px;">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
+                <div class="terms-section" id="termsSectionBox" style="display:none;">
+                  <div class="terms-block" id="boxNotesSection" style="display:none;"><div class="terms-title" id="lblNotesHeader">ĐIỀU KHOẢN &amp; GHI CHÚ:</div><div class="terms-content" id="preDieuKhoan"></div></div>
+                  <div class="terms-block" id="boxPaymentTermPre" style="display:none;"><div class="terms-title" id="lblPaymentHeader">PHƯƠNG THỨC THANH TOÁN:</div><div class="terms-content" id="prePaymentTerm"></div></div>
+                  <div class="terms-block" id="boxBankInfoPre" style="display:none;border-top:1px dashed #cbd5e1;padding-top:8px;"><div class="terms-title">BANKING INFORMATION FOR T/T:</div><div class="terms-content" id="preBankInfo" style="font-weight:700;"></div></div>
+                </div>
+
+                <div id="boxEnNotePre" style="display:none;margin-top:12px;font-size:11.5px;font-style:italic;color:#334155;line-height:1.5;"><span id="preEnNote"></span></div>
+
+                <div class="signatures-xk-container" id="sigXKContainer" style="display:none;">
+                  <div class="sig-col"><div class="sig-title-xk">Thủ Trưởng Đơn Vị</div><div class="sig-sub-xk">(Ký và ghi rõ họ tên)</div></div>
+                  <div class="sig-col"><div class="sig-title-xk">Thủ Kho / Quản Đốc</div><div class="sig-sub-xk">(Ký và ghi rõ họ tên)</div></div>
+                  <div class="sig-col"><div class="sig-title-xk">Người Giao Hàng</div><div class="sig-sub-xk">(Ký và ghi rõ họ tên)</div></div>
+                  <div class="sig-col"><div class="sig-title-xk">Người Lập Phiếu</div><div class="sig-sub-xk">(Ký và ghi rõ họ tên)</div></div>
+                  <div class="sig-col"><div class="sig-title-xk">Người Nhận Hàng</div><div class="sig-sub-xk">(Ký và ghi rõ họ tên)</div></div>
+                </div>
+
+                <div class="signatures-single-container" id="sigSingleContainer">
+                  <div style="width:240px;">
+                    <div class="sign-title" id="signTitleName">ĐẠI DIỆN CÔNG TY</div>
+                    <div style="color:#475569;font-size:11px;margin-bottom:55px;font-style:italic;" id="signSubText">(Ký, đóng dấu &amp; ghi rõ họ tên)</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+
       </div>
 
-    </div>
+      <!-- ========================================================= -->
+      <!-- MÀN HÌNH 3: QUẢN LÝ MASTER DATA & CRM                      -->
+      <!-- ========================================================= -->
+      <div id="manHinhQuanLyMaster" class="main-content-tab" style="display:none; padding:25px; background:var(--sap-bg); height:calc(100vh - 92px); overflow-y:auto;">
+        <h2 style="color: var(--sap-text); margin-top:0; margin-bottom: 18px; font-size:18px;">⚙️ SAP Master Data Management (Database, CRM, Banking)</h2>
+        
+        <div class="master-grid-3">
+          
+          <!-- 1. THÊM / SỬA SẢN PHẨM -->
+          <div style="background: white; padding: 18px; border-radius: 12px; border: 1px solid var(--sap-border);">
+            <h3 style="color: var(--sap-brand); margin-top:0; margin-bottom: 14px; font-size: 15px;" id="titleFormSP">➕ Thêm Sản Phẩm Mới</h3>
+            <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Mã SP:</label><input type="text" id="qtMaSP" placeholder="VD: 01" style="width: 100%; padding: 8px;"></div>
+            <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Tên Sản Phẩm:</label><input type="text" id="qtTenSP" placeholder="VD: COCONUT" style="width: 100%; padding: 8px;"></div>
+            <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Mô tả / Quy cách chi tiết:</label><textarea id="qtMoTaSP" rows="2" placeholder="Quy cách, thành phần, tiêu chuẩn xuất khẩu..." style="width: 100%; padding: 8px;"></textarea></div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom: 8px;">
+              <div><label style="font-size: 12px; font-weight: 600;">ĐVT:</label><input type="text" id="qtDVT" value="CTN" style="width: 100%; padding: 8px;"></div>
+              <div><label style="font-size: 12px; font-weight: 600;">Đơn Giá:</label><input type="number" id="qtGia" value="0" step="any" style="width: 100%; padding: 8px;"></div>
+            </div>
+            <div style="margin-bottom: 12px;">
+              <label style="font-size: 12px; font-weight: 600;">Ảnh Sản Phẩm Mặc Định (Tùy chọn):</label>
+              <input type="file" id="qtFileSP" accept="image/png, image/jpeg, image/webp" onchange="loadMasterSpImage(this)" style="width: 100%; font-size: 12px;">
+              <img id="qtPreviewSP" style="height:68px; width:68px; object-fit:cover; display:none; margin-top:6px; border-radius:6px; border:1px solid #cbd5e1; background:#fff;">
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button id="btnSaveSP" class="sap-btn sap-btn-accept" onclick="themSanPhamNhanh()" style="flex:1; padding:10px !important;">💾 Lưu Sản Phẩm</button>
+              <button id="btnCancelSP" class="sap-btn sap-btn-reject" onclick="huySuaSP()" style="display:none; padding:10px 14px !important;">Hủy</button>
+            </div>
+          </div>
+
+          <!-- 2. THÊM / SỬA KHÁCH HÀNG -->
+          <div style="background: white; padding: 18px; border-radius: 12px; border: 1px solid var(--sap-border);">
+            <h3 style="color: var(--sap-brand); margin-top:0; margin-bottom: 14px; font-size: 15px;" id="titleFormKH">👤 Thêm Khách Hàng (CRM)</h3>
+            <div style="margin-bottom: 10px;"><label style="font-size: 12px; font-weight: 600;">Tên Công Ty / Đối Tác:</label><input type="text" id="qtTenKH" placeholder="Nhập tên khách hàng..." style="width: 100%; padding: 8px;"></div>
+            <div style="margin-bottom: 15px;"><label style="font-size: 12px; font-weight: 600;">Thông Tin Liên Hệ (Địa chỉ, SĐT, Email, Attn):</label><textarea id="qtInfoKH" rows="5" placeholder="Địa chỉ, SĐT, Email, Người liên hệ..." style="width: 100%; padding: 8px;"></textarea></div>
+            <div style="display:flex; gap:8px;">
+              <button id="btnSaveKH" class="sap-btn sap-btn-emphasized" onclick="themKhachHangNhanh()" style="flex:1; padding:10px !important;">💾 Lưu Khách Hàng</button>
+              <button id="btnCancelKH" class="sap-btn sap-btn-reject" onclick="huySuaKH()" style="display:none; padding:10px 14px !important;">Hủy</button>
+            </div>
+          </div>
+
+          <!-- 3. THÊM / SỬA NGÂN HÀNG THANH TOÁN -->
+          <div style="background: white; padding: 18px; border-radius: 12px; border: 1px solid var(--sap-border);">
+            <h3 style="color: var(--sap-warning); margin-top:0; margin-bottom: 14px; font-size: 15px;" id="titleFormBank">🏦 Thêm Ngân Hàng T/T</h3>
+            <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Tên Ngân Hàng (Bank Name):</label><input type="text" id="qtBankName" placeholder="VD: VIETCOMBANK - HCMC" style="width: 100%; padding: 8px;"></div>
+            <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Tên Tài Khoản (Beneficiary):</label><input type="text" id="qtAccName" placeholder="CONG TY CO PHAN GOODS LINK" style="width: 100%; padding: 8px;"></div>
+            <div style="margin-bottom: 8px;"><label style="font-size: 12px; font-weight: 600;">Số Tài Khoản (Account No):</label><input type="text" id="qtAccNo" placeholder="Số tài khoản USD / VND..." style="width: 100%; padding: 8px;"></div>
+            <div style="margin-bottom: 12px;"><label style="font-size: 12px; font-weight: 600;">Swift Code:</label><input type="text" id="qtSwift" placeholder="VD: BFTVVNVX..." style="width: 100%; padding: 8px;"></div>
+            <div style="display:flex; gap:8px;">
+              <button id="btnSaveBank" class="sap-btn sap-btn-critical" onclick="themBankNhanh()" style="flex:1; padding:10px !important;">💾 Lưu Ngân Hàng</button>
+              <button id="btnCancelBank" class="sap-btn sap-btn-reject" onclick="huySuaBank()" style="display:none; padding:10px 14px !important;">Hủy</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- BẢNG LỊCH SỬ KÈM THANH CUỘN -->
+        <div class="master-grid-3" style="margin-top:20px; padding-bottom:60px;">
+          
+          <!-- Lịch sử SP -->
+          <div style="background:white; padding:15px; border-radius:10px; border:1px solid var(--sap-border);">
+            <h4 style="color:var(--sap-success); margin-top:0; margin-bottom:10px; font-size:14px;">📦 Danh sách Sản phẩm đã lưu</h4>
+            <div style="max-height: 360px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 6px;">
+              <table style="width:100%; font-size:12px; border-collapse:collapse;" id="tableHistorySP">
+                <thead>
+                  <tr style="border-bottom:2px solid #e2e8f0; text-align:left; background:#f8fafc; position:sticky; top:0;">
+                    <th style="padding:8px;">Mã / Tên / Mô tả quy cách</th>
+                    <th style="padding:8px; width:80px;">Giá / ĐVT</th>
+                    <th style="padding:8px; text-align:right; width:85px;">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Lịch sử KH -->
+          <div style="background:white; padding:15px; border-radius:10px; border:1px solid var(--sap-border);">
+            <h4 style="color:var(--sap-brand); margin-top:0; margin-bottom:10px; font-size:14px;">👤 Danh sách Khách hàng đã lưu</h4>
+            <div style="max-height: 360px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 6px;">
+              <table style="width:100%; font-size:12px; border-collapse:collapse;" id="tableHistoryKH">
+                <thead>
+                  <tr style="border-bottom:2px solid #e2e8f0; text-align:left; background:#f8fafc; position:sticky; top:0;">
+                    <th style="padding:8px;">Tên Công Ty &amp; Thông Tin Liên Hệ</th>
+                    <th style="padding:8px; text-align:right; width:85px;">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Lịch sử Bank -->
+          <div style="background:white; padding:15px; border-radius:10px; border:1px solid var(--sap-border);">
+            <h4 style="color:var(--sap-warning); margin-top:0; margin-bottom:10px; font-size:14px;">🏦 Danh sách Ngân hàng đã lưu</h4>
+            <div style="max-height: 360px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 6px;">
+              <table style="width:100%; font-size:12px; border-collapse:collapse;" id="tableHistoryBank">
+                <thead>
+                  <tr style="border-bottom:2px solid #e2e8f0; text-align:left; background:#f8fafc; position:sticky; top:0;">
+                    <th style="padding:8px;">Chi tiết Ngân hàng / Beneficiary / STK / Swift</th>
+                    <th style="padding:8px; text-align:right; width:85px;">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+
+    <!-- CỘT PHẢI: TRỢ LÝ ẢO SAP JOULE COPILOT (GIỐNG ẢNH MẪU SAP HORIZON) -->
+    <aside class="sap-joule-drawer" id="sapJouleDrawer">
+      <div class="joule-hero">
+        <div class="joule-top-bar">
+          <span><i class="mdi mdi-menu" style="margin-right:6px;"></i> Joule</span>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <i class="mdi mdi-arrow-expand-all" style="cursor:pointer;" onclick="batTatJouleCopilot()" title="Thu gọn"></i>
+            <i class="mdi mdi-close" style="cursor:pointer;" onclick="batTatJouleCopilot()" title="Đóng Joule"></i>
+          </div>
+        </div>
+        <div class="joule-diamond-wrap">
+          <i class="mdi mdi-diamond-stone joule-diamond-icon"></i>
+        </div>
+        <div class="joule-greeting">Hello Bảo Minh,</div>
+        <div class="joule-question">How can I assist you?</div>
+        <button class="joule-badge-btn" onclick="jouleThucThiLenh('SUMMARY')">Talk to me naturally.</button>
+      </div>
+
+      <div class="joule-chat-body" id="jouleChatBody">
+        <div class="joule-msg">
+          👋 Xin chào! Tôi là trợ lý <b>SAP Joule</b> của <b>Goods Link ERP</b>. Chọn nhanh tác vụ bên dưới hoặc nhập yêu cầu của bạn:
+        </div>
+        <div class="joule-quick-actions">
+          <button class="joule-chip" onclick="jouleThucThiLenh('NEW_ORDER')">✨ Tạo đơn mới</button>
+          <button class="joule-chip" onclick="jouleThucThiLenh('SWITCH_EN')">🌐 Chuyển Quote EN</button>
+          <button class="joule-chip" onclick="jouleThucThiLenh('SWITCH_PI')">⚡ Bật chế độ PI</button>
+          <button class="joule-chip" onclick="jouleThucThiLenh('EXPORT_PDF')">🖨️ Xuất PDF ngay</button>
+          <button class="joule-chip" onclick="jouleThucThiLenh('SAVE_CLOUD')">☁️ Lưu Cloud</button>
+          <button class="joule-chip" onclick="jouleThucThiLenh('SUMMARY')">📊 Tóm tắt đơn hiện tại</button>
+        </div>
+      </div>
+
+      <div class="joule-footer">
+        <div class="joule-input-box">
+          <input type="text" id="jouleInputText" placeholder="Message Joule..." onkeydown="if(event.key==='Enter') guiTinNhanJoule()">
+          <button class="joule-send-btn" onclick="guiTinNhanJoule()"><i class="mdi mdi-send" style="font-size:13px;"></i></button>
+        </div>
+        <div style="text-align:center;font-size:10px;color:var(--sap-muted);margin-top:5px;">
+          Joule uses AI. Verify results.
+        </div>
+      </div>
+    </aside>
+
   </div>
 
   <!-- THANH CHUYỂN TAB MOBILE -->
   <div class="mobile-bottom-nav" id="mobileBottomNav">
     <button class="mob-nav-btn active" id="mobBtnForm" onclick="chuyenTabMobile('FORM')">📝 1. Soạn Đơn</button>
-    <button class="mob-nav-btn" id="mobBtnPreview" onclick="chuyenTabMobile('PREVIEW')">📄 2. Xem A4 & Tải PDF</button>
+    <button class="mob-nav-btn" id="mobBtnPreview" onclick="chuyenTabMobile('PREVIEW')">📄 2. Xem A4 &amp; Tải PDF</button>
+  </div>
+
+  <!-- HỘP XÁC NHẬN 1 CHẠM KHI TRÌNH DUYỆT YÊU CẦU MỞ KHAY CHỌN APP -->
+  <div id="quickShareConfirmModal">
+    <div class="quick-share-card">
+      <div style="font-size:15px;font-weight:800;color:#0f172a;margin-bottom:6px;">📎 File PDF &amp; Nội Dung Đã Sẵn Sàng!</div>
+      <div id="quickShareInfoText" style="font-size:12px;color:#475569;margin-bottom:14px;line-height:1.4;"></div>
+      <button type="button" id="btnTriggerNativeShareNow" class="sap-btn sap-btn-accept" style="width:100%;padding:12px !important;margin-bottom:8px;">
+        📤 Chọn App Gửi Mail (Kèm PDF + Nội dung)
+      </button>
+      <button type="button" onclick="document.getElementById('quickShareConfirmModal').style.display='none'" class="sap-btn" style="background:#e2e8f0;color:#334155;">
+        Đóng
+      </button>
+    </div>
   </div>
 
   <div id="loading-overlay"><div class="spinner"></div><div class="loading-text">Đang xử lý...</div></div>
@@ -687,7 +1503,7 @@
   <script src="JS_State_CRUD.js"></script>
   <script src="JS_Render_PDF.js"></script>
 
-  <!-- SCRIPT TÍCH HỢP TOÀN DIỆN -->
+  <!-- SCRIPT TÍCH HỢP TOÀN DIỆN SAP HORIZON + LOGIC ERP -->
   <script>
     window.masterCache = { sp: {}, kh: {}, bank: {}, orders: {} };
     window.gioHang = [];
@@ -725,6 +1541,113 @@
     }
 
     // =====================================================
+    // 0. ĐIỀU KHIỂN MENU SAP SIDEBAR & TRỢ LÝ JOULE AI
+    // =====================================================
+    window.batTatMenuTraiSAP = function() {
+      const side = document.getElementById('sapSideNav');
+      if (side) side.classList.toggle('collapsed');
+    };
+
+    window.batTatJouleCopilot = function() {
+      const drawer = document.getElementById('sapJouleDrawer');
+      if (drawer) drawer.classList.toggle('open');
+    };
+
+    window.jouleThucThiLenh = function(cmd) {
+      const chat = document.getElementById('jouleChatBody');
+      const addMsg = (html) => {
+        if (!chat) return;
+        const d = document.createElement('div');
+        d.className = 'joule-msg';
+        d.innerHTML = html;
+        chat.appendChild(d);
+        chat.scrollTop = chat.scrollHeight;
+      };
+
+      if (cmd === 'NEW_ORDER') {
+        window.chuyenManHinhKapella('STUDIO');
+        window.taoDonMoi();
+        addMsg("✨ Đã khởi tạo đơn báo giá mới và làm sạch giỏ hàng.");
+      } else if (cmd === 'SWITCH_EN') {
+        window.chuyenManHinhKapella('STUDIO');
+        if (document.getElementById('chkIsPI')) document.getElementById('chkIsPI').checked = false;
+        window.doiCheDo('BG_EN');
+        addMsg("🌐 Đã chuyển sang chế độ <b>Quotation Quốc Tế (EN)</b> — Đơn giá cố định theo <b>Currency/CTN</b>.");
+      } else if (cmd === 'SWITCH_PI') {
+        window.chuyenManHinhKapella('STUDIO');
+        if (document.getElementById('chkIsPI')) document.getElementById('chkIsPI').checked = true;
+        window.doiCheDo('BG_EN');
+        addMsg("⚡ Đã bật chế độ <b>Proforma Invoice (PI)</b> kèm thông tin thanh toán ngân hàng T/T.");
+      } else if (cmd === 'EXPORT_PDF') {
+        addMsg("🖨️ Đang kết xuất file PDF chuẩn khổ A4 (kèm Watermark)...");
+        window.xuatPDF(false);
+      } else if (cmd === 'SAVE_CLOUD') {
+        addMsg("☁️ Đang đồng bộ đơn hàng hiện tại lên Firebase Firestore...");
+        window.luuVaoAppSheet();
+      } else if (cmd === 'SUMMARY') {
+        const ma = document.getElementById('inMa')?.value || 'QUO-2026-001';
+        const kh = document.getElementById('inKhach')?.value || 'Chưa nhập tên khách';
+        const soSP = window.gioHang.length;
+        let tong = 0;
+        window.gioHang.forEach(i => { tong += (Number(i.sl) || 0) * (Number(i.gia) || 0); });
+        addMsg(`📊 <b>Tóm tắt chứng từ [${escapeHtml(ma)}]:</b><br>• Khách hàng: <b>${escapeHtml(kh)}</b><br>• Số mặt hàng: <b>${soSP} SP</b><br>• Tổng giá trị: <b>${tong.toLocaleString('en-US')}</b>`);
+      }
+    };
+
+    window.guiTinNhanJoule = function() {
+      const inp = document.getElementById('jouleInputText');
+      const txt = inp?.value.trim();
+      if (!txt) return;
+      inp.value = '';
+      const chat = document.getElementById('jouleChatBody');
+      if (chat) {
+        const u = document.createElement('div');
+        u.className = 'joule-msg';
+        u.style.background = '#ece3ff';
+        u.style.fontWeight = '700';
+        u.innerText = '🧑‍💼 ' + txt;
+        chat.appendChild(u);
+      }
+      const lower = txt.toLowerCase();
+      if (lower.includes('pdf') || lower.includes('tải') || lower.includes('in')) {
+        window.jouleThucThiLenh('EXPORT_PDF');
+      } else if (lower.includes('lưu') || lower.includes('cloud')) {
+        window.jouleThucThiLenh('SAVE_CLOUD');
+      } else if (lower.includes('mới') || lower.includes('tạo')) {
+        window.jouleThucThiLenh('NEW_ORDER');
+      } else if (lower.includes('pi')) {
+        window.jouleThucThiLenh('SWITCH_PI');
+      } else {
+        window.jouleThucThiLenh('SUMMARY');
+      }
+    };
+
+    // Hàm hỗ trợ Copy tự động Email khách hàng vào bộ nhớ tạm
+    window.copyTextToClipboard = async function(text) {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch (e) {}
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try {
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        return true;
+      } catch (err) {
+        document.body.removeChild(ta);
+        return false;
+      }
+    };
+
+    // =====================================================
     // 1. XỬ LÝ ẢNH HD & TÁCH NỀN TRẮNG CHO WATERMARK (100% HIỆN LÊN PDF)
     // =====================================================
     function docFileAnhSangBase64(file, maxWidth, keepPng, callback) {
@@ -752,7 +1675,6 @@
       reader.readAsDataURL(file);
     }
 
-    // Hàm xử lý Watermark chuyên dụng: Tự động lọc bỏ nền trắng của file JPG/PNG và đặt độ đậm chuẩn
     function taoWatermarkTachNenTrang(srcDataUrl, opacityPercent, callback) {
       if (!srcDataUrl) return;
       const img = new Image();
@@ -785,10 +1707,8 @@
           if (a < 10) {
             data[i + 3] = 0;
           } else if (r > 238 && g > 238 && b > 238) {
-            // Điểm ảnh màu trắng nền JPG -> biến thành trong suốt 100%
             data[i + 3] = 0;
           } else {
-            // Điểm ảnh màu của Logo -> gán đúng độ đậm Watermark
             data[i + 3] = targetAlpha;
           }
         }
@@ -800,7 +1720,6 @@
       img.src = srcDataUrl;
     }
 
-    // 1.1. Logo Công ty
     window.loadLogo = function(input) {
       const file = input?.files?.[0];
       if (!file) return;
@@ -832,7 +1751,6 @@
       try { localStorage.removeItem('argon_saved_logo'); } catch (e) {}
     };
 
-    // 1.2. Watermark chìm
     window.loadWatermark = function(input) {
       const file = input?.files?.[0];
       if (!file) return;
@@ -894,7 +1812,6 @@
       } catch (e) {}
     };
 
-    // 1.3. Ảnh sản phẩm HD Lớn (Độ phân giải 700px)
     window.loadSpImage = function(input) {
       const file = input?.files?.[0];
       if (!file) return;
@@ -943,29 +1860,55 @@
     };
 
     // =====================================================
-    // 2. ĐIỀU HƯỚNG MÀN HÌNH & MOBILE
+    // 2. ĐIỀU HƯỚNG MÀN HÌNH & MOBILE FULL A4
     // =====================================================
+    window.tuDongZoomA4TrenMobile = function() {
+      const wrapper = document.getElementById('a4Wrapper');
+      const paper = document.getElementById('a4Paper');
+      if (!wrapper || !paper) return;
+
+      if (window.innerWidth <= 768) {
+        wrapper.style.transform = 'none';
+        const availWidth = Math.max(280, window.innerWidth - 14);
+        const scale = availWidth / 794;
+        paper.style.transform = `scale(${scale.toFixed(4)})`;
+        paper.style.transformOrigin = 'top left';
+
+        const actualHeight = Math.max(1123, paper.scrollHeight);
+        wrapper.style.width = `${availWidth}px`;
+        wrapper.style.height = `${Math.ceil(actualHeight * scale) + 16}px`;
+      } else {
+        paper.style.transform = 'none';
+        wrapper.style.width = '';
+        wrapper.style.height = '';
+        const zoomSelect = document.getElementById('zoomSelectBox');
+        const val = zoomSelect ? zoomSelect.value : '1';
+        wrapper.style.transform = `scale(${val})`;
+        wrapper.style.transformOrigin = 'top center';
+      }
+    };
+
     window.chuyenTabMobile = function(subTab) {
       currentMobileSubTab = subTab;
       const panelLeft = document.querySelector('#viewStudio .panel-left');
       const panelRight = document.querySelector('#viewStudio .panel-right');
       const btnForm = document.getElementById('mobBtnForm');
       const btnPreview = document.getElementById('mobBtnPreview');
-      const isMobile = window.innerWidth <= 768;
 
       if (!panelLeft || !panelRight) return;
-      if (!isMobile) {
+      if (window.innerWidth > 768) {
         panelLeft.style.display = '';
         panelRight.style.display = '';
+        window.tuDongZoomA4TrenMobile();
         return;
       }
 
       if (subTab === 'PREVIEW') {
         panelLeft.style.display = 'none';
-        panelRight.style.display = 'block';
+        panelRight.style.display = 'flex';
         btnForm?.classList.remove('active');
         btnPreview?.classList.add('active');
-        tuDongZoomA4TrenMobile();
+        setTimeout(window.tuDongZoomA4TrenMobile, 50);
       } else {
         panelLeft.style.display = 'block';
         panelRight.style.display = 'none';
@@ -973,20 +1916,6 @@
         btnPreview?.classList.remove('active');
       }
     };
-
-    function tuDongZoomA4TrenMobile() {
-      const wrapper = document.getElementById('a4Wrapper');
-      if (!wrapper) return;
-      if (window.innerWidth <= 768) {
-        const scale = Math.min(1, (window.innerWidth - 20) / 794);
-        wrapper.style.transform = `scale(${scale.toFixed(2)})`;
-        wrapper.style.transformOrigin = 'top center';
-      } else {
-        const zoomSelect = document.getElementById('zoomSelectBox');
-        const val = zoomSelect ? zoomSelect.value : '1';
-        wrapper.style.transform = `scale(${val})`;
-      }
-    }
 
     window.addEventListener('resize', () => {
       if (currentMainTab === 'STUDIO') window.chuyenTabMobile(currentMobileSubTab);
@@ -1000,22 +1929,31 @@
       const mobNav = document.getElementById('mobileBottomNav');
 
       [dashScreen, studioScreen, masterScreen].forEach(s => { if (s) s.style.display = 'none'; });
-      ['tabBtnDash', 'tabBtnStudio', 'tabBtnMaster'].forEach(id => document.getElementById(id)?.classList.remove('active'));
+      ['tabBtnDash', 'tabBtnStudio', 'tabBtnMaster', 'segBtnDash', 'segBtnStudio', 'segBtnMaster'].forEach(id => {
+        document.getElementById(id)?.classList.remove('active');
+      });
 
       if (tab === 'DASH' && dashScreen) {
         dashScreen.style.display = 'block';
         document.getElementById('tabBtnDash')?.classList.add('active');
+        document.getElementById('segBtnDash')?.classList.add('active');
         if (mobNav) mobNav.style.setProperty('display', 'none', 'important');
         renderKapellaDashboard();
       } else if (tab === 'STUDIO' && studioScreen) {
         studioScreen.style.display = 'flex';
         document.getElementById('tabBtnStudio')?.classList.add('active');
+        document.getElementById('segBtnStudio')?.classList.add('active');
         if (mobNav) mobNav.style.display = '';
         window.chuyenTabMobile(currentMobileSubTab);
       } else if (tab === 'MASTER' && masterScreen) {
         masterScreen.style.display = 'block';
         document.getElementById('tabBtnMaster')?.classList.add('active');
+        document.getElementById('segBtnMaster')?.classList.add('active');
         if (mobNav) mobNav.style.setProperty('display', 'none', 'important');
+      }
+
+      if (window.innerWidth <= 1024) {
+        document.getElementById('sapSideNav')?.classList.add('collapsed');
       }
     };
 
@@ -1024,10 +1962,21 @@
     // =====================================================
     window.doiCheDo = function(mode) {
       window.cheDoHienTai = mode;
-      ['btnBG_VN', 'btnBG_EN', 'btnXK'].forEach(id => document.getElementById(id)?.classList.remove('active'));
-      if (mode === 'BG_VN') document.getElementById('btnBG_VN')?.classList.add('active');
-      if (mode === 'BG_EN') document.getElementById('btnBG_EN')?.classList.add('active');
-      if (mode === 'XK') document.getElementById('btnXK')?.classList.add('active');
+      ['btnBG_VN', 'btnBG_EN', 'btnXK', 'sideModeVN', 'sideModeEN', 'sideModeXK'].forEach(id => {
+        document.getElementById(id)?.classList.remove('active');
+      });
+      if (mode === 'BG_VN') {
+        document.getElementById('btnBG_VN')?.classList.add('active');
+        document.getElementById('sideModeVN')?.classList.add('active');
+      }
+      if (mode === 'BG_EN') {
+        document.getElementById('btnBG_EN')?.classList.add('active');
+        document.getElementById('sideModeEN')?.classList.add('active');
+      }
+      if (mode === 'XK') {
+        document.getElementById('btnXK')?.classList.add('active');
+        document.getElementById('sideModeXK')?.classList.add('active');
+      }
 
       const isEN = (mode === 'BG_EN');
       const isXK = (mode === 'XK');
@@ -1055,7 +2004,7 @@
       const sysTen = document.getElementById('sysTen');
       if (sysTen) sysTen.innerText = isEN ? 'GOODS LINK JOINT STOCK COMPANY' : 'CÔNG TY CỔ PHẦN GOODS LINK';
       const sysDiaChi = document.getElementById('sysDiaChi');
-      if (sysDiaChi) sysDiaChi.innerText = isEN ? '157/59/2T2 Duong Ba Trac Str, Chanh Hung Ward, Ho Chi Minh City, Vietnam' : 'Số 157/59/2T2 Dương Bá Trạc, Phường Chánh Hưng, TP. Hồ Chí Minh, Việt Nam';
+      if (sysDiaChi) sysDiaChi.innerText = isEN ? 'Ho Chi Minh City, Vietnam' : 'TP. Hồ Chí Minh, Việt Nam';
 
       const signTitle = document.getElementById('signTitleName');
       const signSub = document.getElementById('signSubText');
@@ -1219,7 +2168,7 @@
 
       // 1. Bảng Mini bên trái
       if (window.gioHang.length === 0) {
-        miniBody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--argon-muted);">Chưa có sản phẩm</td></tr>';
+        miniBody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--sap-muted);">Chưa có sản phẩm</td></tr>';
       } else {
         miniBody.innerHTML = '';
         window.gioHang.forEach((item, idx) => {
@@ -1230,10 +2179,10 @@
               <td>${item.sl} ${escapeHtml(item.dvt)}</td>
               <td>${item.anh ? `<img src="${item.anh}" style="height:40px;width:44px;object-fit:cover;border-radius:4px;border:1px solid #cbd5e1;background:#fff;">` : '<span style="color:#cbd5e1;font-size:10px;">Trống</span>'}</td>
               <td style="text-align:right; white-space:nowrap;">
-                <button type="button" onclick="diChuyenGio(${idx}, -1)" style="background:#e2e8f0; border:none; padding:2px 5px; border-radius:3px; font-size:10px; cursor:pointer;">↑</button>
-                <button type="button" onclick="diChuyenGio(${idx}, 1)" style="background:#e2e8f0; border:none; padding:2px 5px; border-radius:3px; font-size:10px; cursor:pointer;">↓</button>
-                <button type="button" onclick="suaSanPhamTrongGio(${idx})" style="background:#f59e0b; color:#fff; border:none; padding:2px 6px; border-radius:3px; font-size:10px; cursor:pointer;">Sửa</button>
-                <button type="button" onclick="xoaKhoiGio(${idx})" style="background:#ef4444; color:#fff; border:none; padding:2px 6px; border-radius:3px; font-size:10px; cursor:pointer;">Xóa</button>
+                <button type="button" onclick="diChuyenGio(${idx}, -1)" style="background:#e8f3ff; color:#0064d9; border:1px solid #b8daff; padding:2px 6px; border-radius:10px; font-size:10px; cursor:pointer;">↑</button>
+                <button type="button" onclick="diChuyenGio(${idx}, 1)" style="background:#e8f3ff; color:#0064d9; border:1px solid #b8daff; padding:2px 6px; border-radius:10px; font-size:10px; cursor:pointer;">↓</button>
+                <button type="button" onclick="suaSanPhamTrongGio(${idx})" style="background:#fff8f1; color:#e76500; border:1px solid #e76500; padding:2px 7px; border-radius:10px; font-size:10px; font-weight:700; cursor:pointer;">Sửa</button>
+                <button type="button" onclick="xoaKhoiGio(${idx})" style="background:#fff1f1; color:#aa0808; border:1px solid #aa0808; padding:2px 7px; border-radius:10px; font-size:10px; font-weight:700; cursor:pointer;">Xóa</button>
               </td>
             </tr>`;
         });
@@ -1317,7 +2266,6 @@
             ${showImage ? '<th width="175">PHOTO</th>' : ''}
           `;
         } else {
-          // Tiêu đề khung xanh cố định PRICE (Tiền tệ/CTN) theo đúng yêu cầu
           headerRow.innerHTML = `
             <th width="38">NO.</th>
             <th>DESCRIPTION</th>
@@ -1346,7 +2294,6 @@
                   ${showImage ? `<td style="text-align:center;vertical-align:middle;padding:8px;">${item.anh ? `<img src="${item.anh}" class="pdf-product-img">` : ''}</td>` : ''}
                 </tr>`;
             } else {
-              // Chỉ hiển thị con số đơn giá, bỏ hoàn toàn USD/TRÁI bên dưới
               preTable.innerHTML += `
                 <tr>
                   <td style="text-align:center;font-weight:700;vertical-align:middle;">${idx + 1}</td>
@@ -1413,6 +2360,10 @@
         }
         if (boxWords) boxWords.style.display = 'none';
       }
+
+      if (window.innerWidth <= 768) {
+        setTimeout(window.tuDongZoomA4TrenMobile, 60);
+      }
     };
 
     window.updatePreview = function() {
@@ -1454,8 +2405,12 @@
         }
       }
 
-      document.getElementById('preMa').innerText = document.getElementById('inMa')?.value || 'QUO-2026-001';
+      const maVal = document.getElementById('inMa')?.value || 'QUO-2026-001';
+      document.getElementById('preMa').innerText = maVal;
       document.getElementById('preNgay').innerText = document.getElementById('inNgay')?.value || new Date().toLocaleDateString('vi-VN');
+
+      const bc = document.getElementById('sapShellBreadcrumb');
+      if (bc) bc.innerText = `Custom Morning Horizon — Chứng từ: ${maVal}`;
 
       const validVal = document.getElementById('inValidUntil')?.value.trim() || '';
       const prepVal = document.getElementById('inPreparedBy')?.value.trim() || '';
@@ -1649,13 +2604,13 @@
           tbody.innerHTML = '';
           filtered.forEach(o => {
             const ma = o.maDon || '';
-            let badge = '<span style="background:#dcfce7;color:#15803d;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;">🇻🇳 Báo Giá VN</span>';
+            let badge = '<span style="background:#f1fdf6;color:#256f3a;border:1px solid #256f3a;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;">🇻🇳 Báo Giá VN</span>';
             if (o.cheDo === 'BG_EN') {
               badge = o.isPI
-                ? '<span style="background:#fef3c7;color:#b45309;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;">🌐 Proforma Invoice</span>'
-                : '<span style="background:#e0f2fe;color:#0369a1;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;">🌐 Quotation EN</span>';
+                ? '<span style="background:#fff8f1;color:#e76500;border:1px solid #e76500;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;">🌐 Proforma Invoice</span>'
+                : '<span style="background:#e8f3ff;color:#0064d9;border:1px solid #0064d9;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;">🌐 Quotation EN</span>';
             } else if (o.cheDo === 'XK') {
-              badge = '<span style="background:#f3e8ff;color:#6b21a8;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;">📦 Xuất Kho</span>';
+              badge = '<span style="background:#f3e8ff;color:#6b21a8;border:1px solid #6b21a8;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;">📦 Xuất Kho</span>';
             }
 
             tbody.innerHTML += `
@@ -1665,8 +2620,8 @@
                 <td style="padding:10px 8px;font-weight:600;color:#1e293b;">${escapeHtml(o.tenKhach || '...')} <span style="color:#64748b;font-size:11px;font-weight:400;">(${(o.gioHang || []).length} SP)</span></td>
                 <td style="padding:10px 8px;color:#475569;">${escapeHtml(o.ngayLap || '')}</td>
                 <td style="padding:10px 8px;text-align:right;white-space:nowrap;">
-                  <button onclick="taiDonTuApp('${escapeHtml(ma)}')" style="background:#464dee;color:#fff;border:none;padding:5px 10px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;margin-right:4px;">📂 Mở đơn</button>
-                  <button onclick="xoaDonTrongApp('${escapeHtml(ma)}')" style="background:#ef4444;color:#fff;border:none;padding:5px 10px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;">🗑️ Xóa</button>
+                  <button onclick="taiDonTuApp('${escapeHtml(ma)}')" class="sap-btn sap-btn-emphasized" style="padding:4px 10px !important;font-size:11px !important;margin-right:4px;">📂 Mở đơn</button>
+                  <button onclick="xoaDonTrongApp('${escapeHtml(ma)}')" class="sap-btn sap-btn-reject" style="padding:4px 10px !important;font-size:11px !important;">🗑️ Xóa</button>
                 </td>
               </tr>`;
           });
@@ -1682,7 +2637,7 @@
             labels: ['Quốc Tế (Quote/PI)', 'Báo Giá Nội Địa (VN)', 'Phiếu Xuất Kho'],
             datasets: [{
               data: (total === 0) ? [1, 1, 1] : [countEN, countBGVN, countXK],
-              backgroundColor: ['#0ddbb9', '#f6881f', '#464dee'],
+              backgroundColor: ['#256f3a', '#e76500', '#0064d9'],
               borderWidth: 0
             }]
           },
@@ -1751,54 +2706,74 @@
     };
 
     // =====================================================
-    // 6. TẢI PDF & GỬI MAIL (ĐÓNG DẤU TRỰC TIẾP WATERMARK LÊN MỌI TRANG PDF)
+    // 6. XUẤT FULL A4 PDF (KHÔNG BỊ CẮT LỀ) & GỬI MAIL KÈM PDF
     // =====================================================
-    window.xuatPDF = async function() {
+    window.xuatPDF = async function(khongTaiXuong = false) {
       const paper = document.getElementById('a4Paper');
-      const wrapper = document.getElementById('a4Wrapper');
-      const panelRight = document.querySelector('#viewStudio .panel-right');
       const wmImg = document.getElementById('watermarkImg');
-      if (!paper) { alert("❌ Không tìm thấy khung giấy A4!"); return; }
+      const overlay = document.getElementById('loading-overlay');
+
+      if (!paper) {
+        alert("❌ Không tìm thấy khung giấy A4!");
+        return null;
+      }
+
+      if (overlay) {
+        overlay.style.display = 'flex';
+        overlay.style.background = 'rgba(15, 23, 42, 0.92)';
+        overlay.style.zIndex = '99999';
+      }
 
       const maDon = document.getElementById('inMa')?.value.trim() || 'BAO-GIA';
-      const oldTransform = wrapper ? wrapper.style.transform : '';
-      const oldPanelDisplay = panelRight ? panelRight.style.display : '';
-      const wmSrc = window.processedWatermarkBase64 || (wmImg && wmImg.src && wmImg.src.startsWith('data:image') ? wmImg.src : '');
+      const fileName = `${maDon}.pdf`;
 
-      if (panelRight && panelRight.style.display === 'none') panelRight.style.display = 'block';
-      if (wrapper) wrapper.style.transform = 'scale(1)';
+      const tempStage = document.createElement('div');
+      tempStage.style.cssText = 'position:fixed; top:0; left:0; width:794px; background:#ffffff; z-index:99990; margin:0; padding:0; overflow:visible; pointer-events:none;';
 
-      // Tạm ẩn thẻ #watermarkImg trong DOM lúc chụp để tránh nhân đôi, sau đó dùng jsPDF đóng dấu PNG trong suốt chính xác 100% lên giữa trang PDF
-      const oldWmDisplay = wmImg ? wmImg.style.display : '';
-      if (wmImg && wmSrc) wmImg.style.setProperty('display', 'none', 'important');
+      const clonePaper = paper.cloneNode(true);
+      clonePaper.style.cssText = 'width:794px !important; min-width:794px !important; max-width:794px !important; min-height:1122px !important; margin:0 !important; transform:none !important; box-shadow:none !important; position:relative !important; left:0 !important; top:0 !important; background:#ffffff !important;';
+
+      const cloneWm = clonePaper.querySelector('#watermarkImg');
+      if (cloneWm) cloneWm.style.setProperty('display', 'none', 'important');
+
+      tempStage.appendChild(clonePaper);
+      document.body.appendChild(tempStage);
+
+      await new Promise(r => setTimeout(r, 120));
 
       try {
         const opt = {
           margin: 0,
-          filename: `${maDon}.pdf`,
+          filename: fileName,
           image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff', scrollY: 0 },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            x: 0,
+            y: 0,
+            scrollX: 0,
+            scrollY: 0,
+            width: 794,
+            windowWidth: 794
+          },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        const worker = html2pdf().set(opt).from(paper).toPdf();
+        const worker = html2pdf().set(opt).from(clonePaper).toPdf();
         const pdf = await worker.get('pdf');
 
+        // Đóng dấu Watermark chính giữa mọi trang PDF
+        const wmSrc = window.processedWatermarkBase64 || (wmImg && wmImg.src && wmImg.src.startsWith('data:image') ? wmImg.src : '');
         if (wmSrc) {
           const totalPages = pdf.internal.getNumberOfPages();
-          const pageW = pdf.internal.pageSize.getWidth();   // 210mm
-          const pageH = pdf.internal.pageSize.getHeight();  // 297mm
-
-          // Tính tỷ lệ khung ảnh Watermark để không bị méo trên trang A4
+          const pageW = pdf.internal.pageSize.getWidth();
+          const pageH = pdf.internal.pageSize.getHeight();
           const tempImg = new Image();
-          await new Promise(resolve => {
-            tempImg.onload = resolve;
-            tempImg.onerror = resolve;
-            tempImg.src = wmSrc;
-          });
-          const maxWmW = 125; // rộng 125mm giữa trang A4
+          await new Promise(res => { tempImg.onload = res; tempImg.onerror = res; tempImg.src = wmSrc; });
+          const wmW = 125;
           const ratio = (tempImg.width && tempImg.height) ? (tempImg.height / tempImg.width) : 1;
-          const wmW = maxWmW;
           const wmH = Math.min(160, Math.round(wmW * ratio));
           const xPos = (pageW - wmW) / 2;
           const yPos = (pageH - wmH) / 2;
@@ -1809,13 +2784,29 @@
           }
         }
 
-        pdf.save(`${maDon}.pdf`);
+        const pdfBlob = pdf.output('blob');
+
+        if (!khongTaiXuong) {
+          const blobUrl = URL.createObjectURL(pdfBlob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 8000);
+          hienToast("✅ Đã tải xuống file PDF: " + fileName);
+        }
+
+        return pdfBlob;
       } catch (err) {
         alert("❌ Lỗi khi tải PDF: " + err.message);
+        return null;
       } finally {
-        if (wmImg && wmSrc) wmImg.style.setProperty('display', oldWmDisplay || 'block', 'important');
-        if (wrapper) wrapper.style.transform = oldTransform;
-        if (panelRight) panelRight.style.display = oldPanelDisplay;
+        if (tempStage && tempStage.parentNode) {
+          tempStage.parentNode.removeChild(tempStage);
+        }
+        if (overlay) overlay.style.display = 'none';
       }
     };
 
@@ -1827,18 +2818,80 @@
         return;
       }
 
-      window.datLaiNoiDungMacDinh(false);
+      if (!document.getElementById('inEmailSubject')?.value.trim() || !document.getElementById('inEmailBody')?.value.trim()) {
+        window.datLaiNoiDungMacDinh(false);
+      }
 
-      const subject = document.getElementById('inEmailSubject')?.value.trim();
-      const bodyMsg = document.getElementById('inEmailBody')?.value.trim();
+      const subject = document.getElementById('inEmailSubject')?.value.trim() || 'Quotation';
+      const bodyMsg = document.getElementById('inEmailBody')?.value.trim() || '';
       const maDon = document.getElementById('inMa')?.value.trim() || 'BAO-GIA';
+      const fileName = `${maDon}.pdf`;
+      const selectedApp = document.getElementById('inMailAppSelect')?.value || 'SHARE_PDF';
 
-      hienToast("⏳ Đang tự động xuất file PDF để đính kèm vào Gmail...");
-      await window.xuatPDF();
+      await window.copyTextToClipboard(email);
 
-      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
-      window.open(gmailUrl, '_blank');
-      alert(`✅ Hệ thống đã tự động tải file "${maDon}.pdf" về máy và mở cửa sổ Gmail!\n\n👉 Bạn chỉ cần kéo file "${maDon}.pdf" ở góc thanh tải xuống của trình duyệt thả vào cửa sổ Gmail để gửi đi.`);
+      if (selectedApp === 'SHARE_PDF') {
+        const pdfBlob = await window.xuatPDF(true);
+        if (!pdfBlob) return;
+
+        const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+        const canShareFile = !!(navigator.canShare && navigator.canShare({ files: [pdfFile] }));
+
+        if (canShareFile) {
+          const shareData = {
+            files: [pdfFile],
+            title: subject,
+            text: bodyMsg
+          };
+
+          try {
+            hienToast("📋 Đã tự copy Email nhận (" + email + ") — Chỉ cần Dán vào ô Người nhận!");
+            await navigator.share(shareData);
+            return;
+          } catch (err) {
+            if (err.name === 'AbortError') return;
+            const modal = document.getElementById('quickShareConfirmModal');
+            const infoText = document.getElementById('quickShareInfoText');
+            const btnNow = document.getElementById('btnTriggerNativeShareNow');
+            if (modal && btnNow) {
+              if (infoText) {
+                infoText.innerHTML = `Đã đóng gói <b>${escapeHtml(fileName)}</b> kèm nội dung thư.<br>📋 Đã tự copy sẵn người nhận: <b>${escapeHtml(email)}</b> (chỉ cần bấm Dán ở ô To).`;
+              }
+              btnNow.onclick = async function() {
+                modal.style.display = 'none';
+                await window.copyTextToClipboard(email);
+                try {
+                  await navigator.share(shareData);
+                } catch (e) {}
+              };
+              modal.style.display = 'flex';
+              return;
+            }
+          }
+        } else {
+          const blobUrl = URL.createObjectURL(pdfBlob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          const gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
+          window.open(gmailWebUrl, '_blank');
+          return;
+        }
+      }
+
+      await window.xuatPDF(false);
+
+      if (selectedApp === 'GMAIL_APP') {
+        window.location.href = `googlegmail:///co?to=${encodeURIComponent(email)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
+      } else if (selectedApp === 'MAILTO_DEFAULT') {
+        window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
+      } else {
+        const gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
+        window.open(gmailWebUrl, '_blank');
+      }
     };
 
     // =====================================================
@@ -2040,12 +3093,12 @@
                     </div>
                   </div>
                 </td>
-                <td style="padding:8px; vertical-align:top; font-weight:700; color:#0d9488;">
+                <td style="padding:8px; vertical-align:top; font-weight:700; color:var(--sap-success);">
                   ${gia.toLocaleString('vi-VN')}<br><span style="font-size:11px; color:#64748b;">ĐVT: ${escapeHtml(dvt)}</span>
                 </td>
                 <td style="padding:8px; text-align:right; vertical-align:top; white-space:nowrap;">
-                  <button onclick="suaSanPham('${escapeHtml(docId)}')" style="background:#f59e0b; color:#fff; border:none; padding:4px 7px; border-radius:4px; font-size:11px; cursor:pointer; margin-right:3px;">Sửa</button>
-                  <button onclick="xoaFirestore('Database', '${escapeHtml(docId)}', 'Sản phẩm')" style="background:#ef4444; color:#fff; border:none; padding:4px 7px; border-radius:4px; font-size:11px; cursor:pointer;">Xóa</button>
+                  <button onclick="suaSanPham('${escapeHtml(docId)}')" style="background:#fff8f1; color:#e76500; border:1px solid #e76500; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; margin-right:3px;">Sửa</button>
+                  <button onclick="xoaFirestore('Database', '${escapeHtml(docId)}', 'Sản phẩm')" style="background:#fff1f1; color:#aa0808; border:1px solid #aa0808; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer;">Xóa</button>
                 </td>
               </tr>`;
           }
@@ -2074,12 +3127,12 @@
             tableKH.innerHTML += `
               <tr style="border-bottom:1px solid #f1f5f9;">
                 <td style="padding:8px; vertical-align:top;">
-                  <div style="font-weight:700; color:#1e40af;">${escapeHtml(ten)}</div>
+                  <div style="font-weight:700; color:var(--sap-brand);">${escapeHtml(ten)}</div>
                   ${info ? `<div style="color:#475569; font-size:11px; white-space:pre-line; margin-top:3px;">📍 ${escapeHtml(info)}</div>` : `<div style="color:#94a3b8; font-size:11px; font-style:italic;">(Chưa có thông tin liên hệ)</div>`}
                 </td>
                 <td style="padding:8px; text-align:right; vertical-align:top; white-space:nowrap;">
-                  <button onclick="suaKhachHang('${escapeHtml(docId)}')" style="background:#f59e0b; color:#fff; border:none; padding:4px 7px; border-radius:4px; font-size:11px; cursor:pointer; margin-right:3px;">Sửa</button>
-                  <button onclick="xoaFirestore('KhachHang', '${escapeHtml(docId)}', 'Khách hàng')" style="background:#ef4444; color:#fff; border:none; padding:4px 7px; border-radius:4px; font-size:11px; cursor:pointer;">Xóa</button>
+                  <button onclick="suaKhachHang('${escapeHtml(docId)}')" style="background:#fff8f1; color:#e76500; border:1px solid #e76500; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; margin-right:3px;">Sửa</button>
+                  <button onclick="xoaFirestore('KhachHang', '${escapeHtml(docId)}', 'Khách hàng')" style="background:#fff1f1; color:#aa0808; border:1px solid #aa0808; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer;">Xóa</button>
                 </td>
               </tr>`;
           }
@@ -2108,14 +3161,14 @@
             tableBank.innerHTML += `
               <tr style="border-bottom:1px solid #f1f5f9;">
                 <td style="padding:8px; vertical-align:top;">
-                  <div style="font-weight:700; color:#c2410c;">🏦 ${escapeHtml(bName)}</div>
+                  <div style="font-weight:700; color:var(--sap-warning);">🏦 ${escapeHtml(bName)}</div>
                   <div style="color:#0f172a; font-size:11.5px;">👤 <b>Chủ TK:</b> ${escapeHtml(accName || '---')}</div>
                   <div style="color:#0f172a; font-size:11.5px;">💳 <b>Số TK:</b> ${escapeHtml(accNo)}</div>
                   <div style="color:#475569; font-size:11px;">🌐 <b>Swift:</b> ${escapeHtml(swift || '---')}</div>
                 </td>
                 <td style="padding:8px; text-align:right; vertical-align:top; white-space:nowrap;">
-                  <button onclick="suaBank('${escapeHtml(docId)}')" style="background:#f59e0b; color:#fff; border:none; padding:4px 7px; border-radius:4px; font-size:11px; cursor:pointer; margin-right:3px;">Sửa</button>
-                  <button onclick="xoaFirestore('DM_Bank', '${escapeHtml(docId)}', 'Ngân hàng')" style="background:#ef4444; color:#fff; border:none; padding:4px 7px; border-radius:4px; font-size:11px; cursor:pointer;">Xóa</button>
+                  <button onclick="suaBank('${escapeHtml(docId)}')" style="background:#fff8f1; color:#e76500; border:1px solid #e76500; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; margin-right:3px;">Sửa</button>
+                  <button onclick="xoaFirestore('DM_Bank', '${escapeHtml(docId)}', 'Ngân hàng')" style="background:#fff1f1; color:#aa0808; border:1px solid #aa0808; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer;">Xóa</button>
                 </td>
               </tr>`;
           }
@@ -2250,10 +3303,12 @@
       } catch (e) {}
     }
 
-    // Khởi chạy toàn bộ khi mở trang (chạy cả ở DOMContentLoaded và sau window.onload để không bị file JS cũ ghi đè)
     window.addEventListener('DOMContentLoaded', () => {
       if (document.getElementById('inNgay') && !document.getElementById('inNgay').value) {
         document.getElementById('inNgay').value = new Date().toLocaleDateString('vi-VN');
+      }
+      if (window.innerWidth <= 1024) {
+        document.getElementById('sapSideNav')?.classList.add('collapsed');
       }
       khoiPhucLogoVaWatermarkTuBoNho();
       taiDuLieuMasterTuFirestore();
@@ -2267,384 +3322,6 @@
         khoiPhucLogoVaWatermarkTuBoNho();
       }, 200);
     });
-  </script>
-<!-- BẢN VÁ CHUẨN: PDF FULL A4 + CHỌN APP GỬI MAIL + ĐÍNH KÈM TRỰC TIẾP PDF VÀO NỘI DUNG MAIL -->
-  <style>
-    @media screen and (max-width: 768px) {
-      #panelRightScroll {
-        padding: 10px 6px 95px 6px !important;
-        overflow-y: auto !important;
-        overflow-x: hidden !important;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        -webkit-overflow-scrolling: touch;
-      }
-      #a4Wrapper {
-        width: 100% !important;
-        margin: 0 auto !important;
-        padding: 0 !important;
-        overflow: hidden !important;
-        display: block !important;
-        transform: none !important;
-      }
-      #a4Paper {
-        width: 794px !important;
-        min-width: 794px !important;
-        min-height: 1123px !important;
-        transform-origin: top left !important;
-        margin: 0 !important;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18) !important;
-      }
-    }
-
-    /* Hộp xác nhận 1 chạm nếu trình duyệt Mobile yêu cầu xác nhận mở khay App */
-    #quickShareConfirmModal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.65);
-      z-index: 99999;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-    }
-    .quick-share-card {
-      background: #ffffff;
-      width: 100%;
-      max-width: 370px;
-      border-radius: 14px;
-      padding: 18px;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25);
-      text-align: center;
-    }
-  </style>
-
-  <!-- HỘP XÁC NHẬN 1 CHẠM KHI TRÌNH DUYỆT YÊU CẦU MỞ KHAY CHỌN APP -->
-  <div id="quickShareConfirmModal">
-    <div class="quick-share-card">
-      <div style="font-size:15px;font-weight:800;color:#0f172a;margin-bottom:6px;">📎 File PDF & Nội Dung Đã Sẵn Sàng!</div>
-      <div id="quickShareInfoText" style="font-size:12px;color:#475569;margin-bottom:14px;line-height:1.4;"></div>
-      <button type="button" id="btnTriggerNativeShareNow" style="width:100%;background:linear-gradient(87deg,#0d9488 0,#059669 100%);color:#fff;border:none;padding:12px;border-radius:8px;font-size:13.5px;font-weight:800;cursor:pointer;margin-bottom:8px;">
-        📤 Chọn App Gửi Mail (Kèm PDF + Nội dung)
-      </button>
-      <button type="button" onclick="document.getElementById('quickShareConfirmModal').style.display='none'" style="background:#e2e8f0;color:#334155;border:none;padding:7px 18px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">
-        Đóng
-      </button>
-    </div>
-  </div>
-
-  <script>
-    // Tự động chèn ô "Chọn App gửi mail" vào đầu Mục 4 (Cấu Hình Gửi Mail Khách Hàng)
-    function khoiTaoOChonAppMail() {
-      const emailInput = document.getElementById('inEmailKhach');
-      if (!emailInput || document.getElementById('inMailAppSelect')) return;
-
-      const parentGroup = emailInput.closest('.form-group');
-      if (!parentGroup) return;
-
-      const appSelectDiv = document.createElement('div');
-      appSelectDiv.className = 'form-group';
-      appSelectDiv.style.cssText = 'background:#f0fdf4;border:1px solid #bbf7d0;padding:8px 10px;border-radius:8px;margin-bottom:10px;';
-      appSelectDiv.innerHTML = `
-        <label style="color:#15803d;font-weight:800;font-size:11.5px;margin-bottom:4px;display:block;">
-          📲 Chọn App gửi Mail (Khi bấm nút Gửi Mail):
-        </label>
-        <select id="inMailAppSelect" style="width:100%;padding:6px 8px;border:1px solid #86efac;border-radius:6px;font-weight:700;color:#0f172a;background:#ffffff;">
-          <option value="SHARE_PDF">📎 Đính kèm thẳng File PDF + Nội dung (Chọn App: Gmail, Mail, Zalo...)</option>
-          <option value="GMAIL_APP">📲 Mở thẳng App Gmail (Điền sẵn Email nhận + Chủ đề + Nội dung)</option>
-          <option value="MAILTO_DEFAULT">✉️ Mở App Mail mặc định / Outlook (Điền sẵn Email + Chủ đề + Nội dung)</option>
-          <option value="GMAIL_WEB">💻 Mở Gmail Web trên máy tính (Điền sẵn Email + Chủ đề + Nội dung)</option>
-        </select>
-      `;
-      parentGroup.parentNode.insertBefore(appSelectDiv, parentGroup);
-    }
-
-    window.addEventListener('DOMContentLoaded', khoiTaoOChonAppMail);
-    khoiTaoOChonAppMail();
-
-    // Hàm hỗ trợ Copy tự động Email khách hàng vào bộ nhớ tạm
-    window.copyTextToClipboard = async function(text) {
-      try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(text);
-          return true;
-        }
-      } catch (e) {}
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.left = '-9999px';
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      try {
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        return true;
-      } catch (err) {
-        document.body.removeChild(ta);
-        return false;
-      }
-    };
-
-    // 1. Tự động co giãn tờ A4 vừa khít màn hình khi xem trên điện thoại
-    window.tuDongZoomA4TrenMobile = function() {
-      const wrapper = document.getElementById('a4Wrapper');
-      const paper = document.getElementById('a4Paper');
-      if (!wrapper || !paper) return;
-
-      if (window.innerWidth <= 768) {
-        wrapper.style.transform = 'none';
-        const availWidth = Math.max(280, window.innerWidth - 14);
-        const scale = availWidth / 794;
-        paper.style.transform = `scale(${scale.toFixed(4)})`;
-        paper.style.transformOrigin = 'top left';
-
-        const actualHeight = Math.max(1123, paper.scrollHeight);
-        wrapper.style.width = `${availWidth}px`;
-        wrapper.style.height = `${Math.ceil(actualHeight * scale) + 16}px`;
-      } else {
-        paper.style.transform = 'none';
-        wrapper.style.width = '';
-        wrapper.style.height = '';
-        const zoomSelect = document.getElementById('zoomSelectBox');
-        const val = zoomSelect ? zoomSelect.value : '1';
-        wrapper.style.transform = `scale(${val})`;
-        wrapper.style.transformOrigin = 'top center';
-      }
-    };
-
-    const _origRenderTable = window.renderTable;
-    window.renderTable = function() {
-      if (typeof _origRenderTable === 'function') _origRenderTable();
-      if (window.innerWidth <= 768) {
-        setTimeout(window.tuDongZoomA4TrenMobile, 60);
-      }
-    };
-
-    window.chuyenTabMobile = function(subTab) {
-      currentMobileSubTab = subTab;
-      const panelLeft = document.querySelector('#viewStudio .panel-left');
-      const panelRight = document.querySelector('#viewStudio .panel-right');
-      const btnForm = document.getElementById('mobBtnForm');
-      const btnPreview = document.getElementById('mobBtnPreview');
-
-      if (!panelLeft || !panelRight) return;
-      if (window.innerWidth > 768) {
-        panelLeft.style.display = '';
-        panelRight.style.display = '';
-        window.tuDongZoomA4TrenMobile();
-        return;
-      }
-
-      if (subTab === 'PREVIEW') {
-        panelLeft.style.display = 'none';
-        panelRight.style.display = 'flex';
-        btnForm?.classList.remove('active');
-        btnPreview?.classList.add('active');
-        setTimeout(window.tuDongZoomA4TrenMobile, 50);
-      } else {
-        panelLeft.style.display = 'block';
-        panelRight.style.display = 'none';
-        btnForm?.classList.add('active');
-        btnPreview?.classList.remove('active');
-      }
-    };
-
-    // 2. Hàm Xuất PDF chuẩn Full A4 (Đặt bản sao tại góc 0,0 rộng 794px để không bị cắt lề)
-    window.xuatPDF = async function(khongTaiXuong = false) {
-      const paper = document.getElementById('a4Paper');
-      const wmImg = document.getElementById('watermarkImg');
-      const overlay = document.getElementById('loading-overlay');
-
-      if (!paper) {
-        alert("❌ Không tìm thấy khung giấy A4!");
-        return null;
-      }
-
-      if (overlay) {
-        overlay.style.display = 'flex';
-        overlay.style.background = 'rgba(15, 23, 42, 0.92)';
-        overlay.style.zIndex = '99999';
-      }
-
-      const maDon = document.getElementById('inMa')?.value.trim() || 'BAO-GIA';
-      const fileName = `${maDon}.pdf`;
-
-      const tempStage = document.createElement('div');
-      tempStage.style.cssText = 'position:fixed; top:0; left:0; width:794px; background:#ffffff; z-index:99990; margin:0; padding:0; overflow:visible; pointer-events:none;';
-
-      const clonePaper = paper.cloneNode(true);
-      clonePaper.style.cssText = 'width:794px !important; min-width:794px !important; max-width:794px !important; min-height:1122px !important; margin:0 !important; transform:none !important; box-shadow:none !important; position:relative !important; left:0 !important; top:0 !important; background:#ffffff !important;';
-
-      const cloneWm = clonePaper.querySelector('#watermarkImg');
-      if (cloneWm) cloneWm.style.setProperty('display', 'none', 'important');
-
-      tempStage.appendChild(clonePaper);
-      document.body.appendChild(tempStage);
-
-      await new Promise(r => setTimeout(r, 120));
-
-      try {
-        const opt = {
-          margin: 0,
-          filename: fileName,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#ffffff',
-            x: 0,
-            y: 0,
-            scrollX: 0,
-            scrollY: 0,
-            width: 794,
-            windowWidth: 794
-          },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        const worker = html2pdf().set(opt).from(clonePaper).toPdf();
-        const pdf = await worker.get('pdf');
-
-        // Đóng dấu Watermark chính giữa mọi trang PDF
-        const wmSrc = window.processedWatermarkBase64 || (wmImg && wmImg.src && wmImg.src.startsWith('data:image') ? wmImg.src : '');
-        if (wmSrc) {
-          const totalPages = pdf.internal.getNumberOfPages();
-          const pageW = pdf.internal.pageSize.getWidth();
-          const pageH = pdf.internal.pageSize.getHeight();
-          const tempImg = new Image();
-          await new Promise(res => { tempImg.onload = res; tempImg.onerror = res; tempImg.src = wmSrc; });
-          const wmW = 125;
-          const ratio = (tempImg.width && tempImg.height) ? (tempImg.height / tempImg.width) : 1;
-          const wmH = Math.min(160, Math.round(wmW * ratio));
-          const xPos = (pageW - wmW) / 2;
-          const yPos = (pageH - wmH) / 2;
-
-          for (let i = 1; i <= totalPages; i++) {
-            pdf.setPage(i);
-            pdf.addImage(wmSrc, 'PNG', xPos, yPos, wmW, wmH, undefined, 'FAST');
-          }
-        }
-
-        const pdfBlob = pdf.output('blob');
-
-        if (!khongTaiXuong) {
-          const blobUrl = URL.createObjectURL(pdfBlob);
-          const a = document.createElement('a');
-          a.href = blobUrl;
-          a.download = fileName;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          setTimeout(() => URL.revokeObjectURL(blobUrl), 8000);
-          hienToast("✅ Đã tải xuống file PDF: " + fileName);
-        }
-
-        return pdfBlob;
-      } catch (err) {
-        alert("❌ Lỗi khi tải PDF: " + err.message);
-        return null;
-      } finally {
-        if (tempStage && tempStage.parentNode) {
-          tempStage.parentNode.removeChild(tempStage);
-        }
-        if (overlay) overlay.style.display = 'none';
-      }
-    };
-
-    // 3. Hàm Gửi Mail theo đúng App đã chọn & Đính kèm thẳng File PDF đi cùng Nội dung Mail
-    window.guiEmailChoKhachHang = async function() {
-      khoiTaoOChonAppMail();
-      const email = document.getElementById('inEmailKhach')?.value.trim();
-      if (!email) {
-        alert("⚠️ Vui lòng nhập địa chỉ Email khách hàng ở mục số 4 (Cấu Hình Gửi Mail)!");
-        document.getElementById('inEmailKhach')?.focus();
-        return;
-      }
-
-      if (!document.getElementById('inEmailSubject')?.value.trim() || !document.getElementById('inEmailBody')?.value.trim()) {
-        window.datLaiNoiDungMacDinh(false);
-      }
-
-      const subject = document.getElementById('inEmailSubject')?.value.trim() || 'Quotation';
-      const bodyMsg = document.getElementById('inEmailBody')?.value.trim() || '';
-      const maDon = document.getElementById('inMa')?.value.trim() || 'BAO-GIA';
-      const fileName = `${maDon}.pdf`;
-      const selectedApp = document.getElementById('inMailAppSelect')?.value || 'SHARE_PDF';
-
-      // Tự động Copy sẵn địa chỉ Email khách hàng vào Clipboard
-      await window.copyTextToClipboard(email);
-
-      // TRƯỜNG HỢP 1: Đính kèm thẳng File PDF + Nội dung qua khay Chọn App của thiết bị (Gmail, Mail, Outlook, Zalo...)
-      if (selectedApp === 'SHARE_PDF') {
-        const pdfBlob = await window.xuatPDF(true);
-        if (!pdfBlob) return;
-
-        const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
-        const canShareFile = !!(navigator.canShare && navigator.canShare({ files: [pdfFile] }));
-
-        if (canShareFile) {
-          const shareData = {
-            files: [pdfFile],
-            title: subject,
-            text: bodyMsg
-          };
-
-          try {
-            hienToast("📋 Đã tự copy Email nhận (" + email + ") — Chỉ cần Dán vào ô Người nhận!");
-            await navigator.share(shareData);
-            return;
-          } catch (err) {
-            if (err.name === 'AbortError') return;
-            // Nếu trình duyệt chặn do thời gian chờ vẽ PDF > 1 giây, bật nút xác nhận 1 chạm (0ms) để mở ngay khay App
-            const modal = document.getElementById('quickShareConfirmModal');
-            const infoText = document.getElementById('quickShareInfoText');
-            const btnNow = document.getElementById('btnTriggerNativeShareNow');
-            if (modal && btnNow) {
-              if (infoText) {
-                infoText.innerHTML = `Đã đóng gói <b>${escapeHtml(fileName)}</b> kèm nội dung thư.<br>📋 Đã tự copy sẵn người nhận: <b>${escapeHtml(email)}</b> (chỉ cần bấm Dán ở ô To).`;
-              }
-              btnNow.onclick = async function() {
-                modal.style.display = 'none';
-                await window.copyTextToClipboard(email);
-                try {
-                  await navigator.share(shareData);
-                } catch (e) {}
-              };
-              modal.style.display = 'flex';
-              return;
-            }
-          }
-        } else {
-          // Nếu trình duyệt máy tính không hỗ trợ Web Share File -> Tự tải PDF và mở Gmail Web
-          const blobUrl = URL.createObjectURL(pdfBlob);
-          const a = document.createElement('a');
-          a.href = blobUrl;
-          a.download = fileName;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          const gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
-          window.open(gmailWebUrl, '_blank');
-          return;
-        }
-      }
-
-      // TRƯỜNG HỢP 2, 3, 4: Mở thẳng App Gmail / App Mail mặc định / Gmail Web (Tự tải PDF về máy + Điền sẵn Email, Chủ đề, Nội dung)
-      await window.xuatPDF(false);
-
-      if (selectedApp === 'GMAIL_APP') {
-        window.location.href = `googlegmail:///co?to=${encodeURIComponent(email)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
-      } else if (selectedApp === 'MAILTO_DEFAULT') {
-        window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
-      } else {
-        const gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
-        window.open(gmailWebUrl, '_blank');
-      }
-    };
   </script>
 </body>
 </html>
