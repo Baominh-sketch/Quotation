@@ -2268,5 +2268,344 @@
       }, 200);
     });
   </script>
+  <!-- BẢN VÁ TỐI ƯU HIỂN THỊ FULL TRANG A4, TẢI PDF & GỬI MAIL TRÊN MOBILE -->
+  <style>
+    @media screen and (max-width: 768px) {
+      #panelRightScroll {
+        padding: 10px 6px 95px 6px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        -webkit-overflow-scrolling: touch;
+      }
+      #a4Wrapper {
+        width: 100% !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        display: block !important;
+        transform: none !important;
+      }
+      #a4Paper {
+        width: 794px !important;
+        min-width: 794px !important;
+        min-height: 1123px !important;
+        transform-origin: top left !important;
+        margin: 0 !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18) !important;
+      }
+    }
+
+    /* Hộp thoại chọn ứng dụng gửi Mail & đính kèm PDF trên Mobile */
+    #mobileMailModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      z-index: 99999;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .mail-modal-card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 380px;
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25);
+      text-align: center;
+    }
+    .mail-modal-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      box-sizing: border-box;
+    }
+  </style>
+
+  <!-- HỘP THOẠI GỬI MAIL & ĐÍNH KÈM FILE PDF TRÊN ĐIỆN THOẠI -->
+  <div id="mobileMailModal">
+    <div class="mail-modal-card">
+      <div style="font-size:16px;font-weight:800;color:#0f172a;margin-bottom:6px;">📧 Gửi Báo Giá Cho Khách Hàng</div>
+      <div id="mailModalSubText" style="font-size:12px;color:#475569;margin-bottom:16px;">File PDF đã sẵn sàng. Chọn phương thức gửi trên thiết bị của bạn:</div>
+
+      <!-- Nút 1: Đính kèm trực tiếp file PDF vào App Gmail / Mail / Zalo trên iPhone & Android -->
+      <button type="button" id="btnNativeSharePdf" class="mail-modal-btn" style="background:#0d9488;color:#fff;display:none;">
+        📎 Đính kèm thẳng PDF qua App (Gmail / Mail / Zalo)
+      </button>
+
+      <!-- Nút 2: Mở trực tiếp Ứng dụng Mail mặc định trên điện thoại (mailto:) -->
+      <a id="btnOpenMailtoApp" href="#" class="mail-modal-btn" style="background:#2563eb;color:#fff;">
+        📱 Mở Ứng Dụng Mail Trên Điện Thoại
+      </a>
+
+      <!-- Nút 3: Mở Gmail Web (Dành cho máy tính) -->
+      <a id="btnOpenGmailWeb" href="#" target="_blank" class="mail-modal-btn" style="background:#ea580c;color:#fff;">
+        🌐 Mở Gmail Web (Trình duyệt)
+      </a>
+
+      <button type="button" onclick="document.getElementById('mobileMailModal').style.display='none'" style="margin-top:4px;background:#e2e8f0;color:#334155;border:none;padding:8px 20px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">
+        Đóng
+      </button>
+    </div>
+  </div>
+
+  <script>
+    window.lastGeneratedPdfBlob = null;
+    window.lastGeneratedPdfName = 'BAO-GIA.pdf';
+
+    // 1. Tự động căn chỉnh tờ A4 vừa khít 100% chiều ngang & chiều dọc trên màn hình điện thoại
+    window.tuDongZoomA4TrenMobile = function() {
+      const wrapper = document.getElementById('a4Wrapper');
+      const paper = document.getElementById('a4Paper');
+      if (!wrapper || !paper) return;
+
+      if (window.innerWidth <= 768) {
+        wrapper.style.transform = 'none';
+        const availWidth = Math.max(280, window.innerWidth - 14);
+        const scale = availWidth / 794;
+        paper.style.transform = `scale(${scale.toFixed(4)})`;
+        paper.style.transformOrigin = 'top left';
+
+        // Cố định chiều rộng và chiều cao thực tế sau khi thu nhỏ để không bị cắt chữ và cuộn mượt hết trang
+        const actualHeight = Math.max(1123, paper.scrollHeight);
+        wrapper.style.width = `${availWidth}px`;
+        wrapper.style.height = `${Math.ceil(actualHeight * scale) + 16}px`;
+      } else {
+        paper.style.transform = 'none';
+        wrapper.style.width = '';
+        wrapper.style.height = '';
+        const zoomSelect = document.getElementById('zoomSelectBox');
+        const val = zoomSelect ? zoomSelect.value : '1';
+        wrapper.style.transform = `scale(${val})`;
+        wrapper.style.transformOrigin = 'top center';
+      }
+    };
+
+    // Ghi đè hàm chuyển tab Mobile để luôn tính lại kích thước full trang A4
+    const _origRenderTable = window.renderTable;
+    window.renderTable = function() {
+      if (typeof _origRenderTable === 'function') _origRenderTable();
+      if (window.innerWidth <= 768) {
+        setTimeout(window.tuDongZoomA4TrenMobile, 60);
+      }
+    };
+
+    window.chuyenTabMobile = function(subTab) {
+      currentMobileSubTab = subTab;
+      const panelLeft = document.querySelector('#viewStudio .panel-left');
+      const panelRight = document.querySelector('#viewStudio .panel-right');
+      const btnForm = document.getElementById('mobBtnForm');
+      const btnPreview = document.getElementById('mobBtnPreview');
+
+      if (!panelLeft || !panelRight) return;
+      if (window.innerWidth > 768) {
+        panelLeft.style.display = '';
+        panelRight.style.display = '';
+        window.tuDongZoomA4TrenMobile();
+        return;
+      }
+
+      if (subTab === 'PREVIEW') {
+        panelLeft.style.display = 'none';
+        panelRight.style.display = 'flex';
+        btnForm?.classList.remove('active');
+        btnPreview?.classList.add('active');
+        setTimeout(window.tuDongZoomA4TrenMobile, 50);
+      } else {
+        panelLeft.style.display = 'block';
+        panelRight.style.display = 'none';
+        btnForm?.classList.add('active');
+        btnPreview?.classList.remove('active');
+      }
+    };
+
+    // 2. Hàm Xuất & Tải PDF tương thích 100% với Mobile (Safari iOS & Chrome Android)
+    window.xuatPDF = async function(chiTaoBlob = false) {
+      const paper = document.getElementById('a4Paper');
+      const wrapper = document.getElementById('a4Wrapper');
+      const panelLeft = document.querySelector('#viewStudio .panel-left');
+      const panelRight = document.querySelector('#viewStudio .panel-right');
+      const wmImg = document.getElementById('watermarkImg');
+      const overlay = document.getElementById('loading-overlay');
+
+      if (!paper) {
+        alert("❌ Không tìm thấy khung giấy A4!");
+        return null;
+      }
+
+      if (overlay) overlay.style.display = 'flex';
+
+      const maDon = document.getElementById('inMa')?.value.trim() || 'BAO-GIA';
+      const fileName = `${maDon}.pdf`;
+      window.lastGeneratedPdfName = fileName;
+
+      // Lưu trạng thái hiển thị cũ
+      const oldLeftDisplay = panelLeft ? panelLeft.style.display : '';
+      const oldRightDisplay = panelRight ? panelRight.style.display : '';
+      const oldPaperTransform = paper.style.transform;
+      const oldWrapperTransform = wrapper ? wrapper.style.transform : '';
+      const oldWrapperW = wrapper ? wrapper.style.width : '';
+      const oldWrapperH = wrapper ? wrapper.style.height : '';
+
+      // Đưa tờ A4 về kích thước chuẩn 1:1 (794px) và hiển thị lên màn hình để chụp không bị trắng trang trên Mobile
+      if (panelRight) panelRight.style.display = 'block';
+      paper.style.transform = 'none';
+      if (wrapper) {
+        wrapper.style.transform = 'none';
+        wrapper.style.width = '794px';
+        wrapper.style.height = 'auto';
+      }
+
+      const wmSrc = window.processedWatermarkBase64 || (wmImg && wmImg.src && wmImg.src.startsWith('data:image') ? wmImg.src : '');
+      const oldWmDisplay = wmImg ? wmImg.style.display : '';
+      if (wmImg && wmSrc) wmImg.style.setProperty('display', 'none', 'important');
+
+      // Chờ 150ms để trình duyệt điện thoại kịp vẽ xong khung A4
+      await new Promise(r => setTimeout(r, 150));
+
+      try {
+        const isMobile = window.innerWidth <= 768;
+        const opt = {
+          margin: 0,
+          filename: fileName,
+          image: { type: 'jpeg', quality: 0.96 },
+          html2canvas: {
+            scale: isMobile ? 1.5 : 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            windowWidth: 794,
+            scrollY: 0
+          },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        const worker = html2pdf().set(opt).from(paper).toPdf();
+        const pdf = await worker.get('pdf');
+
+        // Đóng dấu Watermark chính giữa trang PDF
+        if (wmSrc) {
+          const totalPages = pdf.internal.getNumberOfPages();
+          const pageW = pdf.internal.pageSize.getWidth();
+          const pageH = pdf.internal.pageSize.getHeight();
+          const tempImg = new Image();
+          await new Promise(res => { tempImg.onload = res; tempImg.onerror = res; tempImg.src = wmSrc; });
+          const wmW = 125;
+          const ratio = (tempImg.width && tempImg.height) ? (tempImg.height / tempImg.width) : 1;
+          const wmH = Math.min(160, Math.round(wmW * ratio));
+          const xPos = (pageW - wmW) / 2;
+          const yPos = (pageH - wmH) / 2;
+
+          for (let i = 1; i <= totalPages; i++) {
+            pdf.setPage(i);
+            pdf.addImage(wmSrc, 'PNG', xPos, yPos, wmW, wmH, undefined, 'FAST');
+          }
+        }
+
+        const pdfBlob = pdf.output('blob');
+        window.lastGeneratedPdfBlob = pdfBlob;
+
+        if (!chiTaoBlob) {
+          // Tạo link tải trực tiếp tương thích cả Safari iOS & Android
+          const blobUrl = URL.createObjectURL(pdfBlob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 8000);
+          hienToast("✅ Đã tải xuống file " + fileName);
+        }
+
+        return pdfBlob;
+      } catch (err) {
+        alert("❌ Lỗi khi tạo PDF: " + err.message);
+        return null;
+      } finally {
+        if (wmImg && wmSrc) wmImg.style.setProperty('display', oldWmDisplay || 'block', 'important');
+        paper.style.transform = oldPaperTransform;
+        if (wrapper) {
+          wrapper.style.transform = oldWrapperTransform;
+          wrapper.style.width = oldWrapperW;
+          wrapper.style.height = oldWrapperH;
+        }
+        if (panelLeft) panelLeft.style.display = oldLeftDisplay;
+        if (panelRight) panelRight.style.display = oldRightDisplay;
+        if (window.innerWidth <= 768) window.tuDongZoomA4TrenMobile();
+        if (overlay) overlay.style.display = 'none';
+      }
+    };
+
+    // 3. Hàm Gửi Mail kết nối trực tiếp với App Mail trên điện thoại & đính kèm file PDF
+    window.guiEmailChoKhachHang = async function() {
+      const email = document.getElementById('inEmailKhach')?.value.trim();
+      if (!email) {
+        alert("⚠️ Vui lòng nhập địa chỉ Email khách hàng ở mục số 4 (Cấu Hình Gửi Mail)!");
+        document.getElementById('inEmailKhach')?.focus();
+        return;
+      }
+
+      window.datLaiNoiDungMacDinh(false);
+      const subject = document.getElementById('inEmailSubject')?.value.trim() || 'Quotation';
+      const bodyMsg = document.getElementById('inEmailBody')?.value.trim() || '';
+      const maDon = document.getElementById('inMa')?.value.trim() || 'BAO-GIA';
+      const fileName = `${maDon}.pdf`;
+
+      // Tự động xuất và tải file PDF trước
+      const pdfBlob = await window.xuatPDF(false);
+
+      // Cấu hình link mailto: mở trực tiếp App Mail mặc định trên điện thoại/máy tính
+      const mailtoUrl = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
+      const gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
+
+      const btnMailto = document.getElementById('btnOpenMailtoApp');
+      const btnGmailWeb = document.getElementById('btnOpenGmailWeb');
+      const btnNativeShare = document.getElementById('btnNativeSharePdf');
+      const subText = document.getElementById('mailModalSubText');
+
+      if (btnMailto) btnMailto.href = mailtoUrl;
+      if (btnGmailWeb) btnGmailWeb.href = gmailWebUrl;
+      if (subText) subText.innerText = `Đã tải "${fileName}". Chọn ứng dụng bạn muốn dùng để gửi cho ${email}:`;
+
+      // Kiểm tra nếu điện thoại hỗ trợ đính kèm trực tiếp file PDF qua Web Share API (iOS Safari / Android)
+      if (pdfBlob && navigator.canShare) {
+        const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+        if (navigator.canShare({ files: [pdfFile] })) {
+          btnNativeShare.style.display = 'flex';
+          btnNativeShare.onclick = async function() {
+            try {
+              await navigator.share({
+                files: [pdfFile],
+                title: subject,
+                text: bodyMsg
+              });
+            } catch (e) {}
+          };
+        } else {
+          btnNativeShare.style.display = 'none';
+        }
+      } else if (btnNativeShare) {
+        btnNativeShare.style.display = 'none';
+      }
+
+      // Hiển thị hộp thoại chọn ứng dụng Mail
+      document.getElementById('mobileMailModal').style.display = 'flex';
+    };
+  </script>
 </body>
 </html>
