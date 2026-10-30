@@ -3335,5 +3335,67 @@
       }, 200);
     });
   </script>
+  <!-- ===================================================== -->
+  <!-- TÍCH HỢP TỶ GIÁ NGOẠI TỆ TỰ ĐỘNG THEO NGÀY THỰC TẾ      -->
+  <!-- ===================================================== -->
+  <script>
+    window.currentExchangeRates = { USD: 1, VND: 25400, EUR: 0.92, GBP: 0.79, CNY: 7.2 };
+    window.exchangeRatesUpdateDate = '';
+
+    // Hàm gọi API lấy tỷ giá mới nhất trực tiếp trên trình duyệt
+    async function taiTyGiaNgoaiTeClient() {
+      try {
+        const response = await fetch("https://open.er-api.com/v6/latest/USD");
+        const data = await response.json();
+        if (data && data.result === "success") {
+          window.currentExchangeRates = {
+            USD: 1,
+            VND: data.rates.VND || 25400,
+            EUR: data.rates.EUR || 0.92,
+            GBP: data.rates.GBP || 0.79,
+            CNY: data.rates.CNY || 7.2
+          };
+          window.exchangeRatesUpdateDate = data.time_last_update_utc ? new Date(data.time_last_update_utc).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN');
+          
+          console.log("📈 Đã cập nhật tỷ giá ngoại tệ thành công:", window.currentExchangeRates);
+          hienThiWidgetTyGiaTrenStudio();
+        }
+      } catch (err) {
+        console.warn("⚠️ Không thể tải API tỷ giá, sử dụng tỷ giá mặc định:", err);
+      }
+    }
+
+    // Hiển thị một khung nhỏ (Widget) báo cáo tỷ giá ngay trong mục Hàng hóa / Tiền tệ của Studio
+    function hienThiWidgetTyGiaTrenStudio() {
+      let widget = document.getElementById('sapExchangeRateWidget');
+      if (!widget) {
+        const targetContainer = document.getElementById('rowEnOptions');
+        if (!targetContainer) return;
+        
+        widget = document.createElement('div');
+        widget.id = 'sapExchangeRateWidget';
+        widget.style.cssText = 'background:var(--sap-brand-light, #e8f3ff); border:1px solid #b8daff; border-radius:8px; padding:8px 12px; margin-bottom:12px; font-size:11.5px; color:var(--sap-text, #1d2d3e); display:flex; justify-content:space-between; align-items:center;';
+        targetContainer.parentNode.insertBefore(widget, targetContainer);
+      }
+
+      const usdToVnd = window.currentExchangeRates.VND ? window.currentExchangeRates.VND.toLocaleString('vi-VN') : '25.400';
+      const cnyToUsd = window.currentExchangeRates.CNY ? (1 / window.currentExchangeRates.CNY).toFixed(4) : '0.1389';
+      
+      widget.innerHTML = `
+        <div>
+          <span style="font-weight:800;color:var(--sap-brand);">💱 Tỷ giá ngoại tệ (${window.exchangeRatesUpdateDate || 'Hôm nay'}):</span> 
+          <span>1 USD = <b>${usdToVnd} VNĐ</b> | 1 CNY = <b>${(window.currentExchangeRates.VND / window.currentExchangeRates.CNY).toFixed(0)} VNĐ</b></span>
+        </div>
+        <button type="button" onclick="taiTyGiaNgoaiTeClient(); hienToast('🔄 Đã làm mới tỷ giá!');" style="background:#ffffff;color:var(--sap-brand);border:1px solid #b8daff;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:700;cursor:pointer;">Làm mới</button>
+      `;
+    }
+
+    // Tự động chạy ngầm lấy tỷ giá ngay khi trang web vừa tải xong
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        taiTyGiaNgoaiTeClient();
+      }, 500);
+    });
+  </script>
 </body>
 </html>
