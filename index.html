@@ -986,7 +986,7 @@
         <div class="panel-left" id="panelLeftForm">
           <div class="argon-hero-header">
             <div class="brand-bar">
-              <h2 class="brand-title">⚡ Quotation Studio <span class="badge-argon">HORIZON UI</span></h2>
+              <h2 class="brand-title">⚡ Quotation Studio </h2>
               <button class="sap-btn sap-btn-emphasized" onclick="taoDonMoi()" style="padding:4px 10px !important;font-size:11px !important;">+ Đơn mới</button>
             </div>
             <div class="mode-switch">
@@ -1077,7 +1077,7 @@
               </div>
 
               <div class="form-group" id="divEnNoteGroup" style="display:none;">
-                <label style="color:var(--sap-brand);">🌐 Câu Note Liên Hệ (PDF Tiếng Anh)</label>
+                <label style="color:var(--sap-brand);">🌐 Câu Note Liên Hệ</label>
                 <textarea id="inEnNote" rows="2" placeholder="Please contact us via information..." oninput="updatePreview()"></textarea>
               </div>
 
@@ -1088,6 +1088,7 @@
                   <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'Thanh toán 100% bằng chuyển khoản hoặc tiền mặt ngay khi nhận hàng.')">+ TT 100% (VN)</span>
                   <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'Đặt cọc 50% ngay sau khi xác nhận đơn hàng, 50% còn lại thanh toán trước khi giao hàng.')">+ Cọc 50-50 (VN)</span>
                   <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'The buyer shall deposit 30% of the total contract value upon signing the contract. The remaining 70% shall be paid within 3 days upon receipt of the copy documents via email.')">+ T/T 30-70 (EN)</span>
+                  <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'The buyer shall deposit 50% of the total contract value upon signing the contract. The remaining 50% shall be paid within 3 days upon receipt of the copy documents via email.')">+ T/T 50-50 (EN)</span>
                 </div>
                 <textarea id="inPaymentTerm" rows="2" placeholder="Nhập điều khoản / phương thức thanh toán..." oninput="updatePreview()"></textarea>
               </div>
@@ -1147,7 +1148,7 @@
               </div>
 
               <div class="form-group">
-                <label>Ảnh sản phẩm (HD Lớn 160x145px)</label>
+                <label>Ảnh sản phẩm </label>
                 <input type="file" id="inSpFile" accept="image/png, image/jpeg, image/webp" onchange="loadSpImage(this)">
                 <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
                   <img id="spPreviewLeft" style="height:86px;width:96px;object-fit:cover;display:none;border-radius:8px;border:1px solid #cbd5e1;background:#fff;">
@@ -1168,7 +1169,7 @@
             <!-- 3. LOGO & WATERMARK (HIỂN THỊ ĐẦY ĐỦ 100%) -->
             <div class="argon-card">
               <div class="argon-card-header">
-                <div class="argon-card-title">🎨 3. Logo &amp; Watermark (In trực tiếp vào PDF)</div>
+                <div class="argon-card-title">🎨 3. Logo &amp; Watermark</div>
               </div>
 
               <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:10px;">
@@ -1181,7 +1182,7 @@
 
               <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                  <label style="margin:0;font-size:12px;font-weight:700;color:var(--sap-text);">💧 Watermark chìm (Tự tách nền trắng)</label>
+                  <label style="margin:0;font-size:12px;font-weight:700;color:var(--sap-text);">💧 Watermark</label>
                   <button type="button" onclick="xoaWatermark()" id="btnXoaWm" class="sap-btn sap-btn-reject" style="display:none;padding:2px 8px !important;font-size:10px !important;">Xóa Watermark</button>
                 </div>
                 <input type="file" id="inWmFile" accept="image/png, image/jpeg, image/webp" onchange="loadWatermark(this)" style="width:100%;max-width:100%;font-size:11.5px;">
@@ -1202,7 +1203,7 @@
 
               <div class="form-group" style="background:var(--sap-brand-light);border:1px solid #b8daff;padding:8px 10px;border-radius:8px;margin-bottom:10px;">
                 <label style="color:var(--sap-brand);font-weight:800;font-size:11.5px;margin-bottom:4px;display:block;">
-                  📲 Chọn App gửi Mail (Khi bấm nút Gửi Mail):
+                  📲 Chọn App gửi Mail:
                 </label>
                 <select id="inMailAppSelect" style="width:100%;padding:6px 8px;font-weight:700;">
                   <option value="SHARE_PDF">📎 Đính kèm thẳng File PDF + Nội dung (Chọn App: Gmail, Mail, Zalo...)</option>
@@ -1213,9 +1214,9 @@
               </div>
 
               <div class="form-group"><label>Email khách hàng nhận file PDF</label><input type="text" id="inEmailKhach" placeholder="VD: contact@customer.com"></div>
-              <div class="form-group"><label>Thông tin liên hệ của bạn (Hiển thị trong email &amp; Note A4)</label><input type="text" id="inThongTinLienHeMail" placeholder="VD: Mr. Minh - Phone/WhatsApp: +84 707 253 054 - Email: work.baominh@gmail.com" oninput="capNhatLienHeVaoA4()"></div>
-              <div class="form-group"><label>Tiêu đề thư (Subject — Tự động nhảy theo Số chứng từ)</label><input type="text" id="inEmailSubject" placeholder="Tiêu đề email..."></div>
-              <div class="form-group"><label>Nội dung lời nhắn (Tự động nhảy theo Số chứng từ &amp; Ngày lập)</label><textarea id="inEmailBody" rows="5" placeholder="Nội dung email..."></textarea></div>
+              <div class="form-group"><label>Thông tin liên hệ của bạn </label><input type="text" id="inThongTinLienHeMail" placeholder="Email/Phone" oninput="capNhatLienHeVaoA4()"></div>
+              <div class="form-group"><label>Tiêu đề thư </label><input type="text" id="inEmailSubject" placeholder="Tiêu đề email..."></div>
+              <div class="form-group"><label>Nội dung lời nhắn </label><textarea id="inEmailBody" rows="5" placeholder="Nội dung email..."></textarea></div>
             </div>
           </div>
         </div>
