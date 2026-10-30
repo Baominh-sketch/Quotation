@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ARGON ERP — Hệ Thống Báo Giá & Xuất Kho</title>
+  <title>Hệ Thống Báo Giá</title>
 
   <!-- 1. THƯ VIỆN FIREBASE SDK (COMPAT) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -142,7 +142,7 @@
   <div class="kapella-top-nav">
     <div class="kapella-brand">
       <i class="mdi mdi-cube-send" style="font-size:22px;"></i>
-      <span>GOODS LINK ERP — KAPELLA v5.0</span>
+      <span>GOODS LINK ERP</span>
     </div>
     <div class="kapella-nav-tabs">
       <button class="kapella-tab-btn" id="tabBtnDash" onclick="chuyenManHinhKapella('DASH')">📊 Tổng Quan</button>
@@ -162,9 +162,8 @@
   <div id="viewDashboard" style="display:none; padding:20px; background:#f8fafc; min-height:85vh;">
     <div class="kp-welcome-banner">
       <div>
-        <h3 style="margin:0 0 4px 0;font-size:17px;font-weight:800;">Bảng Điều Khiển Quản Trị Báo Giá & Ngoại Thương</h3>
-        <div style="font-size:12px;opacity:0.9;">Dữ liệu đồng bộ thời gian thực từ Firebase Firestore</div>
-      </div>
+        <h3 style="margin:0 0 4px 0;font-size:17px;font-weight:800;">DASHBOARD</h3>
+             </div>
       <button onclick="taiDanhSachDonLuuApp()" style="background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.4);padding:7px 14px;border-radius:6px;cursor:pointer;font-weight:700;font-size:12px;white-space:nowrap;">
         🔄 Làm mới dữ liệu
       </button>
@@ -196,7 +195,7 @@
     <div class="kp-main-grid">
       <div class="kp-card" style="background:#fff; padding:16px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05); overflow:hidden;">
         <div class="kp-search-box" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <div style="font-weight:800;font-size:14px;color:#001737;">📋 Danh Sách Đơn Hàng Cloud Gần Đây</div>
+          <div style="font-weight:800;font-size:14px;color:#001737;">📋 Danh Sách Đơn Hàng Gần Đây</div>
           <input type="text" id="kpSearchOrder" placeholder="🔍 Tìm mã đơn hoặc tên khách..." oninput="renderKapellaDashboard()" style="width:240px;padding:6px 10px;font-size:12px;border:1px solid #cbd5e1;border-radius:6px;box-sizing:border-box;">
         </div>
         <div style="max-height:360px;overflow-y:auto;overflow-x:auto;">
@@ -323,7 +322,7 @@
           </div>
 
           <div class="form-group" id="divEnNoteGroup" style="display:none;">
-            <label style="color:var(--argon-primary);">🌐 Câu Note Liên Hệ (PDF Tiếng Anh)</label>
+            <label style="color:var(--argon-primary);">🌐 Câu Note Liên Hệ</label>
             <textarea id="inEnNote" rows="2" placeholder="Please contact us via information..." oninput="updatePreview()"></textarea>
           </div>
 
@@ -334,13 +333,15 @@
               <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'Thanh toán 100% bằng chuyển khoản hoặc tiền mặt ngay khi nhận hàng.')" style="background:#e2e8f0; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">+ TT 100% (VN)</span>
               <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'Đặt cọc 50% ngay sau khi xác nhận đơn hàng, 50% còn lại thanh toán trước khi giao hàng.')" style="background:#e2e8f0; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">+ Cọc 50-50 (VN)</span>
               <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'The buyer shall deposit 30% of the total contract value upon signing the contract. The remaining 70% shall be paid within 3 days upon receipt of the copy documents via email.')" style="background:#e2e8f0; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">+ T/T 30-70 (EN)</span>
+              <span class="preset-chip" onclick="chenMauNhanh('inPaymentTerm', 'The buyer shall deposit 50% of the total contract value upon signing the contract. The remaining 50% shall be paid within 3 days upon receipt of the copy documents via email.')" style="background:#e2e8f0; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">+ T/T 50-50 (EN)</span>
+
             </div>
             <textarea id="inPaymentTerm" rows="2" placeholder="Nhập điều khoản / phương thức thanh toán..." oninput="updatePreview()"></textarea>
           </div>
 
           <!-- NGÂN HÀNG T/T -->
           <div class="form-group" id="divBankInfoInput" style="display:none;">
-            <label style="color:var(--argon-primary);">🏦 Thông tin Ngân hàng Quốc tế (PI)</label>
+            <label style="color:var(--argon-primary);">🏦 Thông tin Ngân hàng Quốc tế</label>
             <select id="bankSelect" onchange="chonBankTuSheet()" style="margin-bottom:6px;"><option value="">-- Chọn Bank từ Database --</option></select>
             <textarea id="inBankInfo" rows="3" placeholder="Chọn ngân hàng ở trên hoặc tự nhập..." oninput="updatePreview()"></textarea>
           </div>
@@ -393,7 +394,7 @@
           </div>
 
           <div class="form-group">
-            <label>Ảnh sản phẩm (HD Lớn) — Tự động gắn vào dòng sản phẩm</label>
+            <label>Ảnh sản phẩm</label>
             <input type="file" id="inSpFile" accept="image/png, image/jpeg, image/webp" onchange="loadSpImage(this)">
             <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
               <img id="spPreviewLeft" style="height:86px;width:96px;object-fit:cover;display:none;border-radius:8px;border:1px solid #cbd5e1;background:#fff;">
@@ -413,7 +414,7 @@
 
         <!-- 3. LOGO & WATERMARK -->
         <div class="argon-card">
-          <div class="argon-card-header"><div class="argon-card-title">🎨 3. Logo & Watermark (In trực tiếp vào PDF)</div></div>
+          <div class="argon-card-header"><div class="argon-card-title">🎨 3. Logo & Watermark</div></div>
           <div class="row">
             <div class="form-group col">
               <label>Logo Công ty</label>
@@ -421,7 +422,7 @@
               <button type="button" onclick="xoaLogo()" id="btnXoaLogo" style="display:none;margin-top:5px;background:var(--argon-danger);color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Xóa Logo</button>
             </div>
             <div class="form-group col">
-              <label>Watermark chìm (Tự tách nền trắng)</label>
+              <label>Watermark</label>
               <input type="file" id="inWmFile" accept="image/png, image/jpeg, image/webp" onchange="loadWatermark(this)">
               <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
                 <span style="font-size:10.5px;color:#475569;font-weight:700;">Độ đậm:</span>
@@ -439,10 +440,10 @@
             <div class="argon-card-title" style="color:var(--argon-primary);">📧 4. Cấu Hình Gửi Mail Khách Hàng</div>
             <button class="btn-mini-save" onclick="datLaiNoiDungMacDinh(true)">🔄 Tạo mẫu (VN/EN)</button>
           </div>
-          <div class="form-group"><label>Email khách hàng nhận file PDF</label><input type="text" id="inEmailKhach" placeholder="VD: contact@customer.com"></div>
-          <div class="form-group"><label>Thông tin liên hệ của bạn (Hiển thị trong email & Note A4)</label><input type="text" id="inThongTinLienHeMail" placeholder="VD: Mr. Minh - Phone/WhatsApp: +84 707 253 054 - Email: work.baominh@gmail.com" oninput="capNhatLienHeVaoA4()"></div>
-          <div class="form-group"><label>Tiêu đề thư (Subject — Tự động nhảy theo Số chứng từ)</label><input type="text" id="inEmailSubject" placeholder="Tiêu đề email..."></div>
-          <div class="form-group"><label>Nội dung lời nhắn (Tự động nhảy theo Số chứng từ & Ngày lập)</label><textarea id="inEmailBody" rows="5" placeholder="Nội dung email..."></textarea></div>
+          <div class="form-group"><label>Email khách hàng nhận file PDF</label><input type="text" id="inEmailKhach" placeholder="e.g. customer@example.com"></div>
+          <div class="form-group"><label>Thông tin liên hệ của bạn </label><input type="text" id="inThongTinLienHeMail" placeholder="e.g." oninput="capNhatLienHeVaoA4()"></div>
+          <div class="form-group"><label>Tiêu đề thư </label><input type="text" id="inEmailSubject" placeholder="Tiêu đề email..."></div>
+          <div class="form-group"><label>Nội dung lời nhắn</label><textarea id="inEmailBody" rows="5" placeholder="Nội dung email..."></textarea></div>
         </div>
 
         <!-- THAO TÁC HỆ THỐNG -->
