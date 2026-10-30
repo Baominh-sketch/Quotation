@@ -890,7 +890,7 @@
       <div class="sap-sub-toolbar">
         <div class="sap-segmented-group">
           <button class="sap-seg-btn" id="segBtnDash" onclick="chuyenManHinhKapella('DASH')">📊 Dashboard</button>
-          <button class="sap-seg-btn active" id="segBtnStudio" onclick="chuyenManHinhKapella('STUDIO')">⚡ Studio (Form &amp; A4)</button>
+          <button class="sap-seg-btn active" id="segBtnStudio" onclick="chuyenManHinhKapella('STUDIO')">⚡ Studio </button>
           <button class="sap-seg-btn" id="segBtnMaster" onclick="chuyenManHinhKapella('MASTER')">📦 Master Data</button>
         </div>
 
@@ -916,8 +916,7 @@
       <div id="viewDashboard" style="display:none; padding:20px; background:var(--sap-bg); height:calc(100vh - 94px); overflow-y:auto;">
         <div class="kp-welcome-banner">
           <div>
-            <h3 style="margin:0 0 4px 0;font-size:17px;font-weight:800;">ERP Launchpad — Quản Trị Báo Giá &amp; Ngoại Thương</h3>
-            <div style="font-size:12px;opacity:0.92;">Đồng bộ thời gian thực với Firebase Firestore (Goods Link Joint Stock Company)</div>
+            <h3 style="margin:0 0 4px 0;font-size:17px;font-weight:800;">DASHBOARD</h3>
           </div>
           <button onclick="taiDanhSachDonLuuApp()" class="sap-btn" style="background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.5);">
             🔄 Làm mới dữ liệu
@@ -950,7 +949,7 @@
         <div class="kp-main-grid">
           <div class="kp-card" style="background:#fff; padding:16px; border-radius:10px; border:1px solid var(--sap-border); overflow:hidden;">
             <div class="kp-search-box" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-              <div style="font-weight:800;font-size:14px;color:var(--sap-text);">📋 Danh Sách Đơn Hàng Cloud Gần Đây</div>
+              <div style="font-weight:800;font-size:14px;color:var(--sap-text);">📋 Danh Sách Đơn Hàng Gần Đây</div>
               <input type="text" id="kpSearchOrder" placeholder="🔍 Tìm mã đơn hoặc tên khách..." oninput="renderKapellaDashboard()" style="width:240px;padding:6px 10px;font-size:12px;">
             </div>
             <div style="max-height:360px;overflow-y:auto;overflow-x:auto;">
@@ -1340,7 +1339,7 @@
               <div><label style="font-size: 12px; font-weight: 600;">Đơn Giá:</label><input type="number" id="qtGia" value="0" step="any" style="width: 100%; padding: 8px;"></div>
             </div>
             <div style="margin-bottom: 12px;">
-              <label style="font-size: 12px; font-weight: 600;">Ảnh Sản Phẩm Mặc Định (Tùy chọn):</label>
+              <label style="font-size: 12px; font-weight: 600;">Ảnh Sản Phẩm Mặc Định:</label>
               <input type="file" id="qtFileSP" accept="image/png, image/jpeg, image/webp" onchange="loadMasterSpImage(this)" style="width: 100%; font-size: 12px;">
               <img id="qtPreviewSP" style="height:68px; width:68px; object-fit:cover; display:none; margin-top:6px; border-radius:6px; border:1px solid #cbd5e1; background:#fff;">
             </div>
@@ -2019,7 +2018,7 @@
       const sysTen = document.getElementById('sysTen');
       if (sysTen) sysTen.innerText = isEN ? 'GOODS LINK JOINT STOCK COMPANY' : 'CÔNG TY CỔ PHẦN GOODS LINK';
       const sysDiaChi = document.getElementById('sysDiaChi');
-      if (sysDiaChi) sysDiaChi.innerText = isEN ? 'Ho Chi Minh City, Vietnam' : 'TP. Hồ Chí Minh, Việt Nam';
+      if (sysDiaChi) sysDiaChi.innerText = isEN ? '157/59/2T2 Duong Ba Trac Street , Chanh Hung Ward, Ho Chi Minh City, Viet Nam' : ' Số 157/59/2T2 Dương Bá Trạc, Phường Chánh Hưng, TP. Hồ Chí Minh, Việt Nam';
 
       const signTitle = document.getElementById('signTitleName');
       const signSub = document.getElementById('signSubText');
