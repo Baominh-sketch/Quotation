@@ -2268,7 +2268,7 @@
       }, 200);
     });
   </script>
-  <!-- BẢN VÁ CHUẨN: XUẤT FULL A4 PDF 100% & GOM 1 NÚT GỬI MAIL DUY NHẤT -->
+<!-- BẢN VÁ CHUẨN: PDF FULL A4 + CHỌN APP GỬI MAIL + ĐÍNH KÈM TRỰC TIẾP PDF VÀO NỘI DUNG MAIL -->
   <style>
     @media screen and (max-width: 768px) {
       #panelRightScroll {
@@ -2297,9 +2297,97 @@
         box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18) !important;
       }
     }
+
+    /* Hộp xác nhận 1 chạm nếu trình duyệt Mobile yêu cầu xác nhận mở khay App */
+    #quickShareConfirmModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      z-index: 99999;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .quick-share-card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 370px;
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25);
+      text-align: center;
+    }
   </style>
 
+  <!-- HỘP XÁC NHẬN 1 CHẠM KHI TRÌNH DUYỆT YÊU CẦU MỞ KHAY CHỌN APP -->
+  <div id="quickShareConfirmModal">
+    <div class="quick-share-card">
+      <div style="font-size:15px;font-weight:800;color:#0f172a;margin-bottom:6px;">📎 File PDF & Nội Dung Đã Sẵn Sàng!</div>
+      <div id="quickShareInfoText" style="font-size:12px;color:#475569;margin-bottom:14px;line-height:1.4;"></div>
+      <button type="button" id="btnTriggerNativeShareNow" style="width:100%;background:linear-gradient(87deg,#0d9488 0,#059669 100%);color:#fff;border:none;padding:12px;border-radius:8px;font-size:13.5px;font-weight:800;cursor:pointer;margin-bottom:8px;">
+        📤 Chọn App Gửi Mail (Kèm PDF + Nội dung)
+      </button>
+      <button type="button" onclick="document.getElementById('quickShareConfirmModal').style.display='none'" style="background:#e2e8f0;color:#334155;border:none;padding:7px 18px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">
+        Đóng
+      </button>
+    </div>
+  </div>
+
   <script>
+    // Tự động chèn ô "Chọn App gửi mail" vào đầu Mục 4 (Cấu Hình Gửi Mail Khách Hàng)
+    function khoiTaoOChonAppMail() {
+      const emailInput = document.getElementById('inEmailKhach');
+      if (!emailInput || document.getElementById('inMailAppSelect')) return;
+
+      const parentGroup = emailInput.closest('.form-group');
+      if (!parentGroup) return;
+
+      const appSelectDiv = document.createElement('div');
+      appSelectDiv.className = 'form-group';
+      appSelectDiv.style.cssText = 'background:#f0fdf4;border:1px solid #bbf7d0;padding:8px 10px;border-radius:8px;margin-bottom:10px;';
+      appSelectDiv.innerHTML = `
+        <label style="color:#15803d;font-weight:800;font-size:11.5px;margin-bottom:4px;display:block;">
+          📲 Chọn App gửi Mail (Khi bấm nút Gửi Mail):
+        </label>
+        <select id="inMailAppSelect" style="width:100%;padding:6px 8px;border:1px solid #86efac;border-radius:6px;font-weight:700;color:#0f172a;background:#ffffff;">
+          <option value="SHARE_PDF">📎 Đính kèm thẳng File PDF + Nội dung (Chọn App: Gmail, Mail, Zalo...)</option>
+          <option value="GMAIL_APP">📲 Mở thẳng App Gmail (Điền sẵn Email nhận + Chủ đề + Nội dung)</option>
+          <option value="MAILTO_DEFAULT">✉️ Mở App Mail mặc định / Outlook (Điền sẵn Email + Chủ đề + Nội dung)</option>
+          <option value="GMAIL_WEB">💻 Mở Gmail Web trên máy tính (Điền sẵn Email + Chủ đề + Nội dung)</option>
+        </select>
+      `;
+      parentGroup.parentNode.insertBefore(appSelectDiv, parentGroup);
+    }
+
+    window.addEventListener('DOMContentLoaded', khoiTaoOChonAppMail);
+    khoiTaoOChonAppMail();
+
+    // Hàm hỗ trợ Copy tự động Email khách hàng vào bộ nhớ tạm
+    window.copyTextToClipboard = async function(text) {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch (e) {}
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try {
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        return true;
+      } catch (err) {
+        document.body.removeChild(ta);
+        return false;
+      }
+    };
+
     // 1. Tự động co giãn tờ A4 vừa khít màn hình khi xem trên điện thoại
     window.tuDongZoomA4TrenMobile = function() {
       const wrapper = document.getElementById('a4Wrapper');
@@ -2364,8 +2452,8 @@
       }
     };
 
-    // 2. Hàm Xuất PDF chuẩn Full A4 (Đặt bản sao tại góc 0,0 rộng 794px để không bao giờ bị cắt lề)
-    window.xuatPDF = async function() {
+    // 2. Hàm Xuất PDF chuẩn Full A4 (Đặt bản sao tại góc 0,0 rộng 794px để không bị cắt lề)
+    window.xuatPDF = async function(khongTaiXuong = false) {
       const paper = document.getElementById('a4Paper');
       const wmImg = document.getElementById('watermarkImg');
       const overlay = document.getElementById('loading-overlay');
@@ -2384,14 +2472,12 @@
       const maDon = document.getElementById('inMa')?.value.trim() || 'BAO-GIA';
       const fileName = `${maDon}.pdf`;
 
-      // Tạo khung chứa tạm thời ở đúng góc (top: 0, left: 0, width: 794px) phía sau màn hình chờ
       const tempStage = document.createElement('div');
       tempStage.style.cssText = 'position:fixed; top:0; left:0; width:794px; background:#ffffff; z-index:99990; margin:0; padding:0; overflow:visible; pointer-events:none;';
 
       const clonePaper = paper.cloneNode(true);
       clonePaper.style.cssText = 'width:794px !important; min-width:794px !important; max-width:794px !important; min-height:1122px !important; margin:0 !important; transform:none !important; box-shadow:none !important; position:relative !important; left:0 !important; top:0 !important; background:#ffffff !important;';
 
-      // Ẩn watermark trong bản clone để đóng dấu sắc nét bằng jsPDF bên dưới
       const cloneWm = clonePaper.querySelector('#watermarkImg');
       if (cloneWm) cloneWm.style.setProperty('display', 'none', 'important');
 
@@ -2444,16 +2530,19 @@
         }
 
         const pdfBlob = pdf.output('blob');
-        const blobUrl = URL.createObjectURL(pdfBlob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 8000);
 
-        hienToast("✅ Đã tải xuống file PDF đầy đủ: " + fileName);
+        if (!khongTaiXuong) {
+          const blobUrl = URL.createObjectURL(pdfBlob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 8000);
+          hienToast("✅ Đã tải xuống file PDF: " + fileName);
+        }
+
         return pdfBlob;
       } catch (err) {
         alert("❌ Lỗi khi tải PDF: " + err.message);
@@ -2466,8 +2555,9 @@
       }
     };
 
-    // 3. Gom gọn 1 nút Gửi Mail duy nhất: Tự tải PDF + Mở thẳng Mail điền sẵn đủ Email, Chủ đề & Nội dung
+    // 3. Hàm Gửi Mail theo đúng App đã chọn & Đính kèm thẳng File PDF đi cùng Nội dung Mail
     window.guiEmailChoKhachHang = async function() {
+      khoiTaoOChonAppMail();
       const email = document.getElementById('inEmailKhach')?.value.trim();
       if (!email) {
         alert("⚠️ Vui lòng nhập địa chỉ Email khách hàng ở mục số 4 (Cấu Hình Gửi Mail)!");
@@ -2475,19 +2565,81 @@
         return;
       }
 
-      // Đồng bộ số chứng từ & ngày lập mới nhất vào tiêu đề và nội dung thư
-      window.datLaiNoiDungMacDinh(false);
+      if (!document.getElementById('inEmailSubject')?.value.trim() || !document.getElementById('inEmailBody')?.value.trim()) {
+        window.datLaiNoiDungMacDinh(false);
+      }
+
       const subject = document.getElementById('inEmailSubject')?.value.trim() || 'Quotation';
       const bodyMsg = document.getElementById('inEmailBody')?.value.trim() || '';
-      const isMobile = window.innerWidth <= 768;
+      const maDon = document.getElementById('inMa')?.value.trim() || 'BAO-GIA';
+      const fileName = `${maDon}.pdf`;
+      const selectedApp = document.getElementById('inMailAppSelect')?.value || 'SHARE_PDF';
 
-      // Bước 1: Tự động xuất & tải file PDF chuẩn A4 về thiết bị
-      await window.xuatPDF();
+      // Tự động Copy sẵn địa chỉ Email khách hàng vào Clipboard
+      await window.copyTextToClipboard(email);
 
-      // Bước 2: Mở thẳng trình soạn thảo Mail với đầy đủ Email nhận, Chủ đề và Nội dung
-      if (isMobile) {
-        const mailtoUrl = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
-        window.location.href = mailtoUrl;
+      // TRƯỜNG HỢP 1: Đính kèm thẳng File PDF + Nội dung qua khay Chọn App của thiết bị (Gmail, Mail, Outlook, Zalo...)
+      if (selectedApp === 'SHARE_PDF') {
+        const pdfBlob = await window.xuatPDF(true);
+        if (!pdfBlob) return;
+
+        const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+        const canShareFile = !!(navigator.canShare && navigator.canShare({ files: [pdfFile] }));
+
+        if (canShareFile) {
+          const shareData = {
+            files: [pdfFile],
+            title: subject,
+            text: bodyMsg
+          };
+
+          try {
+            hienToast("📋 Đã tự copy Email nhận (" + email + ") — Chỉ cần Dán vào ô Người nhận!");
+            await navigator.share(shareData);
+            return;
+          } catch (err) {
+            if (err.name === 'AbortError') return;
+            // Nếu trình duyệt chặn do thời gian chờ vẽ PDF > 1 giây, bật nút xác nhận 1 chạm (0ms) để mở ngay khay App
+            const modal = document.getElementById('quickShareConfirmModal');
+            const infoText = document.getElementById('quickShareInfoText');
+            const btnNow = document.getElementById('btnTriggerNativeShareNow');
+            if (modal && btnNow) {
+              if (infoText) {
+                infoText.innerHTML = `Đã đóng gói <b>${escapeHtml(fileName)}</b> kèm nội dung thư.<br>📋 Đã tự copy sẵn người nhận: <b>${escapeHtml(email)}</b> (chỉ cần bấm Dán ở ô To).`;
+              }
+              btnNow.onclick = async function() {
+                modal.style.display = 'none';
+                await window.copyTextToClipboard(email);
+                try {
+                  await navigator.share(shareData);
+                } catch (e) {}
+              };
+              modal.style.display = 'flex';
+              return;
+            }
+          }
+        } else {
+          // Nếu trình duyệt máy tính không hỗ trợ Web Share File -> Tự tải PDF và mở Gmail Web
+          const blobUrl = URL.createObjectURL(pdfBlob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          const gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
+          window.open(gmailWebUrl, '_blank');
+          return;
+        }
+      }
+
+      // TRƯỜNG HỢP 2, 3, 4: Mở thẳng App Gmail / App Mail mặc định / Gmail Web (Tự tải PDF về máy + Điền sẵn Email, Chủ đề, Nội dung)
+      await window.xuatPDF(false);
+
+      if (selectedApp === 'GMAIL_APP') {
+        window.location.href = `googlegmail:///co?to=${encodeURIComponent(email)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
+      } else if (selectedApp === 'MAILTO_DEFAULT') {
+        window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
       } else {
         const gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
         window.open(gmailWebUrl, '_blank');
