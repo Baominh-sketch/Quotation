@@ -1165,24 +1165,32 @@
               </div>
             </div>
 
-            <!-- 3. LOGO & WATERMARK -->
-            <div class="argon-card">
-              <div class="argon-card-header"><div class="argon-card-title">🎨 3. Logo &amp; Watermark (In trực tiếp vào PDF)</div></div>
-              <div class="row">
-                <div class="form-group col">
-                  <label>Logo Công ty</label>
-                  <input type="file" id="inLogoFile" accept="image/png, image/jpeg, image/webp" onchange="loadLogo(this)">
-                  <button type="button" onclick="xoaLogo()" id="btnXoaLogo" class="sap-btn sap-btn-reject" style="display:none;margin-top:5px;padding:3px 8px !important;font-size:10px !important;">Xóa Logo</button>
+            <!-- 3. LOGO & WATERMARK (ĐÃ TỐI ƯU GỌN TRONG KHUNG, KHÔNG TRÀN LỀ) -->
+            <div class="argon-card" style="overflow:hidden;">
+              <div class="argon-card-header">
+                <div class="argon-card-title">🎨 3. Logo &amp; Watermark (In trực tiếp vào PDF)</div>
+              </div>
+
+              <!-- Khối 1: Logo Công ty -->
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <label style="margin:0;font-size:12px;font-weight:700;color:var(--sap-text);">🏢 Logo Công ty</label>
+                  <button type="button" onclick="xoaLogo()" id="btnXoaLogo" class="sap-btn sap-btn-reject" style="display:none;padding:2px 8px !important;font-size:10px !important;">Xóa Logo</button>
                 </div>
-                <div class="form-group col">
-                  <label>Watermark chìm (Tự tách nền trắng)</label>
-                  <input type="file" id="inWmFile" accept="image/png, image/jpeg, image/webp" onchange="loadWatermark(this)">
-                  <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
-                    <span style="font-size:10.5px;color:#475569;font-weight:700;">Độ đậm:</span>
-                    <input type="range" id="wmOpacitySlider" min="8" max="45" value="20" oninput="doiDoDamWatermark(this.value)" style="flex:1;cursor:pointer;">
-                    <span id="wmOpacityLabel" style="font-size:10.5px;font-weight:700;color:var(--sap-brand);">20%</span>
-                  </div>
-                  <button type="button" onclick="xoaWatermark()" id="btnXoaWm" class="sap-btn sap-btn-reject" style="display:none;margin-top:5px;padding:3px 8px !important;font-size:10px !important;">Xóa Watermark</button>
+                <input type="file" id="inLogoFile" accept="image/png, image/jpeg, image/webp" onchange="loadLogo(this)" style="width:100%;max-width:100%;font-size:11.5px;overflow:hidden;text-overflow:ellipsis;">
+              </div>
+
+              <!-- Khối 2: Watermark chìm -->
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <label style="margin:0;font-size:12px;font-weight:700;color:var(--sap-text);">💧 Watermark chìm (Tự tách nền trắng)</label>
+                  <button type="button" onclick="xoaWatermark()" id="btnXoaWm" class="sap-btn sap-btn-reject" style="display:none;padding:2px 8px !important;font-size:10px !important;">Xóa Watermark</button>
+                </div>
+                <input type="file" id="inWmFile" accept="image/png, image/jpeg, image/webp" onchange="loadWatermark(this)" style="width:100%;max-width:100%;font-size:11.5px;overflow:hidden;text-overflow:ellipsis;">
+                <div style="display:flex;align-items:center;gap:8px;margin-top:8px;width:100%;">
+                  <span style="font-size:11px;color:#475569;font-weight:700;white-space:nowrap;">Độ đậm:</span>
+                  <input type="range" id="wmOpacitySlider" min="8" max="45" value="20" oninput="doiDoDamWatermark(this.value)" style="flex:1;min-width:0;width:100%;cursor:pointer;margin:0;">
+                  <span id="wmOpacityLabel" style="font-size:11px;font-weight:800;color:var(--sap-brand);min-width:32px;text-align:right;">20%</span>
                 </div>
               </div>
             </div>
