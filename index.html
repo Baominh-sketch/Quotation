@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SAP S/4HANA Morning Horizon — GOODS LINK ERP</title>
+  <title>ERP — Hệ Thống Báo Giá & Xuất Kho</title>
 
   <!-- 1. THƯ VIỆN FIREBASE SDK (COMPAT) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -22,13 +22,14 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    console.log("🔥 SAP HANA Cloud / Firebase Firestore Connected!");
+    console.log("🔥 ERP Cloud / Firebase Firestore Connected!");
   </script>
 
   <!-- 3. CÁC LINK CSS & SCRIPT GIAO DIỆN -->
   <link href="https://fonts.googleapis.com/css2?family=72:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.js/npm/chart.js@3.9.1/dist/chart.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
   
   <link rel="stylesheet" href="UI_Styles.css">
@@ -67,7 +68,7 @@
     }
 
     /* =====================================================
-       1. SAP SHELL BAR TRÊN CÙNG (MORNING HORIZON)
+       1. SHELL BAR TRÊN CÙNG (LOGO ERP GỌN GÀNG)
        ===================================================== */
     .sap-shell-bar {
       height: 48px;
@@ -86,7 +87,7 @@
     .sap-shell-left {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
     .sap-logo-badge {
@@ -94,18 +95,12 @@
       color: #fff;
       font-weight: 900;
       font-size: 13px;
-      letter-spacing: 0.5px;
-      padding: 4px 10px 4px 8px;
+      letter-spacing: 0.6px;
+      padding: 4px 12px 4px 9px;
       clip-path: polygon(0 0, 100% 0, 86% 100%, 0% 100%);
       display: inline-flex;
       align-items: center;
       user-select: none;
-    }
-
-    .sap-shell-title {
-      font-size: 13.5px;
-      font-weight: 700;
-      color: var(--sap-text);
     }
 
     .sap-shell-center {
@@ -159,7 +154,7 @@
     }
 
     /* =====================================================
-       2. BỐ CỤC CHÍNH SAP (SIDEBAR TRÁI + WORKSPACE GIỮA)
+       2. BỐ CỤC CHÍNH (SIDEBAR TRÁI TÍCH HỢP + WORKSPACE)
        ===================================================== */
     .sap-master-layout {
       display: flex;
@@ -168,10 +163,9 @@
       overflow: hidden;
     }
 
-    /* Cột Menu Trái SAPUI5 Controls */
     .sap-side-nav {
-      width: 225px;
-      min-width: 225px;
+      width: 220px;
+      min-width: 220px;
       background: #ffffff;
       border-right: 1px solid var(--sap-border);
       display: flex;
@@ -200,7 +194,7 @@
     }
 
     .sap-side-section {
-      padding: 8px 14px 4px 14px;
+      padding: 10px 14px 6px 14px;
       font-size: 10.5px;
       font-weight: 800;
       color: var(--sap-muted);
@@ -212,7 +206,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 9px 14px;
+      padding: 10px 14px;
       font-size: 12.5px;
       font-weight: 600;
       color: var(--sap-text);
@@ -243,6 +237,38 @@
       background: var(--sap-brand);
     }
 
+    /* Nhánh con tích hợp bên trong Phân hệ */
+    .sap-sub-menu {
+      display: none;
+      flex-direction: column;
+      background: #f8fafd;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .sap-sub-menu.open {
+      display: flex;
+    }
+    .sap-sub-item {
+      padding: 8px 14px 8px 32px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--sap-muted);
+      border: none;
+      border-bottom: 1px dashed #eef2f6;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .sap-sub-item:hover {
+      color: var(--sap-brand);
+      background: #eef6ff;
+    }
+    .sap-sub-item.active {
+      color: var(--sap-brand);
+      font-weight: 800;
+      background: #eef6ff;
+    }
+
     /* Vùng Nội Dung Trung Tâm */
     .sap-center-stage {
       flex: 1;
@@ -253,17 +279,17 @@
       background: var(--sap-bg);
     }
 
-    /* Thanh Sub-Header (Segmented Preview Bar của SAP) */
+    /* Thanh Sub-Header chứa toàn bộ nút Thao tác hệ thống ở góc phải */
     .sap-sub-toolbar {
-      height: 44px;
-      min-height: 44px;
+      min-height: 46px;
       background: #ffffff;
       border-bottom: 1px solid var(--sap-border);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 16px;
+      padding: 6px 16px;
       gap: 10px;
+      flex-wrap: wrap;
     }
 
     .sap-segmented-group {
@@ -297,6 +323,7 @@
     .sap-pill-bar {
       display: flex;
       flex-wrap: wrap;
+      align-items: center;
       gap: 6px;
     }
 
@@ -316,7 +343,6 @@
       transition: all 0.15s ease !important;
     }
 
-    /* Emphasized (Xanh SAP đậm) */
     .btn-primary-argon,
     .sap-btn-emphasized {
       background: var(--sap-brand) !important;
@@ -329,7 +355,6 @@
       background: var(--sap-brand-hover) !important;
     }
 
-    /* Accept / Success (Xanh lá SAP) */
     .btn-success-argon,
     .sap-btn-accept {
       background: var(--sap-success) !important;
@@ -337,17 +362,15 @@
       border: 1px solid var(--sap-success) !important;
     }
 
-    /* Outlined Accept (Viền xanh lá giống mẫu SAP) */
     .btn-mini-save,
     .sap-btn-accept-outline {
       background: var(--sap-success-bg) !important;
       color: var(--sap-success) !important;
       border: 1.5px solid var(--sap-success) !important;
-      padding: 3px 10px !important;
-      font-size: 11px !important;
+      padding: 4px 11px !important;
+      font-size: 11.5px !important;
     }
 
-    /* Reject / Negative (Đỏ SAP) */
     .btn-danger-argon,
     .sap-btn-reject {
       background: var(--sap-danger-bg) !important;
@@ -359,14 +382,12 @@
       color: #ffffff !important;
     }
 
-    /* Attention / Critical (Cam SAP) */
     .sap-btn-critical {
       background: var(--sap-warning) !important;
       color: #ffffff !important;
       border: 1.5px solid var(--sap-warning) !important;
     }
 
-    /* Default Pill (Xanh viền mảnh) */
     .preset-chip,
     .btn-neutral-argon {
       background: #ffffff !important;
@@ -380,7 +401,6 @@
       background: var(--sap-brand-light) !important;
     }
 
-    /* Thẻ Card chuẩn SAPUI5 Object Page */
     .argon-card {
       background: #ffffff !important;
       border: 1px solid #e5e7eb !important;
@@ -421,7 +441,6 @@
       color: #ffffff !important;
     }
 
-    /* Ô nhập liệu chuẩn SAPUI5 Input */
     input[type="text"],
     input[type="number"],
     select,
@@ -442,7 +461,7 @@
     }
 
     /* =====================================================
-       4. TRỢ LÝ ẢO SAP JOULE COPILOT (PANEL TÍM BÊN PHẢI)
+       4. TRỢ LÝ ẢO JOULE COPILOT (PANEL TÍM BÊN PHẢI)
        ===================================================== */
     .sap-joule-drawer {
       width: 310px;
@@ -590,7 +609,7 @@
     .kp-welcome-banner { background: linear-gradient(135deg, #004085 0%, #0064d9 100%); color: #fff; padding: 18px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 12px; }
 
     #viewStudio.app-workspace {
-      height: calc(100vh - 92px) !important;
+      height: calc(100vh - 94px) !important;
     }
     #panelRightScroll {
       background: #dfe3e8 !important;
@@ -653,7 +672,6 @@
       margin: 4px auto !important;
     }
 
-    /* Hộp xác nhận 1 chạm khi mở khay chọn App trên Mobile */
     #quickShareConfirmModal {
       display: none;
       position: fixed;
@@ -695,13 +713,13 @@
         display: none;
       }
       .sap-sub-toolbar {
-        overflow-x: auto;
-        padding: 0 10px;
+        padding: 6px 10px;
+        gap: 6px;
       }
       #viewDashboard, #manHinhQuanLyMaster {
         padding: 12px !important;
         padding-bottom: 60px !important;
-        height: calc(100vh - 92px) !important;
+        height: calc(100vh - 96px) !important;
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch;
       }
@@ -712,7 +730,7 @@
 
       #viewStudio.app-workspace {
         flex-direction: column !important;
-        height: calc(100vh - 144px) !important;
+        height: calc(100vh - 148px) !important;
         overflow: hidden !important;
       }
       #viewStudio .panel-left,
@@ -796,87 +814,79 @@
 <body>
 
   <!-- ========================================================= -->
-  <!-- 1. THANH SAP SHELL BAR TRÊN CÙNG (MORNING HORIZON)         -->
+  <!-- 1. THANH SHELL BAR TRÊN CÙNG (ĐỔI SAP -> ERP, XÓA CHỮ KẾ BÊN) -->
   <!-- ========================================================= -->
   <header class="sap-shell-bar">
     <div class="sap-shell-left">
-      <button class="sap-icon-btn" onclick="batTatMenuTraiSAP()" title="Ẩn/Hiện cây điều hướng SAP">
+      <button class="sap-icon-btn" onclick="batTatMenuTraiSAP()" title="Ẩn/Hiện thanh điều hướng">
         <i class="mdi mdi-menu"></i>
       </button>
-      <div class="sap-logo-badge">SAP</div>
-      <span class="sap-shell-title">Goods Link ERP</span>
+      <div class="sap-logo-badge">ERP</div>
     </div>
 
     <div class="sap-shell-center" id="sapShellBreadcrumb">
-      Custom Morning Horizon — Báo Giá &amp; Xuất Kho
+      Custom Morning Horizon — Chứng từ: QUO-2026-001
     </div>
 
     <div class="sap-shell-right">
       <button class="sap-btn sap-btn-emphasized" onclick="taoDonMoi(); chuyenManHinhKapella('STUDIO');" style="padding:5px 12px !important;">
         <i class="mdi mdi-plus-circle-outline"></i> Tạo Đơn Mới
       </button>
-      <button class="sap-icon-btn" onclick="batTatJouleCopilot()" title="Mở trợ lý ảo SAP Joule AI" style="color:#6828e0;background:#f3efff;border-color:#d8c8ff;">
+      <button class="sap-icon-btn" onclick="batTatJouleCopilot()" title="Mở trợ lý ảo Joule AI" style="color:#6828e0;background:#f3efff;border-color:#d8c8ff;">
         <i class="mdi mdi-diamond-stone"></i>
       </button>
-      <div class="sap-avatar" title="Huỳnh Bảo Minh — Goods Link JSC">BM</div>
+      <div class="sap-avatar" title="Huỳnh Bảo Minh">BM</div>
     </div>
   </header>
 
   <!-- ========================================================= -->
-  <!-- 2. KHUNG BỐ CỤC CHÍNH SAP (SIDEBAR + MAIN + JOULE AI)     -->
+  <!-- 2. KHUNG BỐ CỤC CHÍNH (SIDEBAR TÍCH HỢP + MAIN + JOULE AI) -->
   <!-- ========================================================= -->
   <div class="sap-master-layout">
 
-    <!-- CỘT TRÁI: SAPUI5 CONTROLS & MODULES NAVIGATION -->
+    <!-- CỘT TRÁI: CHỈ HIỂN THỊ PHÂN HỆ CHÍNH, CÁC MỤC CON ĐƯỢC TÍCH HỢP BÊN TRONG -->
     <aside class="sap-side-nav" id="sapSideNav">
       <div class="sap-side-header">
-        <span>SAPUI5 Modules</span>
+        <span>ERP Modules</span>
         <i class="mdi mdi-layers-triple-outline" style="color:var(--sap-brand);"></i>
       </div>
 
       <div class="sap-side-section">Phân Hệ Chính</div>
+
+      <!-- Phân hệ 1: Tổng quan -->
       <button class="sap-nav-item" id="tabBtnDash" onclick="chuyenManHinhKapella('DASH')">
         <span><i class="mdi mdi-view-dashboard-outline" style="margin-right:6px;"></i> Tổng Quan (Launchpad)</span>
         <i class="mdi mdi-chevron-right"></i>
       </button>
+
+      <!-- Phân hệ 2: Soạn Báo Giá / PI (Tích hợp sẵn 3 loại chứng từ bên trong khi mở phân hệ này) -->
       <button class="sap-nav-item active" id="tabBtnStudio" onclick="chuyenManHinhKapella('STUDIO')">
         <span><i class="mdi mdi-file-document-edit-outline" style="margin-right:6px;"></i> Soạn Báo Giá / PI</span>
-        <i class="mdi mdi-chevron-right"></i>
+        <i class="mdi mdi-chevron-down" id="iconChevronStudio"></i>
       </button>
+      <div class="sap-sub-menu open" id="subMenuStudio">
+        <button class="sap-sub-item active" id="sideModeVN" onclick="chuyenManHinhKapella('STUDIO'); doiCheDo('BG_VN');">
+          🇻🇳 Báo Giá Nội Địa (VN)
+        </button>
+        <button class="sap-sub-item" id="sideModeEN" onclick="chuyenManHinhKapella('STUDIO'); doiCheDo('BG_EN');">
+          🌐 Quotation / PI (EN)
+        </button>
+        <button class="sap-sub-item" id="sideModeXK" onclick="chuyenManHinhKapella('STUDIO'); doiCheDo('XK');">
+          📦 Phiếu Xuất Kho
+        </button>
+      </div>
+
+      <!-- Phân hệ 3: Database & CRM -->
       <button class="sap-nav-item" id="tabBtnMaster" onclick="chuyenManHinhKapella('MASTER')">
         <span><i class="mdi mdi-database-cog-outline" style="margin-right:6px;"></i> Database &amp; CRM</span>
         <i class="mdi mdi-chevron-right"></i>
       </button>
-
-      <div class="sap-side-section" style="margin-top:8px;">Loại Chứng Từ (Studio)</div>
-      <button class="sap-nav-item" id="sideModeVN" onclick="chuyenManHinhKapella('STUDIO'); doiCheDo('BG_VN');">
-        <span>🇻🇳 Báo Giá Nội Địa (VN)</span>
-      </button>
-      <button class="sap-nav-item" id="sideModeEN" onclick="chuyenManHinhKapella('STUDIO'); doiCheDo('BG_EN');">
-        <span>🌐 Quotation / PI (EN)</span>
-      </button>
-      <button class="sap-nav-item" id="sideModeXK" onclick="chuyenManHinhKapella('STUDIO'); doiCheDo('XK');">
-        <span>📦 Phiếu Xuất Kho</span>
-      </button>
-
-      <div class="sap-side-section" style="margin-top:8px;">Tác Vụ Nhanh (Semantic)</div>
-      <div style="padding:10px 12px;display:flex;flex-direction:column;gap:8px;">
-        <button class="sap-btn sap-btn-emphasized" onclick="xuatPDF()" style="width:100%;justify-content:flex-start !important;">
-          <i class="mdi mdi-printer-outline"></i> Xuất &amp; Tải File PDF
-        </button>
-        <button class="sap-btn sap-btn-accept" onclick="luuVaoAppSheet()" style="width:100%;justify-content:flex-start !important;">
-          <i class="mdi mdi-cloud-upload-outline"></i> Lưu Đơn Lên Cloud
-        </button>
-        <button class="sap-btn sap-btn-critical" onclick="guiEmailChoKhachHang()" style="width:100%;justify-content:flex-start !important;">
-          <i class="mdi mdi-email-fast-outline"></i> Gửi Mail Kèm PDF
-        </button>
-      </div>
     </aside>
 
-    <!-- VÙNG TRUNG TÂM SAP WORKSPACE -->
+    <!-- VÙNG TRUNG TÂM WORKSPACE -->
     <main class="sap-center-stage">
 
-      <!-- Thanh công cụ phụ chuẩn SAP Horizon Preview Header -->
+      <!-- Thanh công cụ phụ: Chuyển hết các nút Thao tác hệ thống (Lưu nháp, Lưu Cloud, Tải PDF, Gửi Mail) sang góc phải -->
       <div class="sap-sub-toolbar">
         <div class="sap-segmented-group">
           <button class="sap-seg-btn" id="segBtnDash" onclick="chuyenManHinhKapella('DASH')">📊 Dashboard</button>
@@ -885,26 +895,28 @@
         </div>
 
         <div class="sap-pill-bar">
-          <span style="font-size:11.5px;color:var(--sap-muted);font-weight:700;align-self:center;margin-right:4px;">SAP Semantic Actions:</span>
-          <button class="sap-btn sap-btn-accept-outline" onclick="luuDonNháp()" title="Lưu nháp">
-            <i class="mdi mdi-check-circle-outline"></i> Lưu Nháp
+          <button class="sap-btn sap-btn-accept-outline" onclick="luuDonNháp()" title="Lưu nháp đơn hàng">
+            <i class="mdi mdi-content-save-outline"></i> Lưu Nháp
           </button>
-          <button class="sap-btn sap-btn-accept" onclick="luuVaoAppSheet()" title="Lưu lên Firebase Cloud">
+          <button class="sap-btn sap-btn-accept" onclick="luuVaoAppSheet()" title="Lưu đơn lên Cloud">
             <i class="mdi mdi-cloud-check-outline"></i> Lưu Cloud
           </button>
           <button class="sap-btn sap-btn-emphasized" onclick="xuatPDF()" title="Tải xuống PDF chuẩn A4">
             <i class="mdi mdi-file-pdf-box"></i> Tải PDF
           </button>
+          <button class="sap-btn sap-btn-critical" onclick="guiEmailChoKhachHang()" title="Tải PDF và Gửi Mail cho khách hàng">
+            <i class="mdi mdi-email-fast-outline"></i> Tải PDF &amp; Gửi Mail
+          </button>
         </div>
       </div>
 
       <!-- ========================================================= -->
-      <!-- MÀN HÌNH 1: SAP FIORI LAUNCHPAD DASHBOARD                 -->
+      <!-- MÀN HÌNH 1: LAUNCHPAD DASHBOARD                           -->
       <!-- ========================================================= -->
-      <div id="viewDashboard" style="display:none; padding:20px; background:var(--sap-bg); height:calc(100vh - 92px); overflow-y:auto;">
+      <div id="viewDashboard" style="display:none; padding:20px; background:var(--sap-bg); height:calc(100vh - 94px); overflow-y:auto;">
         <div class="kp-welcome-banner">
           <div>
-            <h3 style="margin:0 0 4px 0;font-size:17px;font-weight:800;">SAP S/4HANA Launchpad — Quản Trị Báo Giá &amp; Ngoại Thương</h3>
+            <h3 style="margin:0 0 4px 0;font-size:17px;font-weight:800;">ERP Launchpad — Quản Trị Báo Giá &amp; Ngoại Thương</h3>
             <div style="font-size:12px;opacity:0.92;">Đồng bộ thời gian thực với Firebase Firestore (Goods Link Joint Stock Company)</div>
           </div>
           <button onclick="taiDanhSachDonLuuApp()" class="sap-btn" style="background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.5);">
@@ -970,11 +982,11 @@
       <!-- ========================================================= -->
       <div class="app-workspace" id="viewStudio">
 
-        <!-- CỘT TRÁI: FORM NHẬP LIỆU CHUẨN SAP OBJECT PAGE -->
+        <!-- CỘT TRÁI: FORM NHẬP LIỆU -->
         <div class="panel-left" id="panelLeftForm">
           <div class="argon-hero-header">
             <div class="brand-bar">
-              <h2 class="brand-title">⚡ SAP Quotation Studio <span class="badge-argon">HORIZON UI</span></h2>
+              <h2 class="brand-title">⚡ Quotation Studio <span class="badge-argon">HORIZON UI</span></h2>
               <button class="sap-btn sap-btn-emphasized" onclick="taoDonMoi()" style="padding:4px 10px !important;font-size:11px !important;">+ Đơn mới</button>
             </div>
             <div class="mode-switch">
@@ -998,7 +1010,7 @@
             <!-- 1. KHÁCH HÀNG & CHỨNG TỪ -->
             <div class="argon-card">
               <div class="argon-card-header">
-                <div class="argon-card-title">👤 1. Object Header — Khách Hàng &amp; Đơn</div>
+                <div class="argon-card-title">👤 1. Thông Tin Khách Hàng &amp; Đơn</div>
                 <button class="btn-mini-save" onclick="luuKhachHangTuStudio()">➕ Lưu KH</button>
               </div>
 
@@ -1091,7 +1103,7 @@
             <!-- 2. HÀNG HÓA -->
             <div class="argon-card">
               <div class="argon-card-header">
-                <div class="argon-card-title">📦 2. Line Items — Chi Tiết Hàng Hóa</div>
+                <div class="argon-card-title">📦 2. Chi Tiết Hàng Hóa</div>
                 <button class="btn-mini-save" onclick="luuSanPhamTuStudio()">➕ Lưu SP</button>
               </div>
 
@@ -1175,14 +1187,13 @@
               </div>
             </div>
 
-            <!-- 4. CẤU HÌNH GỬI MAIL -->
+            <!-- 4. CẤU HÌNH GỬI MAIL (ĐÃ XÓA KHUNG THAO TÁC HỆ THỐNG BÊN DƯỚI VÀ CHUYỂN LÊN GÓC PHẢI) -->
             <div class="argon-card" style="border:1.5px solid var(--sap-brand) !important;">
               <div class="argon-card-header">
                 <div class="argon-card-title" style="color:var(--sap-brand);">📧 4. Cấu Hình Gửi Mail Khách Hàng</div>
                 <button class="btn-mini-save" onclick="datLaiNoiDungMacDinh(true)">🔄 Tạo mẫu (VN/EN)</button>
               </div>
 
-              <!-- Ô CHỌN APP GỬI MAIL TÍCH HỢP SẴN -->
               <div class="form-group" style="background:var(--sap-brand-light);border:1px solid #b8daff;padding:8px 10px;border-radius:8px;margin-bottom:10px;">
                 <label style="color:var(--sap-brand);font-weight:800;font-size:11.5px;margin-bottom:4px;display:block;">
                   📲 Chọn App gửi Mail (Khi bấm nút Gửi Mail):
@@ -1199,21 +1210,6 @@
               <div class="form-group"><label>Thông tin liên hệ của bạn (Hiển thị trong email &amp; Note A4)</label><input type="text" id="inThongTinLienHeMail" placeholder="VD: Mr. Minh - Phone/WhatsApp: +84 707 253 054 - Email: work.baominh@gmail.com" oninput="capNhatLienHeVaoA4()"></div>
               <div class="form-group"><label>Tiêu đề thư (Subject — Tự động nhảy theo Số chứng từ)</label><input type="text" id="inEmailSubject" placeholder="Tiêu đề email..."></div>
               <div class="form-group"><label>Nội dung lời nhắn (Tự động nhảy theo Số chứng từ &amp; Ngày lập)</label><textarea id="inEmailBody" rows="5" placeholder="Nội dung email..."></textarea></div>
-            </div>
-
-            <!-- THAO TÁC HỆ THỐNG -->
-            <div class="argon-card" style="background:#f8fafc !important;">
-              <div class="argon-card-header"><div class="argon-card-title">⚡ Thao Tác Hệ Thống (SAP Actions)</div></div>
-              <div style="display:flex;flex-direction:column;gap:8px;">
-                <div class="row">
-                  <button class="btn-argon btn-neutral-argon" onclick="luuDonNháp()" style="flex:1;">💾 Lưu Nháp</button>
-                  <button class="btn-argon btn-success-argon" onclick="luuVaoAppSheet()" style="flex:1;">☁️ Lưu Cloud</button>
-                </div>
-                <div class="row">
-                  <button class="btn-argon btn-primary-argon" onclick="xuatPDF()" style="flex:1;">🖨️ Tải PDF</button>
-                  <button class="btn-argon sap-btn-critical" onclick="guiEmailChoKhachHang()" style="flex:1;">📧 Tải PDF &amp; Gửi Mail</button>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -1321,8 +1317,8 @@
       <!-- ========================================================= -->
       <!-- MÀN HÌNH 3: QUẢN LÝ MASTER DATA & CRM                      -->
       <!-- ========================================================= -->
-      <div id="manHinhQuanLyMaster" class="main-content-tab" style="display:none; padding:25px; background:var(--sap-bg); height:calc(100vh - 92px); overflow-y:auto;">
-        <h2 style="color: var(--sap-text); margin-top:0; margin-bottom: 18px; font-size:18px;">⚙️ SAP Master Data Management (Database, CRM, Banking)</h2>
+      <div id="manHinhQuanLyMaster" class="main-content-tab" style="display:none; padding:25px; background:var(--sap-bg); height:calc(100vh - 94px); overflow-y:auto;">
+        <h2 style="color: var(--sap-text); margin-top:0; margin-bottom: 18px; font-size:18px;">⚙️ Master Data Management (Database, CRM, Banking)</h2>
         
         <div class="master-grid-3">
           
@@ -1430,7 +1426,7 @@
 
     </main>
 
-    <!-- CỘT PHẢI: TRỢ LÝ ẢO SAP JOULE COPILOT (GIỐNG ẢNH MẪU SAP HORIZON) -->
+    <!-- CỘT PHẢI: TRỢ LÝ ẢO JOULE COPILOT -->
     <aside class="sap-joule-drawer" id="sapJouleDrawer">
       <div class="joule-hero">
         <div class="joule-top-bar">
@@ -1450,7 +1446,7 @@
 
       <div class="joule-chat-body" id="jouleChatBody">
         <div class="joule-msg">
-          👋 Xin chào! Tôi là trợ lý <b>SAP Joule</b> của <b>Goods Link ERP</b>. Chọn nhanh tác vụ bên dưới hoặc nhập yêu cầu của bạn:
+          👋 Xin chào! Tôi là trợ lý <b>Joule</b>. Chọn nhanh tác vụ bên dưới hoặc nhập yêu cầu của bạn:
         </div>
         <div class="joule-quick-actions">
           <button class="joule-chip" onclick="jouleThucThiLenh('NEW_ORDER')">✨ Tạo đơn mới</button>
@@ -1503,7 +1499,7 @@
   <script src="JS_State_CRUD.js"></script>
   <script src="JS_Render_PDF.js"></script>
 
-  <!-- SCRIPT TÍCH HỢP TOÀN DIỆN SAP HORIZON + LOGIC ERP -->
+  <!-- SCRIPT TÍCH HỢP TOÀN DIỆN -->
   <script>
     window.masterCache = { sp: {}, kh: {}, bank: {}, orders: {} };
     window.gioHang = [];
@@ -1541,7 +1537,7 @@
     }
 
     // =====================================================
-    // 0. ĐIỀU KHIỂN MENU SAP SIDEBAR & TRỢ LÝ JOULE AI
+    // 0. ĐIỀU KHIỂN MENU SIDEBAR & TRỢ LÝ JOULE AI
     // =====================================================
     window.batTatMenuTraiSAP = function() {
       const side = document.getElementById('sapSideNav');
@@ -1622,7 +1618,6 @@
       }
     };
 
-    // Hàm hỗ trợ Copy tự động Email khách hàng vào bộ nhớ tạm
     window.copyTextToClipboard = async function(text) {
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -1648,7 +1643,7 @@
     };
 
     // =====================================================
-    // 1. XỬ LÝ ẢNH HD & TÁCH NỀN TRẮNG CHO WATERMARK (100% HIỆN LÊN PDF)
+    // 1. XỬ LÝ ẢNH HD & TÁCH NỀN TRẮNG CHO WATERMARK
     // =====================================================
     function docFileAnhSangBase64(file, maxWidth, keepPng, callback) {
       if (!file) return;
@@ -1860,7 +1855,7 @@
     };
 
     // =====================================================
-    // 2. ĐIỀU HƯỚNG MÀN HÌNH & MOBILE FULL A4
+    // 2. ĐIỀU HƯỚNG MÀN HÌNH (TÍCH HỢP NHÁNH CON TRONG PHÂN HỆ)
     // =====================================================
     window.tuDongZoomA4TrenMobile = function() {
       const wrapper = document.getElementById('a4Wrapper');
@@ -1927,11 +1922,24 @@
       const studioScreen = document.getElementById('viewStudio');
       const masterScreen = document.getElementById('manHinhQuanLyMaster');
       const mobNav = document.getElementById('mobileBottomNav');
+      const subMenuStudio = document.getElementById('subMenuStudio');
+      const iconChevronStudio = document.getElementById('iconChevronStudio');
 
       [dashScreen, studioScreen, masterScreen].forEach(s => { if (s) s.style.display = 'none'; });
       ['tabBtnDash', 'tabBtnStudio', 'tabBtnMaster', 'segBtnDash', 'segBtnStudio', 'segBtnMaster'].forEach(id => {
         document.getElementById(id)?.classList.remove('active');
       });
+
+      // Chỉ mở nhánh con của Studio khi đang ở phân hệ Studio
+      if (subMenuStudio) {
+        if (tab === 'STUDIO') {
+          subMenuStudio.classList.add('open');
+          if (iconChevronStudio) iconChevronStudio.className = 'mdi mdi-chevron-down';
+        } else {
+          subMenuStudio.classList.remove('open');
+          if (iconChevronStudio) iconChevronStudio.className = 'mdi mdi-chevron-right';
+        }
+      }
 
       if (tab === 'DASH' && dashScreen) {
         dashScreen.style.display = 'block';
@@ -2064,7 +2072,7 @@
     };
 
     // =====================================================
-    // 4. GIỎ HÀNG & BẢNG A4 (ẢNH LỚN 160x145px & ĐƠN GIÁ CHUẨN CTN)
+    // 4. GIỎ HÀNG & BẢNG A4
     // =====================================================
     window.themVaoGio = function() {
       const maSP = document.getElementById('inMaSPMoi')?.value.trim() || ('SP' + (window.gioHang.length + 1));
@@ -2166,7 +2174,6 @@
       const isXK = (mode === 'XK');
       const isPI = isEN && (document.getElementById('chkIsPI')?.checked ?? false);
 
-      // 1. Bảng Mini bên trái
       if (window.gioHang.length === 0) {
         miniBody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--sap-muted);">Chưa có sản phẩm</td></tr>';
       } else {
@@ -2188,7 +2195,6 @@
         });
       }
 
-      // 2. Bảng A4 bên phải (Cột ảnh rộng 175px, ảnh 160x145px to cỡ khung đỏ)
       const showImage = document.getElementById('chkShowImage')?.checked ?? true;
       const showTotal = document.getElementById('chkShowTotal')?.checked ?? true;
       const showWords = document.getElementById('chkShowWords')?.checked ?? true;
@@ -2706,7 +2712,7 @@
     };
 
     // =====================================================
-    // 6. XUẤT FULL A4 PDF (KHÔNG BỊ CẮT LỀ) & GỬI MAIL KÈM PDF
+    // 6. XUẤT FULL A4 PDF & GỬI MAIL KÈM PDF
     // =====================================================
     window.xuatPDF = async function(khongTaiXuong = false) {
       const paper = document.getElementById('a4Paper');
@@ -2764,7 +2770,6 @@
         const worker = html2pdf().set(opt).from(clonePaper).toPdf();
         const pdf = await worker.get('pdf');
 
-        // Đóng dấu Watermark chính giữa mọi trang PDF
         const wmSrc = window.processedWatermarkBase64 || (wmImg && wmImg.src && wmImg.src.startsWith('data:image') ? wmImg.src : '');
         if (wmSrc) {
           const totalPages = pdf.internal.getNumberOfPages();
