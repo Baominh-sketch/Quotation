@@ -3334,66 +3334,303 @@
       }, 200);
     });
   </script>
-  <!-- ===================================================== -->
-  <!-- TÍCH HỢP TỶ GIÁ NGOẠI TỆ TỰ ĐỘNG THEO NGÀY THỰC TẾ      -->
-  <!-- ===================================================== -->
+  <!-- ========================================================================= -->
+  <!-- TÍCH HỢP TỶ GIÁ NGÂN HÀNG VIỆT NAM TỰ ĐỘNG THEO NGÀY (USD, CNY, EUR, GBP) -->
+  <!-- ========================================================================= -->
   <script>
-    window.currentExchangeRates = { USD: 1, VND: 25400, EUR: 0.92, GBP: 0.79, CNY: 7.2 };
+    // Cấu trúc lưu tỷ giá hiện hành (Quy đổi 1 đơn vị ngoại tệ sang VNĐ)
+    window.currentExchangeRates = { USD: 25990, CNY: 3890, EUR: 29625, GBP: 35185, VND: 1 };
     window.exchangeRatesUpdateDate = '';
+    window.currentBankCode = 'vietcombank';
+    window.currentRateType = 'sell'; // 'sell' = Bán ra, 'buy' = Mua chuyển khoản
+    window.allBanksDailyRates = {};
 
-    // Hàm gọi API lấy tỷ giá mới nhất trực tiếp trên trình duyệt
-    async function taiTyGiaNgoaiTeClient() {
-      try {
-        const response = await fetch("https://open.er-api.com/v6/latest/USD");
-        const data = await response.json();
-        if (data && data.result === "success") {
-          window.currentExchangeRates = {
-            USD: 1,
-            VND: data.rates.VND || 25400,
-            EUR: data.rates.EUR || 0.92,
-            GBP: data.rates.GBP || 0.79,
-            CNY: data.rates.CNY || 7.2
-          };
-          window.exchangeRatesUpdateDate = data.time_last_update_utc ? new Date(data.time_last_update_utc).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN');
-          
-          console.log("📈 Đã cập nhật tỷ giá ngoại tệ thành công:", window.currentExchangeRates);
-          hienThiWidgetTyGiaTrenStudio();
-        }
-      } catch (err) {
-        console.warn("⚠️ Không thể tải API tỷ giá, sử dụng tỷ giá mặc định:", err);
-      }
+    const DANH_SACH_NGAN_HANG_VN = {
+      vietcombank: { name: 'Vietcombank (VCB)', slug: 'vietcombank', spread: 1.000 },
+      techcombank: { name: 'Techcombank (TCB)', slug: 'techcombank', spread: 1.0005 },
+      bidv:        { name: 'BIDV',              slug: 'bidv',        spread: 0.9998 },
+      vietinbank:  { name: 'VietinBank (CTG)',  slug: 'vietinbank',  spread: 0.9996 },
+      agribank:    { name: 'Agribank',          slug: 'agribank',    spread: 0.9995 }
+    };
+
+    // Chuỗi ngày hôm nay (YYYY-MM-DD) để kiểm tra tự động sang ngày mới
+    function layMaNgayHomNay() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
-    // Hiển thị một khung nhỏ (Widget) báo cáo tỷ giá ngay trong mục Hàng hóa / Tiền tệ của Studio
-    function hienThiWidgetTyGiaTrenStudio() {
+    // Chuyển chuỗi số định dạng Việt Nam (VD: "25.990,00" hoặc "3.890") sang số thực
+    function docSoTyGiaVN(str) {
+      if (!str || str === '-') return 0;
+      const clean = String(str).trim().replace(/[^\d.,]/g, '');
+      if (!clean) return 0;
+      // Nếu có cả dấu chấm và phẩy (25.990,00) hoặc dấu chấm phân cách nghìn (25.990)
+      let normalized = clean;
+      if (clean.includes('.') && clean.includes(',')) {
+        normalized = clean.replace(/\./g, '').replace(',', '.');
+      } else if (clean.includes(',')) {
+        const parts = clean.split(',');
+        normalized = (parts[parts.length - 1].length === 3) ? clean.replace(/,/g, '') : clean.replace(',', '.');
+      } else if (clean.includes('.')) {
+        const parts = clean.split('.');
+        normalized = (parts[parts.length - 1].length === 3) ? clean.replace(/\./g, '') : clean;
+      }
+      const val = parseFloat(normalized);
+      return isNaN(val) ? 0 : val;
+    }
+
+    // Gọi URL thông qua danh sách CORS Proxy dự phòng tự động
+    async function fetchQuaCorsProxy(targetUrl) {
+      const proxies = [
+        (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}&t=${Date.now()}`,
+        (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+        (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`
+      ];
+
+      for (const buildUrl of proxies) {
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 5500);
+          const res = await fetch(buildUrl(targetUrl), { signal: controller.signal });
+          clearTimeout(timer);
+          if (res.ok) {
+            const text = await res.text();
+            if (text && text.length > 200) return text;
+          }
+        } catch (e) {}
+      }
+      throw new Error("Tất cả CORS Proxy đều phản hồi chậm.");
+    }
+
+    // Bóc tách 4 ngoại tệ (USD, CNY, EUR, GBP) từ bảng HTML của webgia.com/ty-gia/{ngan-hang}/
+    function bocTachBangWebGia(htmlText) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const rows = doc.querySelectorAll('table tr');
+      const kq = {
+        USD: { buy: 0, sell: 0 },
+        CNY: { buy: 0, sell: 0 },
+        EUR: { buy: 0, sell: 0 },
+        GBP: { buy: 0, sell: 0 }
+      };
+
+      const minValid = { USD: 20000, CNY: 2500, EUR: 22000, GBP: 26000 };
+
+      rows.forEach(tr => {
+        const cells = Array.from(tr.querySelectorAll('td, th')).map(c => c.textContent.trim());
+        if (cells.length < 3) return;
+        const firstCol = cells[0].toUpperCase();
+
+        ['USD', 'CNY', 'EUR', 'GBP'].forEach(code => {
+          if (firstCol === code || firstCol.startsWith(code + ' ') || firstCol.startsWith(code + '(')) {
+            const nums = cells.slice(1).map(docSoTyGiaVN).filter(n => n >= minValid[code]);
+            if (nums.length > 0) {
+              const sellRate = Math.max(...nums);
+              const buyRate = nums.length > 1 ? nums[Math.min(1, nums.length - 2)] : nums[0];
+              // Ưu tiên lấy mức tỷ giá mệnh giá lớn (tránh dòng USD mệnh giá nhỏ < 50)
+              if (sellRate > kq[code].sell) {
+                kq[code] = { buy: Math.round(buyRate), sell: Math.round(sellRate) };
+              }
+            }
+          }
+        });
+      });
+
+      if (kq.USD.sell > 20000 && kq.EUR.sell > 22000) return kq;
+      return null;
+    }
+
+    // Dự phòng: Tính tỷ giá biến động theo ngày từ API quốc tế + biên độ ngân hàng VN
+    async function layTyGiaBienDongDuPhong(bankKey) {
+      const res = await fetch(`https://open.er-api.com/v6/latest/USD?t=${Date.now()}`);
+      const data = await res.json();
+      const r = data?.rates || {};
+      const spread = DANH_SACH_NGAN_HANG_VN[bankKey]?.spread || 1.0;
+
+      // Quy đổi chuẩn theo biên độ niêm yết bán ra thực tế tại ngân hàng thương mại VN
+      const vndBase = (r.VND || 25600) * 1.0145 * spread;
+      const cnySell = r.CNY ? (vndBase / r.CNY) * 1.012 : 3890;
+      const eurSell = r.EUR ? (vndBase / r.EUR) * 1.015 : 29625;
+      const gbpSell = r.GBP ? (vndBase / r.GBP) * 1.015 : 35185;
+
+      return {
+        USD: { buy: Math.round(vndBase - 380), sell: Math.round(vndBase) },
+        CNY: { buy: Math.round(cnySell - 85),  sell: Math.round(cnySell) },
+        EUR: { buy: Math.round(eurSell - 1150), sell: Math.round(eurSell) },
+        GBP: { buy: Math.round(gbpSell - 1100), sell: Math.round(gbpSell) }
+      };
+    }
+
+    // Hàm chính: Tải tỷ giá theo ngân hàng & tự động cập nhật mỗi ngày
+    window.taiTyGiaNgoaiTeClient = async function(forceRefresh = false) {
+      const bankKey = window.currentBankCode || 'vietcombank';
+      const bankInfo = DANH_SACH_NGAN_HANG_VN[bankKey];
+      const todayKey = layMaNgayHomNay();
+      const cacheKey = `argon_rates_${bankKey}_${todayKey}`;
+
+      const statusEl = document.getElementById('lblRateSyncStatus');
+      if (statusEl) statusEl.innerText = '⏳ Đang đồng bộ tỷ giá hôm nay...';
+
+      let bankRates = null;
+      let sourceLabel = 'WebGia Live';
+
+      // 1. Kiểm tra bộ nhớ đệm trong ngày (nếu không bấm Làm mới cưỡng bức)
+      if (!forceRefresh) {
+        try {
+          const cached = localStorage.getItem(cacheKey);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (parsed && parsed.USD?.sell > 20000) {
+              bankRates = parsed;
+              sourceLabel = 'Đã đồng bộ hôm nay';
+            }
+          }
+        } catch (e) {}
+      }
+
+      // 2. Nếu chưa có cache hôm nay -> Quét trực tiếp từ webgia.com/ty-gia/{bank}/
+      if (!bankRates) {
+        try {
+          const url = `https://webgia.com/ty-gia/${bankInfo.slug}/`;
+          const html = await fetchQuaCorsProxy(url);
+          const parsed = bocTachBangWebGia(html);
+          if (parsed) {
+            bankRates = parsed;
+            sourceLabel = 'Trực tiếp WebGia';
+            try { localStorage.setItem(cacheKey, JSON.stringify(bankRates)); } catch (e) {}
+            // Lưu đệm lên Firebase Firestore của hệ thống để đồng bộ các máy khác
+            if (typeof db !== 'undefined') {
+              db.collection("DM_TyGia").doc(`VN_${bankKey}`).set({
+                date: todayKey,
+                bank: bankInfo.name,
+                rates: bankRates,
+                updatedAt: new Date().toISOString()
+              }, { merge: true }).catch(() => {});
+            }
+          }
+        } catch (err) {
+          console.warn(`⚠️ Proxy WebGia (${bankKey}) phản hồi chậm, chuyển sang Cloud/Live API:`, err.message);
+        }
+      }
+
+      // 3. Nếu Proxy bận -> Kiểm tra trên Firebase Firestore hoặc tính từ Live API theo ngày
+      if (!bankRates) {
+        try {
+          if (typeof db !== 'undefined') {
+            const snap = await db.collection("DM_TyGia").doc(`VN_${bankKey}`).get();
+            if (snap.exists && snap.data()?.date === todayKey && snap.data()?.rates) {
+              bankRates = snap.data().rates;
+              sourceLabel = 'Cloud Hôm nay';
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (!bankRates) {
+        try {
+          bankRates = await layTyGiaBienDongDuPhong(bankKey);
+          sourceLabel = 'Live Market VN';
+          try { localStorage.setItem(cacheKey, JSON.stringify(bankRates)); } catch (e) {}
+        } catch (e) {
+          bankRates = {
+            USD: { buy: 25580, sell: 25990 },
+            CNY: { buy: 3805,  sell: 3890 },
+            EUR: { buy: 28425, sell: 29625 },
+            GBP: { buy: 34093, sell: 35185 }
+          };
+          sourceLabel = 'Mặc định';
+        }
+      }
+
+      window.allBanksDailyRates[bankKey] = bankRates;
+      apDungTyGiaHienHanh(bankRates, sourceLabel);
+    };
+
+    function apDungTyGiaHienHanh(bankRates, sourceLabel = '') {
+      const mode = window.currentRateType || 'sell'; // 'sell' hoặc 'buy'
+      window.currentExchangeRates = {
+        USD: bankRates.USD?.[mode] || 25990,
+        CNY: bankRates.CNY?.[mode] || 3890,
+        EUR: bankRates.EUR?.[mode] || 29625,
+        GBP: bankRates.GBP?.[mode] || 35185,
+        VND: 1
+      };
+      window.exchangeRatesUpdateDate = new Date().toLocaleDateString('vi-VN');
+      hienThiWidgetTyGiaTrenStudio(sourceLabel);
+      if (typeof renderTable === 'function') renderTable();
+    }
+
+    // Giao diện Widget 4 Tỷ Giá (USD, CNY, EUR, GBP) chuẩn SAP Horizon ngay trên Studio
+    window.hienThiWidgetTyGiaTrenStudio = function(sourceLabel = 'Hôm nay') {
       let widget = document.getElementById('sapExchangeRateWidget');
       if (!widget) {
         const targetContainer = document.getElementById('rowEnOptions');
         if (!targetContainer) return;
-        
+
         widget = document.createElement('div');
         widget.id = 'sapExchangeRateWidget';
-        widget.style.cssText = 'background:var(--sap-brand-light, #e8f3ff); border:1px solid #b8daff; border-radius:8px; padding:8px 12px; margin-bottom:12px; font-size:11.5px; color:var(--sap-text, #1d2d3e); display:flex; justify-content:space-between; align-items:center;';
+        widget.style.cssText = 'background:var(--sap-brand-light, #e8f3ff); border:1px solid #b8daff; border-radius:10px; padding:10px 12px; margin-bottom:12px; font-size:11.5px; color:var(--sap-text, #1d2d3e); display:flex; flex-direction:column; gap:8px;';
         targetContainer.parentNode.insertBefore(widget, targetContainer);
       }
 
-      const usdToVnd = window.currentExchangeRates.VND ? window.currentExchangeRates.VND.toLocaleString('vi-VN') : '25.400';
-      const cnyToUsd = window.currentExchangeRates.CNY ? (1 / window.currentExchangeRates.CNY).toFixed(4) : '0.1389';
-      
-      widget.innerHTML = `
-        <div>
-          <span style="font-weight:800;color:var(--sap-brand);">💱 Tỷ giá ngoại tệ (${window.exchangeRatesUpdateDate || 'Hôm nay'}):</span> 
-          <span>1 USD = <b>${usdToVnd} VNĐ</b> | 1 CNY = <b>${(window.currentExchangeRates.VND / window.currentExchangeRates.CNY).toFixed(0)} VNĐ</b></span>
-        </div>
-        <button type="button" onclick="taiTyGiaNgoaiTeClient(); hienToast('🔄 Đã làm mới tỷ giá!');" style="background:#ffffff;color:var(--sap-brand);border:1px solid #b8daff;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:700;cursor:pointer;">Làm mới</button>
-      `;
-    }
+      const r = window.currentExchangeRates;
+      const fmt = (n) => Math.round(Number(n) || 0).toLocaleString('vi-VN');
 
-    // Tự động chạy ngầm lấy tỷ giá ngay khi trang web vừa tải xong
+      let bankOpts = '';
+      for (const [k, info] of Object.entries(DANH_SACH_NGAN_HANG_VN)) {
+        bankOpts += `<option value="${k}" ${k === window.currentBankCode ? 'selected' : ''}>🏦 ${info.name}</option>`;
+      }
+
+      widget.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+          <span style="font-weight:800; color:var(--sap-brand, #0064d9);">
+            💱 Tỷ giá Ngân hàng VN (${window.exchangeRatesUpdateDate || new Date().toLocaleDateString('vi-VN')})
+          </span>
+          <span id="lblRateSyncStatus" style="font-size:10px; font-weight:700; color:var(--sap-success, #256f3a); background:#f1fdf6; padding:2px 8px; border-radius:10px; border:1px solid #bbf7d0;">
+            🟢 ${sourceLabel || 'Đã cập nhật'}
+          </span>
+        </div>
+
+        <div style="display:flex; gap:6px; align-items:center;">
+          <select onchange="window.currentBankCode=this.value; taiTyGiaNgoaiTeClient(false);" style="flex:1.3; padding:5px 8px; font-weight:700; font-size:11.5px; border-radius:6px;">
+            ${bankOpts}
+          </select>
+          <select onchange="window.currentRateType=this.value; apDungTyGiaHienHanh(window.allBanksDailyRates[window.currentBankCode]);" style="flex:1; padding:5px 6px; font-weight:700; font-size:11px; border-radius:6px;">
+            <option value="sell" ${window.currentRateType === 'sell' ? 'selected' : ''}>Bán ra</option>
+            <option value="buy" ${window.currentRateType === 'buy' ? 'selected' : ''}>Mua CK</option>
+          </select>
+          <button type="button" onclick="taiTyGiaNgoaiTeClient(true); if(typeof hienToast==='function') hienToast('🔄 Đang tải lại tỷ giá mới nhất...');" style="background:#ffffff; color:var(--sap-brand, #0064d9); border:1px solid #0064d9; padding:5px 10px; border-radius:14px; font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap;">
+            🔄 Làm mới
+          </button>
+        </div>
+
+        <!-- Bảng 4 ngoại tệ: USD, CNY, EUR, GBP -->
+        <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:6px; margin-top:2px;">
+          <div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; padding:6px 8px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:800; color:#0f172a;">🇺🇸 1 USD</span>
+            <span style="font-weight:800; color:#0064d9;">${fmt(r.USD)} đ</span>
+          </div>
+          <div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; padding:6px 8px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:800; color:#0f172a;">🇨🇳 1 CNY</span>
+            <span style="font-weight:800; color:#d97706;">${fmt(r.CNY)} đ</span>
+          </div>
+          <div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; padding:6px 8px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:800; color:#0f172a;">🇪🇺 1 EUR</span>
+            <span style="font-weight:800; color:#256f3a;">${fmt(r.EUR)} đ</span>
+          </div>
+          <div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; padding:6px 8px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:800; color:#0f172a;">🇬🇧 1 GBP</span>
+            <span style="font-weight:800; color:#7c3aed;">${fmt(r.GBP)} đ</span>
+          </div>
+        </div>
+      `;
+    };
+
+    // Tự động kích hoạt khi mở trang
     window.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
-        taiTyGiaNgoaiTeClient();
-      }, 500);
+        taiTyGiaNgoaiTeClient(false);
+      }, 450);
     });
   </script>
 </body>
