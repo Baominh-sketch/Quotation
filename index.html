@@ -36,6 +36,180 @@
 
   <!-- 4. BỘ GIAO DIỆN SAPUI5 MORNING HORIZON & JOULE COPILOT -->
   <style>
+    /* ===================================================================== */
+    /* 1. BỘ FONT CHỮ ĐỘC QUYỀN SAP 72 (W05-FULL) TỪ THƯ MỤC 72_Web          */
+    /* ===================================================================== */
+    @font-face {
+      font-family: '72';
+      src: url('./72_Web/WOFF2/W05-full/72-Light-full.woff2') format('woff2'),
+           url('./72_Web/WOFF/W05-full/72-Light-full.woff') format('woff'),
+           url('https://ui5.sap.com/sdk/resources/sap/ui/core/themes/base/fonts/72-Light-full.woff2') format('woff2');
+      font-weight: 300;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: '72';
+      src: url('./72_Web/WOFF2/W05-full/72-Regular-full.woff2') format('woff2'),
+           url('./72_Web/WOFF/W05-full/72-Regular-full.woff') format('woff'),
+           url('https://ui5.sap.com/sdk/resources/sap/ui/core/themes/base/fonts/72-Regular-full.woff2') format('woff2');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: '72';
+      src: url('./72_Web/WOFF2/W05-full/72-Italic-full.woff2') format('woff2'),
+           url('./72_Web/WOFF/W05-full/72-Italic-full.woff') format('woff'),
+           url('https://ui5.sap.com/sdk/resources/sap/ui/core/themes/base/fonts/72-Italic-full.woff2') format('woff2');
+      font-weight: 400;
+      font-style: italic;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: '72';
+      src: url('./72_Web/WOFF2/W05-full/72-Semibold-full.woff2') format('woff2'),
+           url('./72_Web/WOFF/W05-full/72-Semibold-full.woff') format('woff'),
+           url('https://ui5.sap.com/sdk/resources/sap/ui/core/themes/base/fonts/72-Semibold-full.woff2') format('woff2');
+      font-weight: 600;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: '72';
+      src: url('./72_Web/WOFF2/W05-full/72-SemiboldDuplex-full.woff2') format('woff2'),
+           url('./72_Web/WOFF/W05-full/72-SemiboldDuplex-full.woff') format('woff'),
+           url('https://ui5.sap.com/sdk/resources/sap/ui/core/themes/base/fonts/72-SemiboldDuplex-full.woff2') format('woff2');
+      font-weight: 650;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: '72';
+      src: url('./72_Web/WOFF2/W05-full/72-Bold-full.woff2') format('woff2'),
+           url('./72_Web/WOFF/W05-full/72-Bold-full.woff') format('woff'),
+           url('https://ui5.sap.com/sdk/resources/sap/ui/core/themes/base/fonts/72-Bold-full.woff2') format('woff2');
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: '72';
+      src: url('./72_Web/WOFF2/W05-full/72-Black-full.woff2') format('woff2'),
+           url('./72_Web/WOFF/W05-full/72-Black-full.woff') format('woff'),
+           url('https://ui5.sap.com/sdk/resources/sap/ui/core/themes/base/fonts/72-Black-full.woff2') format('woff2');
+      font-weight: 800;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: '72Mono';
+      src: url('./72_Web/WOFF/W05-full/72Mono-Bold-full.woff') format('woff'),
+           url('https://ui5.sap.com/sdk/resources/sap/ui/core/themes/base/fonts/72Mono-Bold-full.woff2') format('woff2');
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    /* ===================================================================== */
+    /* 2. BỘ ICON SAP FIORI (SAP-icons.json)                                 */
+    /* ===================================================================== */
+    @font-face {
+      font-family: 'SAP-icons';
+      src: url('https://ui5.sap.com/sdk/resources/sap/ui/core/themes/base/fonts/SAP-icons.woff2') format('woff2'),
+           url('https://ui5.sap.com/sdk/resources/sap/ui/core/themes/base/fonts/SAP-icons.woff') format('woff');
+      font-weight: normal;
+      font-style: normal;
+      font-display: block;
+    }
+
+    .sap-icon {
+      font-family: 'SAP-icons' !important;
+      font-style: normal;
+      font-weight: normal !important;
+      font-variant: normal;
+      text-transform: none;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Mã Hex trích xuất trực tiếp từ file SAP-icons.json */
+    .sap-icon-account::before          { content: "\e001"; }
+    .sap-icon-wrench::before           { content: "\e002"; }
+    .sap-icon-synchronize::before      { content: "\e00a"; }
+    .sap-icon-settings::before         { content: "\e00c"; }
+    .sap-icon-search::before           { content: "\e00d"; }
+    .sap-icon-sales-document::before   { content: "\e00e"; }
+    .sap-icon-refresh::before          { content: "\e010"; }
+    .sap-icon-product::before          { content: "\e011"; }
+    .sap-icon-picture::before          { content: "\e016"; }
+    .sap-icon-pdf-attachment::before   { content: "\e01a"; }
+    .sap-icon-money-bills::before      { content: "\e020"; }
+    .sap-icon-email::before            { content: "\e037"; }
+    .sap-icon-edit::before             { content: "\e038"; }
+    .sap-icon-download::before         { content: "\e03a"; }
+    .sap-icon-delete::before           { content: "\e03d"; }
+    .sap-icon-decline::before          { content: "\e03e"; }
+    .sap-icon-cart::before             { content: "\e043"; }
+    .sap-icon-attachment::before       { content: "\e04a"; }
+    .sap-icon-add::before              { content: "\e058"; }
+    .sap-icon-accept::before           { content: "\e05b"; }
+    .sap-icon-navigation-right::before { content: "\e066"; }
+    .sap-icon-home::before             { content: "\e070"; }
+    .sap-icon-grid::before             { content: "\e071"; }
+    .sap-icon-flight::before           { content: "\e075"; }
+    .sap-icon-factory::before          { content: "\e078"; }
+    .sap-icon-decision::before         { content: "\e07f"; }
+    .sap-icon-database::before         { content: "\e080"; }
+    .sap-icon-customer::before         { content: "\e082"; }
+    .sap-icon-world::before            { content: "\e091"; }
+    .sap-icon-save::before             { content: "\e09a"; }
+    .sap-icon-shipping-status::before  { content: "\e0b3"; }
+    .sap-icon-sales-order::before      { content: "\e0c3"; }
+    .sap-icon-paper-plane::before      { content: "\e0cc"; }
+    .sap-icon-globe::before            { content: "\e0e8"; }
+    .sap-icon-bbyd-dashboard::before   { content: "\e120"; }
+    .sap-icon-sap-box::before          { content: "\e124"; }
+    .sap-icon-sales-quote::before      { content: "\e13e"; }
+    .sap-icon-add-product::before      { content: "\e142"; }
+    .sap-icon-palette::before          { content: "\e145"; }
+    .sap-icon-inventory::before        { content: "\e15d"; }
+    .sap-icon-document::before         { content: "\e172"; }
+    .sap-icon-building::before         { content: "\e199"; }
+    .sap-icon-sys-enter-2::before      { content: "\e1c1"; }
+    .sap-icon-menu2::before            { content: "\e1de"; }
+    .sap-icon-navigation-down::before  { content: "\e1e2"; }
+    .sap-icon-sys-add::before          { content: "\e1f6"; }
+    .sap-icon-activate::before         { content: "\e208"; }
+    .sap-icon-key::before              { content: "\e20e"; }
+    .sap-icon-upload-to-cloud::before  { content: "\e219"; }
+    .sap-icon-bell::before             { content: "\e23a"; }
+    .sap-icon-copy::before             { content: "\e245"; }
+    .sap-icon-validate::before         { content: "\e280"; }
+    .sap-icon-s4hana::before           { content: "\e28a"; }
+    .sap-icon-da::before               { content: "\e2a3"; }
+    .sap-icon-da-2::before             { content: "\e2a4"; }
+    .sap-icon-ai::before               { content: "\e2a5"; }
+    .sap-icon-verified::before         { content: "\e2a8"; }
+    .sap-icon-cloud-check::before      { content: "\e304"; }
+    .sap-icon-currency::before         { content: "\e30e"; }
+
+    /* Áp dụng Font 72 (W05-full) cho toàn bộ hệ thống kèm Fallback tiếng Việt mượt mà */
+    body, button, input, select, textarea,
+    .sap-shell-bar, .sap-side-nav, .sap-sub-header,
+    .argon-card, .sap-joule-drawer {
+      font-family: '72', 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Mã chứng từ, đơn giá, số thùng dùng font 72Mono-Bold của SAP */
+    #inMa, #inGia, #inSL, #shellDocBadge {
+      font-family: '72', '72Mono', 'Plus Jakarta Sans', sans-serif !important;
+    }
     :root {
       --sap-brand: #0064d9;
       --sap-brand-hover: #0054b4;
@@ -1433,45 +1607,66 @@
 
     </main>
 
-    <!-- CỘT PHẢI: TRỢ LÝ ẢO JOULE COPILOT -->
-    <aside class="sap-joule-drawer" id="sapJouleDrawer">
-      <div class="joule-hero">
-        <div class="joule-top-bar">
-          <span><i class="mdi mdi-menu" style="margin-right:6px;"></i> Joule</span>
-          <div style="display:flex;gap:10px;align-items:center;">
-            <i class="mdi mdi-arrow-expand-all" style="cursor:pointer;" onclick="batTatJouleCopilot()" title="Thu gọn"></i>
-            <i class="mdi mdi-close" style="cursor:pointer;" onclick="batTatJouleCopilot()" title="Đóng Joule"></i>
+    <!-- CỘT PHẢI: TRỢ LÝ ẢO JOULE COPILOT THỰC CHIẾN CHO XUẤT NHẬP KHẨU -->
+    <aside class="sap-joule-drawer open" id="sapJouleDrawer" style="width:340px;min-width:340px;">
+      <div class="joule-hero" style="padding:12px 14px 14px 14px;">
+        <div class="joule-top-bar" style="margin-bottom:8px;">
+          <span style="display:flex;align-items:center;gap:6px;">
+            <i class="mdi mdi-diamond-stone" style="font-size:16px;"></i> <b>Joule Copilot</b> <span style="font-size:10px;background:rgba(255,255,255,0.2);padding:2px 6px;border-radius:8px;">PRO</span>
+          </span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button type="button" onclick="caiDatGeminiKeyJoule()" title="Cấu hình Gemini AI Key" style="background:rgba(255,255,255,0.18);border:none;color:#fff;padding:3px 7px;border-radius:6px;font-size:10.5px;font-weight:700;cursor:pointer;">🔑 AI Key</button>
+            <button type="button" onclick="xoaLichSuChatJoule()" title="Làm mới hội thoại" style="background:rgba(255,255,255,0.18);border:none;color:#fff;padding:3px 7px;border-radius:6px;font-size:10.5px;font-weight:700;cursor:pointer;">🧹 Xóa</button>
+            <i class="mdi mdi-close" style="cursor:pointer;font-size:16px;" onclick="batTatJouleCopilot()" title="Đóng Joule"></i>
           </div>
         </div>
-        <div class="joule-diamond-wrap">
-          <i class="mdi mdi-diamond-stone joule-diamond-icon"></i>
+        <div style="font-size:14.5px;font-weight:800;line-height:1.3;margin-bottom:8px;">
+          Trợ lý Tự động hóa Báo Giá &amp; Logistics
         </div>
-        <div class="joule-greeting">Hello Bảo Minh,</div>
-        <div class="joule-question">How can I assist you?</div>
-        <button class="joule-badge-btn" onclick="jouleThucThiLenh('SUMMARY')">Talk to me naturally.</button>
+
+        <!-- Thanh công cụ Logistics & Quy đổi tiền tệ nhanh ngay trong Joule -->
+        <div style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.25);border-radius:8px;padding:8px;font-size:11px;">
+          <div style="font-weight:700;margin-bottom:5px;display:flex;justify-content:space-between;">
+            <span>🚢 Tính Cước FOB ➔ CNF/CIF ($/CTN):</span>
+          </div>
+          <div style="display:flex;gap:4px;">
+            <input type="number" id="jouleFreightCost" placeholder="Cước $ (VD: 1200)" style="width:42%;padding:4px 6px !important;font-size:11px !important;border:none !important;border-radius:5px !important;">
+            <input type="number" id="jouleCtnPerCont" placeholder="Thùng/Cont (1000)" value="1000" style="width:36%;padding:4px 6px !important;font-size:11px !important;border:none !important;border-radius:5px !important;">
+            <button type="button" onclick="jouleCongCuocVaoDonGia()" style="width:22%;background:#10b981;color:#fff;border:none;border-radius:5px;font-weight:800;font-size:10.5px;cursor:pointer;">+ Cộng</button>
+          </div>
+        </div>
       </div>
 
       <div class="joule-chat-body" id="jouleChatBody">
         <div class="joule-msg">
-          👋 Xin chào! Tôi là trợ lý <b>Joule</b>. Chọn nhanh tác vụ bên dưới hoặc nhập yêu cầu của bạn:
+          💡 <b>Mẹo nhập lệnh nhanh bằng ngôn ngữ tự nhiên:</b><br>
+          • Gõ: <code>Thêm 1000 CTN Fresh Coconut giá 14.5</code><br>
+          • Gõ: <code>Khách Global Fruit, CNF Shanghai</code><br>
+          • Hoặc bấm các tác vụ thông minh bên dưới:
         </div>
+
+        <div style="font-size:10.5px;font-weight:800;color:#5227cc;margin-top:2px;">💱 QUY ĐỔI ĐƠN GIÁ GIỎ HÀNG THEO TỶ GIÁ HÔM NAY</div>
         <div class="joule-quick-actions">
-          <button class="joule-chip" onclick="jouleThucThiLenh('NEW_ORDER')">✨ Tạo đơn mới</button>
-          <button class="joule-chip" onclick="jouleThucThiLenh('SWITCH_EN')">🌐 Chuyển Quote EN</button>
-          <button class="joule-chip" onclick="jouleThucThiLenh('SWITCH_PI')">⚡ Bật chế độ PI</button>
-          <button class="joule-chip" onclick="jouleThucThiLenh('EXPORT_PDF')">🖨️ Xuất PDF ngay</button>
-          <button class="joule-chip" onclick="jouleThucThiLenh('SAVE_CLOUD')">☁️ Lưu Cloud</button>
-          <button class="joule-chip" onclick="jouleThucThiLenh('SUMMARY')">📊 Tóm tắt đơn hiện tại</button>
+          <button class="joule-chip" onclick="jouleQuyDoiTienTeGioHang('VND_TO_USD')">🇻🇳 VNĐ ➔ 🇺🇸 USD</button>
+          <button class="joule-chip" onclick="jouleQuyDoiTienTeGioHang('USD_TO_VND')">🇺🇸 USD ➔ 🇻🇳 VNĐ</button>
+          <button class="joule-chip" onclick="jouleQuyDoiTienTeGioHang('VND_TO_CNY')">🇻🇳 VNĐ ➔ 🇨🇳 CNY</button>
+          <button class="joule-chip" onclick="jouleThucThiLenh('INSERT_RATE_NOTE')">📌 Chèn tỷ giá vào A4</button>
+        </div>
+
+        <div style="font-size:10.5px;font-weight:800;color:#5227cc;margin-top:4px;">⚖️ CHÈN ĐIỀU KHOẢN &amp; SOẠN MAIL THỰC CHIẾN</div>
+        <div class="joule-quick-actions">
+          <button class="joule-chip" onclick="jouleThucThiLenh('CLAUSE_50_50')">🤝 Chia sẻ hư hỏng 50/50</button>
+          <button class="joule-chip" onclick="jouleThucThiLenh('CLAUSE_PHYTO')">🌿 Cam kết Phyto &amp; C/O</button>
+          <button class="joule-chip" onclick="jouleThucThiLenh('MAIL_FOLLOW_UP')">📧 Mail Follow-up Khách</button>
+          <button class="joule-chip" onclick="jouleThucThiLenh('MAIL_REMIND_DEPOSIT')">💰 Mail Nhắc Cọc T/T</button>
+          <button class="joule-chip" onclick="jouleThucThiLenh('AUDIT_ORDER')">🔍 Kiểm toán lỗi Báo giá</button>
         </div>
       </div>
 
       <div class="joule-footer">
         <div class="joule-input-box">
-          <input type="text" id="jouleInputText" placeholder="Message Joule..." onkeydown="if(event.key==='Enter') guiTinNhanJoule()">
+          <input type="text" id="jouleInputText" placeholder="Nhập lệnh (VD: Thêm 500 CTN Dừa giá 15)..." onkeydown="if(event.key==='Enter') guiTinNhanJoule()">
           <button class="joule-send-btn" onclick="guiTinNhanJoule()"><i class="mdi mdi-send" style="font-size:13px;"></i></button>
-        </div>
-        <div style="text-align:center;font-size:10px;color:var(--sap-muted);margin-top:5px;">
-          Joule uses AI. Verify results.
         </div>
       </div>
     </aside>
@@ -1556,72 +1751,257 @@
       if (drawer) drawer.classList.toggle('open');
     };
 
-    window.jouleThucThiLenh = function(cmd) {
+    // =====================================================
+    // BỘ NÃO TRỢ LÝ JOULE AI PRO — TỰ ĐỘNG HÓA BÁO GIÁ & XNK
+    // =====================================================
+    function jouleAppendMsg(html, isUser = false) {
       const chat = document.getElementById('jouleChatBody');
-      const addMsg = (html) => {
-        if (!chat) return;
-        const d = document.createElement('div');
-        d.className = 'joule-msg';
-        d.innerHTML = html;
-        chat.appendChild(d);
-        chat.scrollTop = chat.scrollHeight;
-      };
+      if (!chat) return;
+      const d = document.createElement('div');
+      d.className = 'joule-msg';
+      if (isUser) {
+        d.style.background = '#ece3ff';
+        d.style.borderColor = '#cbb6ff';
+        d.style.fontWeight = '700';
+      }
+      d.innerHTML = html;
+      chat.appendChild(d);
+      chat.scrollTop = chat.scrollHeight;
+    }
 
-      if (cmd === 'NEW_ORDER') {
-        window.chuyenManHinhKapella('STUDIO');
-        window.taoDonMoi();
-        addMsg("✨ Đã khởi tạo đơn báo giá mới và làm sạch giỏ hàng.");
-      } else if (cmd === 'SWITCH_EN') {
-        window.chuyenManHinhKapella('STUDIO');
-        if (document.getElementById('chkIsPI')) document.getElementById('chkIsPI').checked = false;
+    window.xoaLichSuChatJoule = function() {
+      const chat = document.getElementById('jouleChatBody');
+      if (!chat) return;
+      const msgs = chat.querySelectorAll('.joule-msg');
+      msgs.forEach((m, idx) => { if (idx > 0) m.remove(); });
+    };
+
+    // 1. Quy đổi toàn bộ đơn giá trong Giỏ hàng theo Tỷ giá Ngân hàng VN hôm nay
+    window.jouleQuyDoiTienTeGioHang = function(direction) {
+      if (!window.gioHang || window.gioHang.length === 0) {
+        jouleAppendMsg("⚠️ Giỏ hàng đang trống! Hãy thêm sản phẩm trước khi quy đổi tiền tệ.");
+        return;
+      }
+      const rates = window.currentExchangeRates || { USD: 25809, CNY: 3889, EUR: 28531, GBP: 34481 };
+      const usdRate = Number(rates.USD) || 25809;
+      const cnyRate = Number(rates.CNY) || 3889;
+
+      if (direction === 'VND_TO_USD') {
+        window.gioHang.forEach(item => {
+          if (item.gia > 500) item.gia = Number((item.gia / usdRate).toFixed(2));
+        });
+        if (document.getElementById('inCurrency')) document.getElementById('inCurrency').value = 'USD';
         window.doiCheDo('BG_EN');
-        addMsg("🌐 Đã chuyển sang chế độ <b>Quotation Quốc Tế (EN)</b> — Đơn giá cố định theo <b>Currency/CTN</b>.");
-      } else if (cmd === 'SWITCH_PI') {
-        window.chuyenManHinhKapella('STUDIO');
-        if (document.getElementById('chkIsPI')) document.getElementById('chkIsPI').checked = true;
+        jouleAppendMsg(`✅ Đã quy đổi toàn bộ đơn giá từ <b>VNĐ ➔ USD</b> theo tỷ giá <b>1 USD = ${usdRate.toLocaleString('vi-VN')} đ</b> và chuyển sang mẫu Quốc tế (EN)!`);
+      } else if (direction === 'USD_TO_VND') {
+        window.gioHang.forEach(item => {
+          if (item.gia < 5000) item.gia = Math.round(item.gia * usdRate);
+        });
+        if (document.getElementById('inCurrency')) document.getElementById('inCurrency').value = 'VND';
+        window.doiCheDo('BG_VN');
+        jouleAppendMsg(`✅ Đã quy đổi toàn bộ đơn giá từ <b>USD ➔ VNĐ</b> theo tỷ giá <b>1 USD = ${usdRate.toLocaleString('vi-VN')} đ</b>!`);
+      } else if (direction === 'VND_TO_CNY') {
+        window.gioHang.forEach(item => {
+          if (item.gia > 500) item.gia = Number((item.gia / cnyRate).toFixed(2));
+        });
+        if (document.getElementById('inCurrency')) document.getElementById('inCurrency').value = 'CNY';
         window.doiCheDo('BG_EN');
-        addMsg("⚡ Đã bật chế độ <b>Proforma Invoice (PI)</b> kèm thông tin thanh toán ngân hàng T/T.");
-      } else if (cmd === 'EXPORT_PDF') {
-        addMsg("🖨️ Đang kết xuất file PDF chuẩn khổ A4 (kèm Watermark)...");
-        window.xuatPDF(false);
-      } else if (cmd === 'SAVE_CLOUD') {
-        addMsg("☁️ Đang đồng bộ đơn hàng hiện tại lên Firebase Firestore...");
-        window.luuVaoAppSheet();
-      } else if (cmd === 'SUMMARY') {
-        const ma = document.getElementById('inMa')?.value || 'QUO-2026-001';
-        const kh = document.getElementById('inKhach')?.value || 'Chưa nhập tên khách';
-        const soSP = window.gioHang.length;
-        let tong = 0;
-        window.gioHang.forEach(i => { tong += (Number(i.sl) || 0) * (Number(i.gia) || 0); });
-        addMsg(`📊 <b>Tóm tắt chứng từ [${escapeHtml(ma)}]:</b><br>• Khách hàng: <b>${escapeHtml(kh)}</b><br>• Số mặt hàng: <b>${soSP} SP</b><br>• Tổng giá trị: <b>${tong.toLocaleString('en-US')}</b>`);
+        jouleAppendMsg(`✅ Đã quy đổi toàn bộ đơn giá sang <b>Nhân dân tệ (CNY)</b> theo tỷ giá <b>1 CNY = ${cnyRate.toLocaleString('vi-VN')} đ</b>!`);
+      }
+      renderTable();
+      updatePreview();
+    };
+
+    // 2. Tính cước tàu biển (Freight) phân bổ vào đơn giá từng thùng ($/CTN)
+    window.jouleCongCuocVaoDonGia = function() {
+      const freight = parseFloat(document.getElementById('jouleFreightCost')?.value) || 0;
+      const ctnPerCont = parseFloat(document.getElementById('jouleCtnPerCont')?.value) || 1000;
+      if (freight <= 0 || ctnPerCont <= 0) {
+        jouleAppendMsg("⚠️ Vui lòng nhập số tiền Cước tàu ($) và Số thùng/Cont hợp lệ!");
+        return;
+      }
+      const addPerCtn = Number((freight / ctnPerCont).toFixed(2));
+      if (window.gioHang.length > 0) {
+        window.gioHang.forEach(item => {
+          item.gia = Number((Number(item.gia) + addPerCtn).toFixed(2));
+        });
+        renderTable();
+        updatePreview();
+        jouleAppendMsg(`🚢 <b>Đã cộng phân bổ cước biển:</b><br>• Cước tàu: <b>$${freight.toLocaleString()}/cont</b> (${ctnPerCont} CTN)<br>• Tăng thêm: <b>+$${addPerCtn}/CTN</b> vào tất cả sản phẩm trong bảng A4.`);
+      } else {
+        const curGia = parseFloat(document.getElementById('inGia')?.value) || 0;
+        if (document.getElementById('inGia')) document.getElementById('inGia').value = (curGia + addPerCtn).toFixed(2);
+        jouleAppendMsg(`🚢 Cước phân bổ mỗi thùng là <b>+$${addPerCtn}/CTN</b> (Đã cộng sẵn vào ô Đơn giá).`);
       }
     };
 
-    window.guiTinNhanJoule = function() {
+    // 3. Thực thi các kịch bản nghiệp vụ Xuất nhập khẩu & Kiểm toán đơn hàng
+    window.jouleThucThiLenh = function(cmd) {
+      const dkEl = document.getElementById('inDieuKhoan');
+      const payEl = document.getElementById('inPaymentTerm');
+      const bodyEl = document.getElementById('inEmailBody');
+      const subEl = document.getElementById('inEmailSubject');
+      const khach = document.getElementById('inKhach')?.value.trim() || 'Valued Partner';
+      const ma = document.getElementById('inMa')?.value.trim() || 'QUO-2026-001';
+
+      if (cmd === 'INSERT_RATE_NOTE') {
+        const r = window.currentExchangeRates || {};
+        const bankName = DANH_SACH_NGAN_HANG_VN?.[window.currentBankCode]?.name || 'Vietcombank';
+        const noteLine = `Tỷ giá tham chiếu (${bankName} - ${new Date().toLocaleDateString('vi-VN')}): 1 USD = ${Math.round(r.USD || 25800).toLocaleString('vi-VN')} VNĐ | 1 CNY = ${Math.round(r.CNY || 3889).toLocaleString('vi-VN')} VNĐ.`;
+        if (dkEl) {
+          dkEl.value = dkEl.value ? (dkEl.value + '\n' + noteLine) : noteLine;
+          updatePreview();
+        }
+        jouleAppendMsg(`📌 Đã chèn dòng tỷ giá tham chiếu của <b>${bankName}</b> vào mục Điều khoản & Ghi chú trên tờ A4!`);
+      } else if (cmd === 'CLAUSE_50_50') {
+        const isEN = (window.cheDoHienTai === 'BG_EN');
+        const clause = isEN
+          ? `Quality & Loss Allocation: In the event of damaged goods upon arrival verified by joint inspection, Party A and Party B agree to share the loss equally on a 50/50 basis in a spirit of mutual cooperation.`
+          : `Điều khoản rủi ro & Hư hỏng hàng hóa: Trường hợp phát sinh hàng hư hỏng thực tế khi giao nhận, Bên A và Bên B cùng chia nhau 50/50 trên tinh thần chia sẻ hợp tác.`;
+        if (dkEl) {
+          dkEl.value = dkEl.value ? (dkEl.value + '\n' + clause) : clause;
+          updatePreview();
+        }
+        jouleAppendMsg("🤝 Đã chèn điều khoản <b>Chia sẻ tổn thất hư hỏng 50/50</b> vào chứng từ A4!");
+      } else if (cmd === 'CLAUSE_PHYTO') {
+        const clause = `Export Documents Provided: Commercial Invoice, Packing List, Bill of Lading (B/L), Certificate of Origin (C/O), and Phytosanitary Certificate issued by Vietnamese competent authorities.`;
+        if (dkEl) {
+          dkEl.value = dkEl.value ? (dkEl.value + '\n' + clause) : clause;
+          updatePreview();
+        }
+        jouleAppendMsg("🌿 Đã bổ sung bộ chứng từ xuất khẩu chuẩn (<b>Invoice, Packing List, B/L, C/O, Phytosanitary</b>) vào tờ A4!");
+      } else if (cmd === 'MAIL_FOLLOW_UP') {
+        if (subEl) subEl.value = `[GOODS LINK JSC] Follow-up on Official Quotation — Ref: ${ma}`;
+        if (bodyEl) {
+          bodyEl.value = `Dear ${khach},\n\nI hope this email finds you well.\n\nWe are following up on our Official Quotation (Ref No: ${ma}) sent earlier regarding our agricultural export products.\n\nSince fresh raw material prices and reefers space fluctuate weekly, please let us know your feedback or target volume so we can lock in the best rate and priority shipment schedule for your esteemed company.\n\nLooking forward to hearing from you soon.\n\nBest regards,\nGOODS LINK JOINT STOCK COMPANY`;
+        }
+        jouleAppendMsg("📧 Đã soạn xong mẫu <b>Email Follow-up chốt đơn</b> bằng tiếng Anh thương mại vào mục số 4!");
+      } else if (cmd === 'MAIL_REMIND_DEPOSIT') {
+        if (subEl) subEl.value = `[GOODS LINK JSC] Kind Reminder: T/T Deposit for Order ${ma}`;
+        if (bodyEl) {
+          bodyEl.value = `Dear ${khach},\n\nThank you very much for confirming Order Ref: ${ma}.\n\nTo enable us to secure raw materials from our farms and book the reefer container on schedule, please kindly arrange the T/T deposit as agreed in the Proforma Invoice and send us the bank swift copy.\n\nAs soon as we receive the remittance slip, we will immediately proceed with packing and phytosanitary inspection.\n\nBest regards,\nGOODS LINK JOINT STOCK COMPANY`;
+        }
+        jouleAppendMsg("💰 Đã soạn xong mẫu <b>Email nhắc khách chuyển khoản cọc T/T & xin điện Swift</b> vào mục số 4!");
+      } else if (cmd === 'AUDIT_ORDER') {
+        const issues = [];
+        if (!document.getElementById('inKhach')?.value.trim()) issues.push("Chưa nhập <b>Tên khách hàng / Đối tác</b>.");
+        if (window.gioHang.length === 0) issues.push("Giỏ hàng đang <b>trống (0 sản phẩm)</b>.");
+        window.gioHang.forEach((it, idx) => {
+          if (!it.gia || it.gia <= 0) issues.push(`Dòng #${idx + 1} (<b>${escapeHtml(it.tenSP.split('\n')[0])}</b>) đang có <b>Đơn giá = 0</b>.`);
+          if (!it.anh && document.getElementById('chkShowImage')?.checked) issues.push(`Dòng #${idx + 1} đang bật cột Ảnh nhưng <b>chưa tải ảnh SP</b>.`);
+        });
+        if (window.cheDoHienTai === 'BG_EN' && document.getElementById('chkIsPI')?.checked && !document.getElementById('inBankInfo')?.value.trim()) {
+          issues.push("Đang bật chế độ <b>Proforma Invoice (PI)</b> nhưng chưa chọn <b>Thông tin Ngân hàng T/T</b>.");
+        }
+        if (!document.getElementById('inEmailKhach')?.value.trim()) issues.push("Chưa điền <b>Email khách hàng</b> ở Mục 4.");
+
+        if (issues.length === 0) {
+          jouleAppendMsg("✅ <b>Kiểm toán hoàn tất:</b> Chứng từ đã đầy đủ 100% thông tin khách hàng, đơn giá, điều khoản và sẵn sàng xuất PDF / Gửi Mail!");
+        } else {
+          jouleAppendMsg(`⚠️ <b>Phát hiện ${issues.length} điểm cần lưu ý trước khi xuất PDF:</b><br>• ` + issues.join('<br>• '));
+        }
+      }
+    };
+
+    // 4. Phân tích câu lệnh tự nhiên (NLP) + Kết nối Gemini AI khi người dùng gõ vào ô chat Joule
+    window.guiTinNhanJoule = async function() {
       const inp = document.getElementById('jouleInputText');
       const txt = inp?.value.trim();
       if (!txt) return;
       inp.value = '';
-      const chat = document.getElementById('jouleChatBody');
-      if (chat) {
-        const u = document.createElement('div');
-        u.className = 'joule-msg';
-        u.style.background = '#ece3ff';
-        u.style.fontWeight = '700';
-        u.innerText = '🧑‍💼 ' + txt;
-        chat.appendChild(u);
-      }
+      jouleAppendMsg('🧑‍💼 ' + escapeHtml(txt), true);
+
       const lower = txt.toLowerCase();
-      if (lower.includes('pdf') || lower.includes('tải') || lower.includes('in')) {
-        window.jouleThucThiLenh('EXPORT_PDF');
-      } else if (lower.includes('lưu') || lower.includes('cloud')) {
-        window.jouleThucThiLenh('SAVE_CLOUD');
-      } else if (lower.includes('mới') || lower.includes('tạo')) {
-        window.jouleThucThiLenh('NEW_ORDER');
-      } else if (lower.includes('pi')) {
-        window.jouleThucThiLenh('SWITCH_PI');
-      } else {
-        window.jouleThucThiLenh('SUMMARY');
+
+      // A. Nhận diện câu lệnh thêm nhanh sản phẩm: VD "Thêm 1000 CTN Fresh Coconut giá 14.5"
+      const addMatch = txt.match(/(?:thêm|add|báo giá)\s+(\d+(?:[.,]\d+)?)\s*(ctn|thùng|kg|tấn|cont)?\s+(.+?)\s+(?:giá|price|@)\s*(\d+(?:[.,]\d+)?)/i);
+      if (addMatch) {
+        const sl = parseFloat(addMatch[1].replace(',', '.')) || 1;
+        const dvt = (addMatch[2] || 'CTN').toUpperCase();
+        const tenSP = addMatch[3].trim().toUpperCase();
+        const gia = parseFloat(addMatch[4].replace(',', '.')) || 0;
+
+        window.gioHang.push({
+          id: Date.now(),
+          maSP: 'SP0' + (window.gioHang.length + 1),
+          tenSP: tenSP,
+          dvt: dvt,
+          sl: sl,
+          gia: gia,
+          vat: '8',
+          anh: ''
+        });
+        renderTable();
+        updatePreview();
+        jouleAppendMsg(`✅ Đã tự động bóc tách & thêm vào bảng A4:<br>• Sản phẩm: <b>${escapeHtml(tenSP)}</b><br>• Số lượng: <b>${sl} ${dvt}</b> — Đơn giá: <b>${gia.toLocaleString()}</b>`);
+        return;
+      }
+
+      // B. Nhận diện câu lệnh điền nhanh Khách hàng & Cảng Incoterms: VD "Khách Global Fruit, CNF Shanghai"
+      if (lower.startsWith('khách ') || lower.includes('cnf ') || lower.includes('fob ') || lower.includes('cif ')) {
+        const khMatch = txt.match(/khách\s+([^,]+)/i);
+        if (khMatch && document.getElementById('inKhach')) {
+          document.getElementById('inKhach').value = khMatch[1].trim();
+        }
+        const incoMatch = txt.match(/\b(EXW|FOB|CNF|CFR|CIF|DDP)\s+([A-Za-z\s]+)/i);
+        if (incoMatch && document.getElementById('inDieuKhoan')) {
+          const termStr = `The above rates are ${incoMatch[1].toUpperCase()} ${incoMatch[2].trim().toUpperCase()}.`;
+          document.getElementById('inDieuKhoan').value = termStr;
+          window.doiCheDo('BG_EN');
+        }
+        updatePreview();
+        jouleAppendMsg("✅ Đã tự động điền thông tin <b>Khách hàng & Điều khoản cảng giao hàng</b> lên tờ A4!");
+        return;
+      }
+
+      // C. Tìm kiếm nhanh trong Database (Sản phẩm / Khách hàng)
+      const foundSP = Object.values(window.masterCache.sp || {}).filter(s =>
+        s.tenSP.toLowerCase().includes(lower) || s.maSP.toLowerCase().includes(lower)
+      );
+      if (foundSP.length > 0 && lower.length >= 2) {
+        let html = `🔎 Tìm thấy <b>${foundSP.length} sản phẩm</b> trong Database khớp với "${escapeHtml(txt)}":<br>`;
+        foundSP.slice(0, 3).forEach(s => {
+          html += `<button class="joule-chip" style="margin-top:4px;" onclick="document.getElementById('spSelect').value='${escapeHtml(s.docId)}';chonSPDatabase();themVaoGio();">+ Đưa [${escapeHtml(s.maSP)}] ${escapeHtml(s.tenSP)} (${s.gia.toLocaleString()}) vào đơn</button><br>`;
+        });
+        jouleAppendMsg(html);
+        return;
+      }
+
+      // D. Nếu người dùng đã cài đặt Gemini API Key -> Gọi trực tiếp Gemini AI trả lời nghiệp vụ
+      const apiKey = localStorage.getItem('argon_gemini_api_key');
+      if (apiKey) {
+        try {
+          jouleAppendMsg("⏳ <i>Joule đang phân tích...</i>");
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{
+                  text: `Bạn là trợ lý xuất nhập khẩu nông sản của Công ty Cổ phần Goods Link (Việt Nam). Trả lời ngắn gọn, súc tích, thực tế cho câu hỏi: ${txt}`
+                }]
+              }]
+            })
+          });
+          const data = await res.json();
+          const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (reply) {
+            jouleAppendMsg(reply.replace(/\n/g, '<br>'));
+            return;
+          }
+        } catch (e) {}
+      }
+
+      // Mặc định chạy kiểm toán & tóm tắt thông minh
+      window.jouleThucThiLenh('AUDIT_ORDER');
+    };
+
+    window.caiDatGeminiKeyJoule = function() {
+      const cur = localStorage.getItem('argon_gemini_api_key') || '';
+      const key = prompt("Nhập Google Gemini API Key (tùy chọn) để Joule trả lời mọi câu hỏi Xuất nhập khẩu, HS Code & Dịch thuật tự do:", cur);
+      if (key !== null) {
+        localStorage.setItem('argon_gemini_api_key', key.trim());
+        hienToast("✅ Đã lưu khóa Gemini AI cho trợ lý Joule!");
       }
     };
 
@@ -3654,6 +4034,122 @@
         console.log("Thông báo:", msg);
       }
     };
+  </script>
+  <!-- ===================================================================== -->
+  <!-- TỰ ĐỘNG ĐỒNG BỘ SAP-ICONS CHÍNH HÃNG LÊN TOÀN BỘ GIAO DIỆN ERP        -->
+  <!-- ===================================================================== -->
+  <script>
+    function dongBoSapIconsToanHeThong() {
+      // 1. Nút Hamburger Menu trên Shell Bar (0xe1de: menu2)
+      const menuBtnIcon = document.querySelector('.sap-shell-left .sap-icon-btn i');
+      if (menuBtnIcon) {
+        menuBtnIcon.className = 'sap-icon sap-icon-menu2';
+      }
+
+      // 2. Nút Tạo Đơn Mới trên Shell Bar (0xe1f6: sys-add)
+      const createShellBtn = document.querySelector('.sap-shell-right button[onclick*="lamMoiForm"]');
+      if (createShellBtn) {
+        createShellBtn.innerHTML = `<span class="sap-icon sap-icon-sys-add" style="font-size:13px;"></span> Tạo Đơn Mới`;
+      }
+
+      // 3. Biểu tượng mở Trợ lý Joule trên Shell Bar (SVG gốc từ Icons/da.svg & 0xe2a4: da-2)
+      const jouleShellBtn = document.getElementById('shellJouleBtn');
+      if (jouleShellBtn) {
+        jouleShellBtn.innerHTML = `<span class="sap-icon sap-icon-da-2" style="font-size:16px;"></span>`;
+      }
+
+      // 4. Các phân hệ ở Cột điều hướng bên trái (Sidebar)
+      const navHome = document.getElementById('navItemHome');
+      if (navHome) {
+        navHome.innerHTML = `
+          <span class="nav-left"><span class="sap-icon sap-icon-bbyd-dashboard" style="font-size:15px;"></span> Tổng Quan (Launchpad)</span>
+          <span class="sap-icon sap-icon-navigation-right" style="font-size:11px;opacity:0.65;"></span>
+        `;
+      }
+
+      const navStudio = document.getElementById('navItemStudio');
+      if (navStudio) {
+        navStudio.innerHTML = `
+          <span class="nav-left"><span class="sap-icon sap-icon-sales-quote" style="font-size:15px;"></span> Soạn Báo Giá / PI</span>
+          <span class="sap-icon sap-icon-navigation-down" id="studioNavChevron" style="font-size:11px;opacity:0.75;"></span>
+        `;
+      }
+
+      const subVN = document.getElementById('subNavVN');
+      if (subVN) {
+        subVN.innerHTML = `<span class="sap-icon sap-icon-sales-document" style="font-size:13px;color:#0064d9;"></span> Báo Giá Nội Địa (VN)`;
+      }
+      const subEN = document.getElementById('subNavEN');
+      if (subEN) {
+        subEN.innerHTML = `<span class="sap-icon sap-icon-globe" style="font-size:13px;color:#0064d9;"></span> Quotation / PI (EN)`;
+      }
+      const subXK = document.getElementById('subNavXK');
+      if (subXK) {
+        subXK.innerHTML = `<span class="sap-icon sap-icon-shipping-status" style="font-size:13px;color:#d97706;"></span> Phiếu Xuất Kho`;
+      }
+
+      const navMaster = document.getElementById('navItemMaster');
+      if (navMaster) {
+        navMaster.innerHTML = `
+          <span class="nav-left"><span class="sap-icon sap-icon-database" style="font-size:15px;"></span> Database &amp; CRM</span>
+          <span class="sap-icon sap-icon-navigation-right" style="font-size:11px;opacity:0.65;"></span>
+        `;
+      }
+
+      // 5. Thanh Sub-Header (3 Tab chính + 4 Nút Thao tác bên phải)
+      const tabHome = document.getElementById('subTabHome');
+      if (tabHome) tabHome.innerHTML = `<span class="sap-icon sap-icon-bbyd-dashboard"></span> Dashboard`;
+
+      const tabStudio = document.getElementById('subTabStudio');
+      if (tabStudio) tabStudio.innerHTML = `<span class="sap-icon sap-icon-sales-quote"></span> Studio`;
+
+      const tabMaster = document.getElementById('subTabMaster');
+      if (tabMaster) tabMaster.innerHTML = `<span class="sap-icon sap-icon-database"></span> Master Data`;
+
+      const actionButtons = document.querySelectorAll('.sap-sub-actions button');
+      if (actionButtons.length >= 4) {
+        actionButtons[0].innerHTML = `<span class="sap-icon sap-icon-save"></span> Lưu Nháp`;
+        actionButtons[1].innerHTML = `<span class="sap-icon sap-icon-upload-to-cloud"></span> Lưu Cloud`;
+        actionButtons[2].innerHTML = `<span class="sap-icon sap-icon-pdf-attachment"></span> Tải PDF`;
+        actionButtons[3].innerHTML = `<span class="sap-icon sap-icon-paper-plane"></span> Tải PDF &amp; Gửi Mail`;
+      }
+
+      // 6. Các Tab chuyển chế độ trong Quotation Studio
+      const tabModeVN = document.getElementById('tabModeVN');
+      if (tabModeVN) tabModeVN.innerHTML = `<span class="sap-icon sap-icon-sales-document"></span> Báo Giá (VN)`;
+
+      const tabModeEN = document.getElementById('tabModeEN');
+      if (tabModeEN) tabModeEN.innerHTML = `<span class="sap-icon sap-icon-globe"></span> Quote / PI (EN)`;
+
+      const tabModeXK = document.getElementById('tabModeXK');
+      if (tabModeXK) tabModeXK.innerHTML = `<span class="sap-icon sap-icon-shipping-status"></span> Xuất Kho`;
+
+      // 7. Tiêu đề 4 Khung chức năng (Argon Cards) bên cột trái Studio
+      const cardTitles = document.querySelectorAll('#panelLeftForm .argon-card-title');
+      if (cardTitles[0]) cardTitles[0].innerHTML = `<span class="sap-icon sap-icon-customer" style="color:#0064d9;"></span> 1. Thông tin chứng từ &amp; Khách hàng`;
+      if (cardTitles[1]) cardTitles[1].innerHTML = `<span class="sap-icon sap-icon-product" style="color:#0064d9;"></span> 2. Chi tiết hàng hóa`;
+      if (cardTitles[2]) cardTitles[2].innerHTML = `<span class="sap-icon sap-icon-palette" style="color:#0064d9;"></span> 3. Logo &amp; Watermark (In trực tiếp vào PDF)`;
+      if (cardTitles[3]) cardTitles[3].innerHTML = `<span class="sap-icon sap-icon-email" style="color:#0064d9;"></span> 4. Cấu hình gửi Mail khách hàng`;
+
+      // 8. Nâng cấp Header của Joule Copilot bằng đúng SVG Icons/da.svg & Icons/ai.svg của SAP
+      const jouleHeroTitle = document.querySelector('#sapJouleDrawer .joule-top-bar > span');
+      if (jouleHeroTitle) {
+        jouleHeroTitle.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" style="width:16px;height:16px;">
+            <path d="M12 0a.75.75 0 0 1 .62.326l3.25 4.752a.75.75 0 0 1-.018.871l-7.25 9.753a.756.756 0 0 1-1.204 0L.148 5.95a.75.75 0 0 1-.017-.871L3.437.254A.75.75 0 0 1 4 0h8ZM1.67 5.484 8 13.998l6.328-8.514L11.605 1.5h-7.21L1.671 5.484Zm7.5-2.25a.35.35 0 0 1 .66 0c.37 1.084.85 1.575 1.93 1.937.32.11.32.562 0 .662-1.08.371-1.57.853-1.93 1.936a.35.35 0 0 1-.66 0c-.37-1.083-.85-1.575-1.93-1.936-.32-.11-.32-.562 0-.662 1.08-.372 1.57-.853 1.93-1.937Z"/>
+          </svg>
+          <b>Joule Copilot</b>
+          <span style="font-size:10px;background:rgba(255,255,255,0.22);padding:2px 6px;border-radius:8px;display:inline-flex;align-items:center;gap:3px;">
+            <span class="sap-icon sap-icon-ai" style="font-size:10px;"></span> SAP AI
+          </span>
+        `;
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      dongBoSapIconsToanHeThong();
+      setTimeout(dongBoSapIconsToanHeThong, 600);
+    });
   </script>
 </body>
 </html>
