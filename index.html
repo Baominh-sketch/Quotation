@@ -1205,9 +1205,10 @@
                   📲 Chọn App gửi Mail:
                 </label>
                 <select id="inMailAppSelect" style="width:100%;padding:6px 8px;font-weight:700;">
-                  <option value="SHARE_PDF">📎 Đính kèm thẳng File PDF + Nội dung (Chọn App: Gmail, Mail, Zalo...)</option>
-                  <option value="GMAIL_APP">📲 Mở thẳng App Gmail (Điền sẵn Email nhận + Chủ đề + Nội dung)</option>
-                  <option value="MAILTO_DEFAULT">✉️ Mở App Mail mặc định / Outlook (Điền sẵn Email + Chủ đề + Nội dung)</option>
+                  <option value="SHARE_PDF">📎 Đính kèm thẳng File PDF + Nội dung (Tự Copy Email nhận — vào App bấm Dán)</option>
+                  <option value="OUTLOOK_APP">🟦 Mở thẳng App Outlook (Điền sẵn 100% Tới + Chủ đề + Nội dung &amp; Tải PDF)</option>
+                  <option value="GMAIL_APP">📲 Mở thẳng App Gmail (Điền sẵn 100% Tới + Chủ đề + Nội dung &amp; Tải PDF)</option>
+                  <option value="MAILTO_DEFAULT">✉️ Mở App Mail mặc định (Điền sẵn 100% Tới + Chủ đề + Nội dung &amp; Tải PDF)</option>
                   <option value="GMAIL_WEB">💻 Mở Gmail Web trên máy tính (Điền sẵn Email + Chủ đề + Nội dung)</option>
                 </select>
               </div>
@@ -2833,30 +2834,37 @@
         window.datLaiNoiDungMacDinh(false);
       }
 
-      const subject = document.getElementById('inEmailSubject')?.value.trim() || 'Quotation';
+      const subject = document.getElementById('inEmailSubject')?.value.trim() || 'Official Quotation';
       const bodyMsg = document.getElementById('inEmailBody')?.value.trim() || '';
       const maDon = document.getElementById('inMa')?.value.trim() || 'BAO-GIA';
       const fileName = `${maDon}.pdf`;
       const selectedApp = document.getElementById('inMailAppSelect')?.value || 'SHARE_PDF';
 
+      // Copy ngay Email khách hàng vào Clipboard của iPhone/Android ngay tại thời điểm chạm nút
       await window.copyTextToClipboard(email);
 
+      // CHẾ ĐỘ 1: ĐÍNH KÈM THẲNG FILE PDF VÀO MAIL/OUTLOOK
       if (selectedApp === 'SHARE_PDF') {
         const pdfBlob = await window.xuatPDF(true);
         if (!pdfBlob) return;
+
+        // Copy lại lần nữa sau khi tạo xong PDF để đảm bảo Clipboard luôn giữ Email khách hàng
+        await window.copyTextToClipboard(email);
 
         const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
         const canShareFile = !!(navigator.canShare && navigator.canShare({ files: [pdfFile] }));
 
         if (canShareFile) {
+          // Đặt Subject ở dòng đầu tiên để iOS Mail / Outlook tự động nhận đúng ô "Chủ đề:" (không bị nhảy "Dear..." lên Chủ đề)
+          const fullTextForIOS = `${subject}\n\n${bodyMsg}`;
           const shareData = {
             files: [pdfFile],
             title: subject,
-            text: bodyMsg
+            text: fullTextForIOS
           };
 
           try {
-            hienToast("📋 Đã tự copy Email nhận (" + email + ") — Chỉ cần Dán vào ô Người nhận!");
+            hienToast(`📋 Đã Copy sẵn người nhận: ${email} — Chạm ô "Tới:" và bấm Dán!`);
             await navigator.share(shareData);
             return;
           } catch (err) {
@@ -2866,7 +2874,7 @@
             const btnNow = document.getElementById('btnTriggerNativeShareNow');
             if (modal && btnNow) {
               if (infoText) {
-                infoText.innerHTML = `Đã đóng gói <b>${escapeHtml(fileName)}</b> kèm nội dung thư.<br>📋 Đã tự copy sẵn người nhận: <b>${escapeHtml(email)}</b> (chỉ cần bấm Dán ở ô To).`;
+                infoText.innerHTML = `Đã đính kèm <b>${escapeHtml(fileName)}</b> &amp; Chủ đề chuẩn.<br>📋 Đã Copy sẵn Email: <b style="color:#0064d9;">${escapeHtml(email)}</b><br><span style="font-size:11px;color:#d97706;">(Khi cửa sổ Thư Mới hiện lên, bạn chỉ cần chạm ô <b>Tới:</b> rồi bấm <b>Dán / Paste</b>)</span>`;
               }
               btnNow.onclick = async function() {
                 modal.style.display = 'none';
@@ -2880,6 +2888,7 @@
             }
           }
         } else {
+          // Trên máy tính không có khay Share File -> Tự tải PDF và mở trình gửi Mail
           const blobUrl = URL.createObjectURL(pdfBlob);
           const a = document.createElement('a');
           a.href = blobUrl;
@@ -2887,15 +2896,18 @@
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
-          const gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
-          window.open(gmailWebUrl, '_blank');
+          window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
           return;
         }
       }
 
+      // CHẾ ĐỘ 2, 3, 4: MỞ THẲNG APP OUTLOOK / GMAIL / MAIL (ĐIỀN SẴN 100% Ô "TỚI:" + "CHỦ ĐỀ:" + "NỘI DUNG")
       await window.xuatPDF(false);
 
-      if (selectedApp === 'GMAIL_APP') {
+      if (selectedApp === 'OUTLOOK_APP') {
+        // Giao thức mở thẳng App Microsoft Outlook trên iPhone/Android với đầy đủ Người nhận (To), Subject và Body
+        window.location.href = `ms-outlook://compose?to=${encodeURIComponent(email)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
+      } else if (selectedApp === 'GMAIL_APP') {
         window.location.href = `googlegmail:///co?to=${encodeURIComponent(email)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
       } else if (selectedApp === 'MAILTO_DEFAULT') {
         window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
