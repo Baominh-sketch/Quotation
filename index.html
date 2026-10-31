@@ -4035,120 +4035,72 @@
       }
     };
   </script>
-  <!-- ===================================================================== -->
-  <!-- TỰ ĐỘNG ĐỒNG BỘ SAP-ICONS CHÍNH HÃNG LÊN TOÀN BỘ GIAO DIỆN ERP        -->
-  <!-- ===================================================================== -->
   <script>
+    // Hàm tạo SVG icon chuẩn SAP Fiori trực tiếp, không sợ lỗi font
+    function taoSapSvgIcon(pathData, color = "currentColor", size = "14px") {
+      return `<svg xmlns="http://www.w3.org/2000/svg" fill="${color}" viewBox="0 0 16 16" style="width:${size};height:${size};display:inline-block;vertical-align:middle;flex-shrink:0;"><path d="${pathData}"/></svg>`;
+    }
+
+    // Thư viện đường dẫn Path chuẩn từ các file SVG SAP chính hãng bạn cung cấp
+    const SAP_PATHS = {
+      menu: "M15.25 12.5a.75.75 0 0 1 0 1.5H.75a.75.75 0 0 1 0-1.5h14.5Zm0-5.5a.75.75 0 0 1 0 1.5H.75a.75.75 0 0 1 0-1.5h14.5Zm0-5a.75.75 0 0 1 0 1.5H.75a.75.75 0 0 1 0-1.5h14.5Z",
+      add: "M8 1a.75.75 0 0 1 .75.75v5.5h5.5a.75.75 0 0 1 0 1.5h-5.5v5.5a.75.75 0 0 1-1.5 0v-5.5h-5.5a.75.75 0 0 1 0-1.5h5.5v-5.5A.75.75 0 0 1 8 1Z",
+      dashboard: "M3.25 11a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-.75.75H.75a.75.75 0 0 1-.75-.75v-3.5A.75.75 0 0 1 .75 11h2.5Zm7 1a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-.75.75h-4.5a.75.75 0 0 1-.75-.75v-2.5a.75.75 0 0 1 .75-.75h4.5ZM1.5 14.5h1v-2h-1v2Zm5 0h3v-1h-3v1ZM14.24 0C15.211 0 16 .788 16 1.76v7.48A1.76 1.76 0 0 1 14.24 11H6.76A1.76 1.76 0 0 1 5 9.24V1.76C5 .789 5.788 0 6.76 0h7.48Z",
+      quote: "M12.251 0c.966 0 1.75.784 1.75 1.75v12.5a1.75 1.75 0 0 1-1.75 1.75h-8.5a1.75 1.75 0 0 1-1.75-1.75V1.75c0-.966.783-1.75 1.75-1.75h8.5Zm-8.5 1.5a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25h-8.5Z",
+      database: "M10.5 14.686 8.372 15.9a.75.75 0 0 1-.744 0L5.5 14.686v-3.728l1.88 1.074c.384.22.856.22 1.24 0l1.88-1.074v3.728ZM4 10.349v3.802l-3-2V8.35l3 2Zm11 1.802-3 2V10.35l3-2v3.802Z",
+      save: "M12.25 0C13.216 0 14 .784 14 1.75v2.5a.75.75 0 0 1-1.5 0v-2.5a.25.25 0 0 0-.25-.25H6.71a.25.25 0 0 0-.19.087L6 2.193V5.25a.75.75 0 0 1-.75.75H2.738c-.089.104-.238.37-.238.37v7.88c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25v-2a.75.75 0 0 1 1.5 0v2A1.75 1.75 0 0 1 11.25 16h-8.5A1.75 1.75 0 0 1 1 14.25V6.37c0-.417.15-.821.42-1.139L5.38.611A1.751 1.751 0 0 1 6.71 0h1.54Z",
+      cloud: "M7.813 2c2.085 0 3.828 1.332 4.497 3.168 2.099.363 3.69 2.248 3.69 4.38C16 11.724 14.152 14 11.87 14H3.486a3.493 3.493 0 0 1-.472-6.954c0-.08.004-.16.004-.241A4.8 4.8 0 0 1 7.813 2Zm0 1.5A3.3 3.3 0 0 0 4.52 6.805c0 .346-.01.67-.021.982a.75.75 0 0 1-.749.726c-1.243 0-2.249.712-2.249 1.994 0 1.1.894 1.993 1.987 1.993h8.382c1.473 0 2.621-1.59 2.621-2.962a2.937 2.937 0 0 0-2.79-2.933.75.75 0 0 1-.69-.57C10.655 4.578 9.364 3.5 7.813 3.5Z",
+      pdf: "M12.25 0C13.216 0 14 .784 14 1.75v12.5A1.75 1.75 0 0 1 12.25 16h-8.5A1.75 1.75 0 0 1 2 14.25V6.37c0-.417.15-.821.42-1.139L6.38.611A1.751 1.751 0 0 1 7.71 0h4.54ZM7.71 1.5a.25.25 0 0 0-.19.087L7 2.193V5.25a.75.75 0 0 1-.75.75H3.738c-.089.104-.238.37-.238.37v7.88c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25H7.71Z",
+      mail: "M13.25 2A2.75 2.75 0 0 1 16 4.75v6.5A2.75 2.75 0 0 1 13.25 14H2.75A2.75 2.75 0 0 1 0 11.25v-6.5A2.75 2.75 0 0 1 2.75 2h10.5ZM9.521 8.54a2.75 2.75 0 0 1-3.042 0L1.5 5.232v6.018c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25V5.232L9.521 8.54Z",
+      customer: "M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm-.025 10.95a4.903 4.903 0 0 0-4.04 2.12A6.47 6.47 0 0 0 8 14.5a6.47 6.47 0 0 0 4.031-1.403 4.903 4.903 0 0 0-4.056-2.147Z",
+      product: "M4.668 2.077a.75.75 0 0 1 .727.035l5.25 3.25A.75.75 0 0 1 11 6v1.25a.75.75 0 0 1-1.5 0v-.833L5.022 3.646 2.5 5.392v5.682L8 14.375l.445-.267a.75.75 0 1 1 .772 1.287l-.831.499Z"
+    };
+
     function dongBoSapIconsToanHeThong() {
-      // 1. Nút Hamburger Menu trên Shell Bar (0xe1de: menu2)
-      const menuBtnIcon = document.querySelector('.sap-shell-left .sap-icon-btn i');
-      if (menuBtnIcon) {
-        menuBtnIcon.className = 'sap-icon sap-icon-menu2';
+      // 1. Menu icon bên trái
+      const menuBtn = document.querySelector('.sap-shell-left .sap-icon-btn');
+      if (menuBtn) {
+        menuBtn.innerHTML = `&nbsp;${taoSapSvgIcon(SAP_PATHS.menu, "#ffffff", "16px")}`;
       }
 
-      // 2. Nút Tạo Đơn Mới trên Shell Bar (0xe1f6: sys-add)
-      const createShellBtn = document.querySelector('.sap-shell-right button[onclick*="lamMoiForm"]');
-      if (createShellBtn) {
-        createShellBtn.innerHTML = `<span class="sap-icon sap-icon-sys-add" style="font-size:13px;"></span> Tạo Đơn Mới`;
+      // 2. Nút Tạo Đơn Mới
+      const createBtn = document.querySelector('.sap-shell-right button[onclick*="lamMoiForm"]') || document.querySelector('button[onclick*="lamMoiForm"]');
+      if (createBtn) {
+        createBtn.innerHTML = `${taoSapSvgIcon(SAP_PATHS.add, "#ffffff", "13px")} Tạo Đơn Mới`;
       }
 
-      // 3. Biểu tượng mở Trợ lý Joule trên Shell Bar (SVG gốc từ Icons/da.svg & 0xe2a4: da-2)
-      const jouleShellBtn = document.getElementById('shellJouleBtn');
-      if (jouleShellBtn) {
-        jouleShellBtn.innerHTML = `<span class="sap-icon sap-icon-da-2" style="font-size:16px;"></span>`;
-      }
-
-      // 4. Các phân hệ ở Cột điều hướng bên trái (Sidebar)
+      // 3. Menu điều hướng chính
       const navHome = document.getElementById('navItemHome');
       if (navHome) {
-        navHome.innerHTML = `
-          <span class="nav-left"><span class="sap-icon sap-icon-bbyd-dashboard" style="font-size:15px;"></span> Tổng Quan (Launchpad)</span>
-          <span class="sap-icon sap-icon-navigation-right" style="font-size:11px;opacity:0.65;"></span>
-        `;
+        navHome.innerHTML = `<span style="display:inline-flex;align-items:center;gap:8px;">${taoSapSvgIcon(SAP_PATHS.dashboard, "#0064d9", "15px")} Tổng Quan (Launchpad)</span>`;
       }
-
       const navStudio = document.getElementById('navItemStudio');
       if (navStudio) {
-        navStudio.innerHTML = `
-          <span class="nav-left"><span class="sap-icon sap-icon-sales-quote" style="font-size:15px;"></span> Soạn Báo Giá / PI</span>
-          <span class="sap-icon sap-icon-navigation-down" id="studioNavChevron" style="font-size:11px;opacity:0.75;"></span>
-        `;
+        navStudio.innerHTML = `<span style="display:inline-flex;align-items:center;gap:8px;">${taoSapSvgIcon(SAP_PATHS.quote, "#0064d9", "15px")} Soạn Báo Giá / PI</span>`;
       }
-
-      const subVN = document.getElementById('subNavVN');
-      if (subVN) {
-        subVN.innerHTML = `<span class="sap-icon sap-icon-sales-document" style="font-size:13px;color:#0064d9;"></span> Báo Giá Nội Địa (VN)`;
-      }
-      const subEN = document.getElementById('subNavEN');
-      if (subEN) {
-        subEN.innerHTML = `<span class="sap-icon sap-icon-globe" style="font-size:13px;color:#0064d9;"></span> Quotation / PI (EN)`;
-      }
-      const subXK = document.getElementById('subNavXK');
-      if (subXK) {
-        subXK.innerHTML = `<span class="sap-icon sap-icon-shipping-status" style="font-size:13px;color:#d97706;"></span> Phiếu Xuất Kho`;
-      }
-
       const navMaster = document.getElementById('navItemMaster');
       if (navMaster) {
-        navMaster.innerHTML = `
-          <span class="nav-left"><span class="sap-icon sap-icon-database" style="font-size:15px;"></span> Database &amp; CRM</span>
-          <span class="sap-icon sap-icon-navigation-right" style="font-size:11px;opacity:0.65;"></span>
-        `;
+        navMaster.innerHTML = `<span style="display:inline-flex;align-items:center;gap:8px;">${taoSapSvgIcon(SAP_PATHS.database, "#0064d9", "15px")} Database &amp; CRM</span>`;
       }
 
-      // 5. Thanh Sub-Header (3 Tab chính + 4 Nút Thao tác bên phải)
-      const tabHome = document.getElementById('subTabHome');
-      if (tabHome) tabHome.innerHTML = `<span class="sap-icon sap-icon-bbyd-dashboard"></span> Dashboard`;
-
-      const tabStudio = document.getElementById('subTabStudio');
-      if (tabStudio) tabStudio.innerHTML = `<span class="sap-icon sap-icon-sales-quote"></span> Studio`;
-
-      const tabMaster = document.getElementById('subTabMaster');
-      if (tabMaster) tabMaster.innerHTML = `<span class="sap-icon sap-icon-database"></span> Master Data`;
-
+      // 4. Các nút thao tác góc trên phải
       const actionButtons = document.querySelectorAll('.sap-sub-actions button');
       if (actionButtons.length >= 4) {
-        actionButtons[0].innerHTML = `<span class="sap-icon sap-icon-save"></span> Lưu Nháp`;
-        actionButtons[1].innerHTML = `<span class="sap-icon sap-icon-upload-to-cloud"></span> Lưu Cloud`;
-        actionButtons[2].innerHTML = `<span class="sap-icon sap-icon-pdf-attachment"></span> Tải PDF`;
-        actionButtons[3].innerHTML = `<span class="sap-icon sap-icon-paper-plane"></span> Tải PDF &amp; Gửi Mail`;
+        actionButtons[0].innerHTML = `${taoSapSvgIcon(SAP_PATHS.save, "#0064d9", "13px")} Lưu Nháp`;
+        actionButtons[1].innerHTML = `${taoSapSvgIcon(SAP_PATHS.cloud, "#0064d9", "13px")} Lưu Cloud`;
+        actionButtons[2].innerHTML = `${taoSapSvgIcon(SAP_PATHS.pdf, "#0064d9", "13px")} Tải PDF`;
+        actionButtons[3].innerHTML = `${taoSapSvgIcon(SAP_PATHS.mail, "#ffffff", "13px")} Tải PDF &amp; Gửi Mail`;
       }
 
-      // 6. Các Tab chuyển chế độ trong Quotation Studio
-      const tabModeVN = document.getElementById('tabModeVN');
-      if (tabModeVN) tabModeVN.innerHTML = `<span class="sap-icon sap-icon-sales-document"></span> Báo Giá (VN)`;
-
-      const tabModeEN = document.getElementById('tabModeEN');
-      if (tabModeEN) tabModeEN.innerHTML = `<span class="sap-icon sap-icon-globe"></span> Quote / PI (EN)`;
-
-      const tabModeXK = document.getElementById('tabModeXK');
-      if (tabModeXK) tabModeXK.innerHTML = `<span class="sap-icon sap-icon-shipping-status"></span> Xuất Kho`;
-
-      // 7. Tiêu đề 4 Khung chức năng (Argon Cards) bên cột trái Studio
+      // 5. Tiêu đề các Argon Card bên Studio
       const cardTitles = document.querySelectorAll('#panelLeftForm .argon-card-title');
-      if (cardTitles[0]) cardTitles[0].innerHTML = `<span class="sap-icon sap-icon-customer" style="color:#0064d9;"></span> 1. Thông tin chứng từ &amp; Khách hàng`;
-      if (cardTitles[1]) cardTitles[1].innerHTML = `<span class="sap-icon sap-icon-product" style="color:#0064d9;"></span> 2. Chi tiết hàng hóa`;
-      if (cardTitles[2]) cardTitles[2].innerHTML = `<span class="sap-icon sap-icon-palette" style="color:#0064d9;"></span> 3. Logo &amp; Watermark (In trực tiếp vào PDF)`;
-      if (cardTitles[3]) cardTitles[3].innerHTML = `<span class="sap-icon sap-icon-email" style="color:#0064d9;"></span> 4. Cấu hình gửi Mail khách hàng`;
-
-      // 8. Nâng cấp Header của Joule Copilot bằng đúng SVG Icons/da.svg & Icons/ai.svg của SAP
-      const jouleHeroTitle = document.querySelector('#sapJouleDrawer .joule-top-bar > span');
-      if (jouleHeroTitle) {
-        jouleHeroTitle.innerHTML = `
-          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" style="width:16px;height:16px;">
-            <path d="M12 0a.75.75 0 0 1 .62.326l3.25 4.752a.75.75 0 0 1-.018.871l-7.25 9.753a.756.756 0 0 1-1.204 0L.148 5.95a.75.75 0 0 1-.017-.871L3.437.254A.75.75 0 0 1 4 0h8ZM1.67 5.484 8 13.998l6.328-8.514L11.605 1.5h-7.21L1.671 5.484Zm7.5-2.25a.35.35 0 0 1 .66 0c.37 1.084.85 1.575 1.93 1.937.32.11.32.562 0 .662-1.08.371-1.57.853-1.93 1.936a.35.35 0 0 1-.66 0c-.37-1.083-.85-1.575-1.93-1.936-.32-.11-.32-.562 0-.662 1.08-.372 1.57-.853 1.93-1.937Z"/>
-          </svg>
-          <b>Joule Copilot</b>
-          <span style="font-size:10px;background:rgba(255,255,255,0.22);padding:2px 6px;border-radius:8px;display:inline-flex;align-items:center;gap:3px;">
-            <span class="sap-icon sap-icon-ai" style="font-size:10px;"></span> SAP AI
-          </span>
-        `;
-      }
+      if (cardTitles[0]) cardTitles[0].innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;">${taoSapSvgIcon(SAP_PATHS.customer, "#0064d9", "15px")} 1. THÔNG TIN CHỨNG TỪ &amp; KHÁCH HÀNG</span>`;
+      if (cardTitles[1]) cardTitles[1].innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;">${taoSapSvgIcon(SAP_PATHS.product, "#0064d9", "15px")} 2. CHI TIẾT HÀNG HÓA</span>`;
     }
 
     window.addEventListener('DOMContentLoaded', () => {
       dongBoSapIconsToanHeThong();
-      setTimeout(dongBoSapIconsToanHeThong, 600);
+      setTimeout(dongBoSapIconsToanHeThong, 500);
     });
   </script>
 </body>
