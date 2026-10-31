@@ -1205,8 +1205,8 @@
                   📲 Chọn App gửi Mail:
                 </label>
                 <select id="inMailAppSelect" style="width:100%;padding:6px 8px;font-weight:700;">
+                  <option value="OUTLOOK_APP">📧 Mở thẳng App Outlook (Điền sẵn 100% Tới + Chủ đề + Nội dung &amp; Tải PDF)</option>                  
                   <option value="SHARE_PDF">📎 Đính kèm thẳng File PDF + Nội dung (Tự Copy Email nhận — vào App bấm Dán)</option>
-                  <option value="OUTLOOK_APP">🟦 Mở thẳng App Outlook (Điền sẵn 100% Tới + Chủ đề + Nội dung &amp; Tải PDF)</option>
                   <option value="GMAIL_APP">📲 Mở thẳng App Gmail (Điền sẵn 100% Tới + Chủ đề + Nội dung &amp; Tải PDF)</option>
                   <option value="MAILTO_DEFAULT">✉️ Mở App Mail mặc định (Điền sẵn 100% Tới + Chủ đề + Nội dung &amp; Tải PDF)</option>
                   <option value="GMAIL_WEB">💻 Mở Gmail Web trên máy tính (Điền sẵn Email + Chủ đề + Nội dung)</option>
@@ -3644,6 +3644,16 @@
         taiTyGiaNgoaiTeClient(false);
       }, 450);
     });
+  </script>
+  <script>
+    // Ghi đè toàn bộ hộp thoại alert() mặc định của trình duyệt sang thông báo Toast tự tắt
+    window.alert = function(msg) {
+      if (typeof hienToast === 'function') {
+        hienToast(msg);
+      } else {
+        console.log("Thông báo:", msg);
+      }
+    };
   </script>
 </body>
 </html>
