@@ -1700,7 +1700,7 @@
   <script src="JS_State_CRUD.js"></script>
   <script src="JS_Render_PDF.js"></script>
 
- <!-- SCRIPT TÍCH HỢP TOÀN DIỆN (ĐÃ TỐI ƯU, AUTO-SAVE NHÁP & ẨN AI MẶC ĐỊNH) -->
+ <!-- SCRIPT TÍCH HỢP TOÀN DIỆN (TOAST GIAO DIỆN, MODAL XÁC NHẬN & AUTO-SAVE CLOUD) -->
   <script>
     window.masterCache = { sp: {}, kh: {}, bank: {}, orders: {} };
     window.gioHang = [];
@@ -1711,6 +1711,7 @@
     window.processedWatermarkBase64 = '';
     window.wmOpacityPercent = 20;
     window.kpChartInstance = null;
+    window.autoSaveCloudEnabled = true;
 
     let dangSuaSPId = null;
     let dangSuaKHId = null;
@@ -1718,8 +1719,8 @@
     let dangSuaGioIndex = -1;
     let currentMainTab = 'STUDIO';
     let currentMobileSubTab = 'FORM';
-    let autoSaveDraftTimer = null;
-    let dangKhoiPhucNhap = false;
+    let autoSaveCloudTimer = null;
+    let dangNapDuLieuDon = false;
 
     function escapeHtml(str) {
       return String(str || '')
@@ -1730,19 +1731,137 @@
         .replace(/'/g, '&#39;');
     }
 
-    function hienToast(msg) {
-      const toast = document.getElementById('custom-toast');
-      if (toast) {
-        toast.innerText = msg;
-        toast.className = 'show';
-        clearTimeout(window._toastTimer);
-        window._toastTimer = setTimeout(() => { toast.className = ''; }, 2600);
+    // =====================================================
+    // KHỞI TẠO GIAO DIỆN TOAST & HỘP THOẠI XÁC NHẬN TRONG APP
+    // =====================================================
+    function khoiTaoGiaoDienThongBaoSAP() {
+      if (!document.getElementById('sapCustomNotificationStyle')) {
+        const st = document.createElement('style');
+        st.id = 'sapCustomNotificationStyle';
+        st.innerHTML = `
+          #custom-toast {
+            position: fixed !important;
+            top: 58px !important;
+            right: 20px !important;
+            bottom: auto !important;
+            left: auto !important;
+            z-index: 999999 !important;
+            background: #ffffff !important;
+            color: #1d2d3e !important;
+            border-left: 5px solid #256f3a !important;
+            border-top: 1px solid #cbd5e1 !important;
+            border-right: 1px solid #cbd5e1 !important;
+            border-bottom: 1px solid #cbd5e1 !important;
+            padding: 12px 18px !important;
+            border-radius: 10px !important;
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18) !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            transform: translateY(-12px) !important;
+            transition: all 0.22s ease !important;
+            pointer-events: none !important;
+            max-width: 92vw !important;
+          }
+          #custom-toast.show {
+            opacity: 1 !important;
+            visibility: visible !important;
+            transform: translateY(0) !important;
+          }
+          #sapConfirmModalOverlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(2px);
+            z-index: 999998;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+          }
+          .sap-confirm-box {
+            background: #ffffff;
+            width: 100%;
+            max-width: 380px;
+            border-radius: 14px;
+            border: 1px solid #d9d9d9;
+            box-shadow: 0 20px 35px rgba(15, 23, 42, 0.25);
+            overflow: hidden;
+            animation: sapPopIn 0.16s ease-out;
+          }
+          @keyframes sapPopIn {
+            from { transform: scale(0.94); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+          }
+        `;
+        document.head.appendChild(st);
+      }
+
+      if (!document.getElementById('sapConfirmModalOverlay')) {
+        const modal = document.createElement('div');
+        modal.id = 'sapConfirmModalOverlay';
+        modal.innerHTML = `
+          <div class="sap-confirm-box">
+            <div style="padding:14px 18px; background:#fff8f1; border-bottom:1px solid #fed7aa; display:flex; align-items:center; gap:8px; font-weight:800; font-size:14px; color:#c2410c;">
+              <span>⚠️ Xác nhận thao tác</span>
+            </div>
+            <div id="sapConfirmMessage" style="padding:18px; font-size:13.5px; color:#1d2d3e; line-height:1.5; font-weight:600;"></div>
+            <div style="padding:10px 16px 14px 16px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:8px;">
+              <button type="button" id="btnSapConfirmCancel" class="sap-btn" style="background:#ffffff !important; color:#475569 !important; border:1px solid #cbd5e1 !important; padding:6px 16px !important;">Hủy</button>
+              <button type="button" id="btnSapConfirmOk" class="sap-btn sap-btn-reject" style="background:#aa0808 !important; color:#ffffff !important; border:1px solid #aa0808 !important; padding:6px 18px !important;">Đồng ý xóa</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
       }
     }
 
-    // Ghi đè toàn bộ hộp thoại alert() mặc định của trình duyệt sang thông báo Toast tự tắt
+    window.hienToast = function(msg) {
+      khoiTaoGiaoDienThongBaoSAP();
+      let toast = document.getElementById('custom-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'custom-toast';
+        document.body.appendChild(toast);
+      }
+      const isWarn = String(msg).includes('⚠️') || String(msg).includes('❌') || String(msg).includes('🗑️');
+      toast.style.setProperty('border-left-color', isWarn ? '#e76500' : '#256f3a', 'important');
+      toast.innerHTML = `<span>${escapeHtml(msg)}</span>`;
+      toast.classList.add('show');
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2800);
+    };
+
+    // Ghi đè toàn bộ alert() sang Toast trong giao diện
     window.alert = function(msg) {
-      hienToast(msg);
+      window.hienToast(msg);
+    };
+
+    // Hộp thoại xác nhận ngay trong giao diện (thay thế hoàn toàn confirm() của trình duyệt)
+    window.hienHopThoaiXacNhan = function(message, onConfirm) {
+      khoiTaoGiaoDienThongBaoSAP();
+      const overlay = document.getElementById('sapConfirmModalOverlay');
+      const msgEl = document.getElementById('sapConfirmMessage');
+      const btnOk = document.getElementById('btnSapConfirmOk');
+      const btnCancel = document.getElementById('btnSapConfirmCancel');
+      if (!overlay || !msgEl || !btnOk || !btnCancel) return;
+
+      msgEl.innerText = message;
+      overlay.style.display = 'flex';
+
+      btnCancel.onclick = function() {
+        overlay.style.display = 'none';
+      };
+      btnOk.onclick = function() {
+        overlay.style.display = 'none';
+        if (typeof onConfirm === 'function') onConfirm();
+      };
     };
 
     // =====================================================
@@ -1764,102 +1883,85 @@
     };
 
     // =====================================================
-    // TỰ ĐỘNG LƯU NHÁP & KHÔI PHỤC BẢNG BÁO GIÁ (AUTO-SAVE)
+    // TỰ ĐỘNG LƯU BẢNG BÁO GIÁ LÊN CLOUD (AUTO-SAVE CLOUD)
     // =====================================================
-    function layDuLieuBangBaoGiaHienTai() {
+    function thuThapDuLieuDonHangHienTai() {
+      const maDon = document.getElementById('inMa')?.value.trim() || 'QUO-2026-001';
       return {
-        maDon: document.getElementById('inMa')?.value || '',
+        maDon: maDon,
         cheDo: window.cheDoHienTai || 'BG_VN',
         isPI: document.getElementById('chkIsPI')?.checked ?? false,
         titleEN: document.getElementById('inTitleEN')?.value || 'COCONUT QUOTATION',
-        tenKhach: document.getElementById('inKhach')?.value || '',
-        lienHe: document.getElementById('inLienHe')?.value || '',
-        ngayLap: document.getElementById('inNgay')?.value || '',
-        preparedBy: document.getElementById('inPreparedBy')?.value || '',
-        validUntil: document.getElementById('inValidUntil')?.value || '',
-        diaDiemXK: document.getElementById('inDiaDiemXK')?.value || '',
-        bienSoXe: document.getElementById('inBienSoXe')?.value || '',
+        tenKhach: document.getElementById('inKhach')?.value.trim() || 'Khách hàng lẻ',
+        lienHe: document.getElementById('inLienHe')?.value.trim() || '',
+        ngayLap: document.getElementById('inNgay')?.value.trim() || new Date().toLocaleDateString('vi-VN'),
+        preparedBy: document.getElementById('inPreparedBy')?.value.trim() || '',
+        validUntil: document.getElementById('inValidUntil')?.value.trim() || '',
+        diaDiemXK: document.getElementById('inDiaDiemXK')?.value.trim() || '',
+        bienSoXe: document.getElementById('inBienSoXe')?.value.trim() || '',
         dieuKhoan: document.getElementById('inDieuKhoan')?.value || '',
         enNote: document.getElementById('inEnNote')?.value || '',
         paymentTerm: document.getElementById('inPaymentTerm')?.value || '',
         bankInfo: document.getElementById('inBankInfo')?.value || '',
         currency: document.getElementById('inCurrency')?.value || 'USD',
         volumeType: document.getElementById('inVolumeType')?.value || '(CTNS/40RF)',
-        emailKhach: document.getElementById('inEmailKhach')?.value || '',
-        thongTinLienHeMail: document.getElementById('inThongTinLienHeMail')?.value || '',
+        emailKhach: document.getElementById('inEmailKhach')?.value.trim() || '',
+        thongTinLienHeMail: document.getElementById('inThongTinLienHeMail')?.value.trim() || '',
         gioHang: window.gioHang || [],
-        savedAt: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+        updatedAt: new Date().toISOString()
       };
     }
 
-    window.tuDongLuuNhap = function() {
-      if (dangKhoiPhucNhap) return;
-      clearTimeout(autoSaveDraftTimer);
-      autoSaveDraftTimer = setTimeout(() => {
+    function capNhatTrangThaiNutAutoCloud(text, isSaving = false) {
+      const btnAuto = document.querySelector('.sap-pill-bar button:first-child');
+      if (btnAuto) {
+        btnAuto.innerHTML = isSaving
+          ? `⏳ ${text}`
+          : `☁️ ${text}`;
+      }
+      const bc = document.getElementById('sapShellBreadcrumb');
+      const maVal = document.getElementById('inMa')?.value || 'QUO-2026-001';
+      if (bc) {
+        bc.innerText = `Chứng từ: ${maVal} — ${text}`;
+      }
+    }
+
+    window.tuDongLuuLenCloud = function() {
+      if (dangNapDuLieuDon || !window.autoSaveCloudEnabled) return;
+
+      const khachRaw = document.getElementById('inKhach')?.value.trim() || '';
+      const lienHeRaw = document.getElementById('inLienHe')?.value.trim() || '';
+      const dkRaw = document.getElementById('inDieuKhoan')?.value.trim() || '';
+      const coDuLieu = khachRaw || lienHeRaw || dkRaw || (window.gioHang && window.gioHang.length > 0);
+      if (!coDuLieu) return;
+
+      clearTimeout(autoSaveCloudTimer);
+      capNhatTrangThaiNutAutoCloud('Đang tự lưu Cloud...', true);
+
+      autoSaveCloudTimer = setTimeout(async () => {
         try {
-          const draft = layDuLieuBangBaoGiaHienTai();
-          const coDuLieu = draft.tenKhach.trim() || draft.lienHe.trim() || draft.dieuKhoan.trim() || draft.paymentTerm.trim() || (draft.gioHang && draft.gioHang.length > 0);
-          if (!coDuLieu) return;
+          const orderData = thuThapDuLieuDonHangHienTai();
+          await db.collection("DonHang").doc(orderData.maDon).set(orderData, { merge: true });
+          window.masterCache.orders[orderData.maDon] = orderData;
 
-          localStorage.setItem('argon_draft_order', JSON.stringify(draft));
-          const bc = document.getElementById('sapShellBreadcrumb');
-          if (bc) {
-            bc.innerText = `Chứng từ: ${draft.maDon || 'QUO-2026-001'} (💾 Đã tự lưu nháp lúc ${draft.savedAt})`;
+          const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+          capNhatTrangThaiNutAutoCloud(`Đã tự lưu Cloud (${timeStr})`, false);
+
+          // Đồng bộ lại danh sách chọn đơn Cloud ngầm mà không làm giật màn hình
+          const sel = document.getElementById('savedOrdersSelect');
+          if (sel && !sel.querySelector(`option[value="${CSS.escape(orderData.maDon)}"]`)) {
+            taiDanhSachDonLuuApp();
           }
-        } catch (e) {
-          console.warn("Không thể tự động lưu nháp:", e);
+        } catch (err) {
+          console.warn("Lỗi tự động lưu Cloud:", err);
+          capNhatTrangThaiNutAutoCloud('Chờ đồng bộ Cloud', false);
         }
-      }, 450);
+      }, 1200);
     };
 
-    window.luuDonNháp = function() {
-      try {
-        const draft = layDuLieuBangBaoGiaHienTai();
-        localStorage.setItem('argon_draft_order', JSON.stringify(draft));
-        hienToast("✅ Đã lưu nháp bảng báo giá thành công!");
-      } catch (e) {
-        hienToast("❌ Lỗi lưu nháp: " + e.message);
-      }
-    };
-
-    window.khoiPhucDonNhapTuDong = function() {
-      try {
-        const raw = localStorage.getItem('argon_draft_order');
-        if (!raw) return false;
-        const d = JSON.parse(raw);
-        if (!d) return false;
-
-        const coDuLieu = (d.tenKhach && d.tenKhach.trim()) || (d.gioHang && d.gioHang.length > 0) || (d.dieuKhoan && d.dieuKhoan.trim());
-        if (!coDuLieu) return false;
-
-        dangKhoiPhucNhap = true;
-        if (document.getElementById('chkIsPI')) document.getElementById('chkIsPI').checked = !!d.isPI;
-        if (document.getElementById('inTitleEN') && d.titleEN) document.getElementById('inTitleEN').value = d.titleEN;
-        if (document.getElementById('inMa') && d.maDon) document.getElementById('inMa').value = d.maDon;
-        if (document.getElementById('inKhach')) document.getElementById('inKhach').value = d.tenKhach || '';
-        if (document.getElementById('inLienHe')) document.getElementById('inLienHe').value = d.lienHe || '';
-        if (document.getElementById('inNgay') && d.ngayLap) document.getElementById('inNgay').value = d.ngayLap;
-        if (document.getElementById('inPreparedBy')) document.getElementById('inPreparedBy').value = d.preparedBy || '';
-        if (document.getElementById('inValidUntil')) document.getElementById('inValidUntil').value = d.validUntil || '';
-        if (document.getElementById('inDiaDiemXK')) document.getElementById('inDiaDiemXK').value = d.diaDiemXK || '';
-        if (document.getElementById('inBienSoXe')) document.getElementById('inBienSoXe').value = d.bienSoXe || '';
-        if (document.getElementById('inDieuKhoan')) document.getElementById('inDieuKhoan').value = d.dieuKhoan || '';
-        if (document.getElementById('inEnNote')) document.getElementById('inEnNote').value = d.enNote || '';
-        if (document.getElementById('inPaymentTerm')) document.getElementById('inPaymentTerm').value = d.paymentTerm || '';
-        if (document.getElementById('inBankInfo')) document.getElementById('inBankInfo').value = d.bankInfo || '';
-        if (document.getElementById('inCurrency') && d.currency) document.getElementById('inCurrency').value = d.currency;
-        if (document.getElementById('inVolumeType') && d.volumeType) document.getElementById('inVolumeType').value = d.volumeType;
-        if (document.getElementById('inEmailKhach')) document.getElementById('inEmailKhach').value = d.emailKhach || '';
-        if (document.getElementById('inThongTinLienHeMail')) document.getElementById('inThongTinLienHeMail').value = d.thongTinLienHeMail || '';
-
-        window.gioHang = Array.isArray(d.gioHang) ? d.gioHang : [];
-        window.doiCheDo(d.cheDo || 'BG_VN');
-        dangKhoiPhucNhap = false;
-        return true;
-      } catch (e) {
-        dangKhoiPhucNhap = false;
-        return false;
-      }
+    // Đổi nút "Lưu Nháp" cũ thành nút kích hoạt & bật/tắt Tự động lưu Cloud
+    window.luuDonNháp = async function() {
+      await window.luuVaoAppSheet();
     };
 
     // =====================================================
@@ -2229,6 +2331,7 @@
       apDungLogo('');
       if (document.getElementById('inLogoFile')) document.getElementById('inLogoFile').value = '';
       try { localStorage.removeItem('argon_saved_logo'); } catch (e) {}
+      hienToast("🗑️ Đã xóa Logo công ty!");
     };
 
     window.loadWatermark = function(input) {
@@ -2290,6 +2393,7 @@
         localStorage.removeItem('argon_raw_wm');
         localStorage.removeItem('argon_saved_wm');
       } catch (e) {}
+      hienToast("🗑️ Đã xóa Watermark!");
     };
 
     window.loadSpImage = function(input) {
@@ -2340,7 +2444,7 @@
     };
 
     // =====================================================
-    // 2. ĐIỀU HƯỚNG MÀN HÌNH & TỰ ĐỘNG ĐÓNG AI TRÊN MOBILE
+    // 2. ĐIỀU HƯỚNG MÀN HÌNH
     // =====================================================
     window.tuDongZoomA4TrenMobile = function() {
       const wrapper = document.getElementById('a4Wrapper');
@@ -2641,6 +2745,7 @@
       }
       renderTable();
       updatePreview();
+      hienToast("🗑️ Đã xóa dòng sản phẩm khỏi bảng báo giá!");
     };
 
     window.renderTable = function() {
@@ -2854,7 +2959,7 @@
       if (window.innerWidth <= 768) {
         setTimeout(window.tuDongZoomA4TrenMobile, 60);
       }
-      window.tuDongLuuNhap();
+      window.tuDongLuuLenCloud();
     };
 
     window.updatePreview = function() {
@@ -2900,9 +3005,6 @@
       document.getElementById('preMa').innerText = maVal;
       document.getElementById('preNgay').innerText = document.getElementById('inNgay')?.value || new Date().toLocaleDateString('vi-VN');
 
-      const bc = document.getElementById('sapShellBreadcrumb');
-      if (bc) bc.innerText = `Custom Morning Horizon — Chứng từ: ${maVal}`;
-
       const validVal = document.getElementById('inValidUntil')?.value.trim() || '';
       const prepVal = document.getElementById('inPreparedBy')?.value.trim() || '';
       document.getElementById('boxValidUntil').style.display = (isEN && validVal) ? 'table-row' : 'none';
@@ -2935,7 +3037,7 @@
       document.getElementById('preEnNote').innerText = enNoteVal;
 
       window.datLaiNoiDungMacDinh(false);
-      window.tuDongLuuNhap();
+      window.tuDongLuuLenCloud();
     };
 
     window.chenIncotermThongMinh = function() {
@@ -2952,17 +3054,19 @@
     };
 
     window.taoDonMoi = function() {
+      dangNapDuLieuDon = true;
       window.gioHang = [];
       dangSuaGioIndex = -1;
       document.getElementById('inKhach').value = '';
       document.getElementById('inLienHe').value = '';
       document.getElementById('inMa').value = 'QUO-' + new Date().getFullYear() + '-' + Math.floor(100 + Math.random() * 900);
       document.getElementById('inNgay').value = new Date().toLocaleDateString('vi-VN');
-      try { localStorage.removeItem('argon_draft_order'); } catch (e) {}
       xoaAnhSpTam();
       renderTable();
       updatePreview();
-      hienToast("✨ Đã khởi tạo đơn mới!");
+      dangNapDuLieuDon = false;
+      capNhatTrangThaiNutAutoCloud('Tự động lưu Cloud: BẬT', false);
+      hienToast("✨ Đã khởi tạo đơn báo giá mới!");
     };
 
     // =====================================================
@@ -2978,17 +3082,14 @@
       const overlay = document.getElementById('loading-overlay');
       if (overlay) overlay.style.display = 'flex';
 
-      const orderData = {
-        ...layDuLieuBangBaoGiaHienTai(),
-        maDon: maDon,
-        tenKhach: document.getElementById('inKhach')?.value.trim() || 'Khách hàng lẻ',
-        updatedAt: new Date().toISOString()
-      };
+      const orderData = thuThapDuLieuDonHangHienTai();
 
       try {
         await db.collection("DonHang").doc(maDon).set(orderData, { merge: true });
         await taiDanhSachDonLuuApp();
-        hienToast("✅ Đã lưu đơn [" + maDon + "] lên Cloud thành công!");
+        const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        capNhatTrangThaiNutAutoCloud(`Đã lưu Cloud (${timeStr})`, false);
+        hienToast(`✅ Đã lưu đơn [${maDon}] lên Cloud thành công!`);
       } catch (err) {
         console.error("Lỗi lưu Cloud:", err);
         hienToast("❌ Không thể lưu đơn lên Cloud: " + err.message);
@@ -3022,8 +3123,10 @@
         });
 
         renderKapellaDashboard();
+        return arr;
       } catch (err) {
         console.error("Lỗi tải danh sách đơn Cloud:", err);
+        return [];
       }
     };
 
@@ -3108,18 +3211,19 @@
       }
     };
 
-    window.taiDonTuApp = function(maDonParam) {
+    window.taiDonTuApp = function(maDonParam, imLang = false) {
       const maDon = maDonParam || document.getElementById('savedOrdersSelect')?.value;
       if (!maDon) {
-        hienToast("⚠️ Vui lòng chọn một đơn hàng trong danh sách Cloud!");
+        if (!imLang) hienToast("⚠️ Vui lòng chọn một đơn hàng trong danh sách Cloud!");
         return;
       }
       const d = window.masterCache.orders[maDon];
       if (!d) {
-        hienToast("❌ Không tìm thấy dữ liệu của đơn hàng này!");
+        if (!imLang) hienToast("❌ Không tìm thấy dữ liệu của đơn hàng này!");
         return;
       }
 
+      dangNapDuLieuDon = true;
       if (document.getElementById('chkIsPI')) document.getElementById('chkIsPI').checked = !!d.isPI;
       if (document.getElementById('inTitleEN') && d.titleEN) document.getElementById('inTitleEN').value = d.titleEN;
       if (document.getElementById('inMa')) document.getElementById('inMa').value = d.maDon || maDon;
@@ -3143,24 +3247,26 @@
 
       window.chuyenManHinhKapella('STUDIO');
       window.doiCheDo(d.cheDo || 'BG_VN');
-      hienToast("📂 Đã mở đơn hàng [" + maDon + "] thành công!");
+      dangNapDuLieuDon = false;
+
+      if (!imLang) hienToast(`📂 Đã mở đơn hàng [${maDon}] từ Cloud thành công!`);
     };
 
-    window.xoaDonTrongApp = async function(maDonParam) {
+    window.xoaDonTrongApp = function(maDonParam) {
       const maDon = maDonParam || document.getElementById('savedOrdersSelect')?.value;
       if (!maDon) {
         hienToast("⚠️ Vui lòng chọn đơn hàng cần xóa!");
         return;
       }
-      if (!confirm(`⚠️ Bạn có chắc chắn muốn xóa đơn hàng [${maDon}] khỏi Cloud không?`)) return;
-
-      try {
-        await db.collection("DonHang").doc(maDon).delete();
-        await taiDanhSachDonLuuApp();
-        hienToast("🗑️ Đã xóa đơn hàng [" + maDon + "] khỏi Cloud thành công!");
-      } catch (e) {
-        hienToast("❌ Lỗi khi xóa đơn: " + e.message);
-      }
+      window.hienHopThoaiXacNhan(`Bạn có chắc chắn muốn xóa đơn hàng [${maDon}] khỏi Cloud không?`, async function() {
+        try {
+          await db.collection("DonHang").doc(maDon).delete();
+          await taiDanhSachDonLuuApp();
+          hienToast(`✅ Đã xóa đơn hàng [${maDon}] khỏi Cloud thành công!`);
+        } catch (e) {
+          hienToast("❌ Lỗi khi xóa đơn: " + e.message);
+        }
+      });
     };
 
     // =====================================================
@@ -3356,9 +3462,9 @@
     };
 
     // =====================================================
-    // 7. QUẢN LÝ MASTER DATA (THÔNG BÁO ĐÃ THÊM THÀNH CÔNG)
+    // 7. QUẢN LÝ MASTER DATA (THÔNG BÁO TRONG GIAO DIỆN)
     // =====================================================
-    async function themSanPhamNhanh() {
+    window.themSanPhamNhanh = async function() {
       const maSP = document.getElementById('qtMaSP')?.value.trim();
       const tenSP = document.getElementById('qtTenSP')?.value.trim();
       const moTaSP = document.getElementById('qtMoTaSP')?.value.trim() || '';
@@ -3387,9 +3493,9 @@
       } catch (err) {
         hienToast("❌ Lỗi: " + err.message);
       }
-    }
+    };
 
-    function suaSanPham(docId) {
+    window.suaSanPham = function(docId) {
       const d = window.masterCache.sp[docId];
       if (!d) return;
       dangSuaSPId = docId;
@@ -3410,9 +3516,9 @@
       document.getElementById('btnSaveSP').innerText = "💾 Cập Nhật SP";
       document.getElementById('btnCancelSP').style.display = 'inline-block';
       document.getElementById('qtTenSP').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    };
 
-    function huySuaSP() {
+    window.huySuaSP = function() {
       dangSuaSPId = null;
       window.currentMasterSpImageBase64 = '';
       document.getElementById('qtMaSP').value = '';
@@ -3428,9 +3534,9 @@
       document.getElementById('titleFormSP').innerText = "➕ Thêm Sản Phẩm Mới";
       document.getElementById('btnSaveSP').innerText = "💾 Lưu Sản Phẩm";
       document.getElementById('btnCancelSP').style.display = 'none';
-    }
+    };
 
-    async function themKhachHangNhanh() {
+    window.themKhachHangNhanh = async function() {
       const tenKH = document.getElementById('qtTenKH')?.value.trim();
       const infoKH = document.getElementById('qtInfoKH')?.value.trim() || '';
       if (!tenKH) { hienToast("⚠️ Vui lòng nhập Tên Khách Hàng!"); return; }
@@ -3446,9 +3552,9 @@
         await taiDuLieuMasterTuFirestore();
         hienToast(isEdit ? `✅ Đã cập nhật khách hàng [${tenKH}] thành công!` : `✅ Đã thêm khách hàng [${tenKH}] thành công!`);
       } catch (e) { hienToast("❌ Lỗi: " + e.message); }
-    }
+    };
 
-    function suaKhachHang(docId) {
+    window.suaKhachHang = function(docId) {
       const d = window.masterCache.kh[docId];
       if (!d) return;
       dangSuaKHId = docId;
@@ -3458,18 +3564,18 @@
       document.getElementById('btnSaveKH').innerText = "💾 Cập Nhật KH";
       document.getElementById('btnCancelKH').style.display = 'inline-block';
       document.getElementById('qtTenKH').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    };
 
-    function huySuaKH() {
+    window.huySuaKH = function() {
       dangSuaKHId = null;
       document.getElementById('qtTenKH').value = '';
       document.getElementById('qtInfoKH').value = '';
       document.getElementById('titleFormKH').innerText = "👤 Thêm Khách Hàng (CRM)";
       document.getElementById('btnSaveKH').innerText = "💾 Lưu Khách Hàng";
       document.getElementById('btnCancelKH').style.display = 'none';
-    }
+    };
 
-    async function themBankNhanh() {
+    window.themBankNhanh = async function() {
       const bankName = document.getElementById('qtBankName')?.value.trim();
       const accName = document.getElementById('qtAccName')?.value.trim() || '';
       const accNo = document.getElementById('qtAccNo')?.value.trim();
@@ -3487,9 +3593,9 @@
         await taiDuLieuMasterTuFirestore();
         hienToast(isEdit ? `✅ Đã cập nhật ngân hàng [${bankName}] thành công!` : `✅ Đã thêm ngân hàng [${bankName}] thành công!`);
       } catch (e) { hienToast("❌ Lỗi: " + e.message); }
-    }
+    };
 
-    function suaBank(docId) {
+    window.suaBank = function(docId) {
       const d = window.masterCache.bank[docId];
       if (!d) return;
       dangSuaBankId = docId;
@@ -3501,9 +3607,9 @@
       document.getElementById('btnSaveBank').innerText = "💾 Cập Nhật Bank";
       document.getElementById('btnCancelBank').style.display = 'inline-block';
       document.getElementById('qtBankName').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    };
 
-    function huySuaBank() {
+    window.huySuaBank = function() {
       dangSuaBankId = null;
       document.getElementById('qtBankName').value = '';
       document.getElementById('qtAccName').value = '';
@@ -3512,9 +3618,9 @@
       document.getElementById('titleFormBank').innerText = "🏦 Thêm Ngân Hàng T/T";
       document.getElementById('btnSaveBank').innerText = "💾 Lưu Ngân Hàng";
       document.getElementById('btnCancelBank').style.display = 'none';
-    }
+    };
 
-    async function taiDuLieuMasterTuFirestore() {
+    window.taiDuLieuMasterTuFirestore = async function() {
       try {
         window.masterCache.sp = {};
         window.masterCache.kh = {};
@@ -3642,17 +3748,19 @@
       } catch (err) {
         console.error("Lỗi tải Master:", err);
       }
-    }
+    };
 
-    async function xoaFirestore(collectionName, docId, tenLoai) {
-      if (confirm(`⚠️ Bạn có chắc chắn muốn xóa ${tenLoai} này không?`)) {
+    window.xoaFirestore = function(collectionName, docId, tenLoai) {
+      window.hienHopThoaiXacNhan(`Bạn có chắc chắn muốn xóa ${tenLoai} này khỏi hệ thống không?`, async function() {
         try {
           await db.collection(collectionName).doc(docId).delete();
           await taiDuLieuMasterTuFirestore();
           hienToast(`✅ Đã xóa ${tenLoai} thành công!`);
-        } catch (e) { hienToast("❌ Lỗi: " + e.message); }
-      }
-    }
+        } catch (e) {
+          hienToast("❌ Lỗi: " + e.message);
+        }
+      });
+    };
 
     window.chonSPDatabase = function() {
       const sel = document.getElementById('spSelect');
@@ -4041,7 +4149,7 @@
     };
 
     // =====================================================
-    // 9. ĐỒNG BỘ ICON SVG SAP FIORI CHÍNH HÃNG
+    // 9. ĐỒNG BỘ ICON SVG SAP FIORI & THANH AUTO-SAVE CLOUD
     // =====================================================
     function taoSapSvgIcon(pathData, color = "currentColor", size = "14px") {
       return `<svg xmlns="http://www.w3.org/2000/svg" fill="${color}" viewBox="0 0 16 16" style="width:${size};height:${size};display:inline-block;vertical-align:middle;flex-shrink:0;"><path d="${pathData}"/></svg>`;
@@ -4050,10 +4158,6 @@
     const SAP_PATHS = {
       menu: "M15.25 12.5a.75.75 0 0 1 0 1.5H.75a.75.75 0 0 1 0-1.5h14.5Zm0-5.5a.75.75 0 0 1 0 1.5H.75a.75.75 0 0 1 0-1.5h14.5Zm0-5a.75.75 0 0 1 0 1.5H.75a.75.75 0 0 1 0-1.5h14.5Z",
       add: "M8 1a.75.75 0 0 1 .75.75v5.5h5.5a.75.75 0 0 1 0 1.5h-5.5v5.5a.75.75 0 0 1-1.5 0v-5.5h-5.5a.75.75 0 0 1 0-1.5h5.5v-5.5A.75.75 0 0 1 8 1Z",
-      dashboard: "M3.25 11a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-.75.75H.75a.75.75 0 0 1-.75-.75v-3.5A.75.75 0 0 1 .75 11h2.5Zm7 1a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-.75.75h-4.5a.75.75 0 0 1-.75-.75v-2.5a.75.75 0 0 1 .75-.75h4.5ZM1.5 14.5h1v-2h-1v2Zm5 0h3v-1h-3v1ZM14.24 0C15.211 0 16 .788 16 1.76v7.48A1.76 1.76 0 0 1 14.24 11H6.76A1.76 1.76 0 0 1 5 9.24V1.76C5 .789 5.788 0 6.76 0h7.48Z",
-      quote: "M12.251 0c.966 0 1.75.784 1.75 1.75v12.5a1.75 1.75 0 0 1-1.75 1.75h-8.5a1.75 1.75 0 0 1-1.75-1.75V1.75c0-.966.783-1.75 1.75-1.75h8.5Zm-8.5 1.5a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25h-8.5Z",
-      database: "M10.5 14.686 8.372 15.9a.75.75 0 0 1-.744 0L5.5 14.686v-3.728l1.88 1.074c.384.22.856.22 1.24 0l1.88-1.074v3.728ZM4 10.349v3.802l-3-2V8.35l3 2Zm11 1.802-3 2V10.35l3-2v3.802Z",
-      save: "M12.25 0C13.216 0 14 .784 14 1.75v2.5a.75.75 0 0 1-1.5 0v-2.5a.25.25 0 0 0-.25-.25H6.71a.25.25 0 0 0-.19.087L6 2.193V5.25a.75.75 0 0 1-.75.75H2.738c-.089.104-.238.37-.238.37v7.88c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25v-2a.75.75 0 0 1 1.5 0v2A1.75 1.75 0 0 1 11.25 16h-8.5A1.75 1.75 0 0 1 1 14.25V6.37c0-.417.15-.821.42-1.139L5.38.611A1.751 1.751 0 0 1 6.71 0h1.54Z",
       cloud: "M7.813 2c2.085 0 3.828 1.332 4.497 3.168 2.099.363 3.69 2.248 3.69 4.38C16 11.724 14.152 14 11.87 14H3.486a3.493 3.493 0 0 1-.472-6.954c0-.08.004-.16.004-.241A4.8 4.8 0 0 1 7.813 2Zm0 1.5A3.3 3.3 0 0 0 4.52 6.805c0 .346-.01.67-.021.982a.75.75 0 0 1-.749.726c-1.243 0-2.249.712-2.249 1.994 0 1.1.894 1.993 1.987 1.993h8.382c1.473 0 2.621-1.59 2.621-2.962a2.937 2.937 0 0 0-2.79-2.933.75.75 0 0 1-.69-.57C10.655 4.578 9.364 3.5 7.813 3.5Z",
       pdf: "M12.25 0C13.216 0 14 .784 14 1.75v12.5A1.75 1.75 0 0 1 12.25 16h-8.5A1.75 1.75 0 0 1 2 14.25V6.37c0-.417.15-.821.42-1.139L6.38.611A1.751 1.751 0 0 1 7.71 0h4.54ZM7.71 1.5a.25.25 0 0 0-.19.087L7 2.193V5.25a.75.75 0 0 1-.75.75H3.738c-.089.104-.238.37-.238.37v7.88c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25H7.71Z",
       mail: "M13.25 2A2.75 2.75 0 0 1 16 4.75v6.5A2.75 2.75 0 0 1 13.25 14H2.75A2.75 2.75 0 0 1 0 11.25v-6.5A2.75 2.75 0 0 1 2.75 2h10.5ZM9.521 8.54a2.75 2.75 0 0 1-3.042 0L1.5 5.232v6.018c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25V5.232L9.521 8.54Z",
@@ -4074,8 +4178,9 @@
 
       const actionButtons = document.querySelectorAll('.sap-pill-bar button');
       if (actionButtons.length >= 4) {
-        actionButtons[0].innerHTML = `${taoSapSvgIcon(SAP_PATHS.save, "#256f3a", "13px")} Lưu Nháp`;
-        actionButtons[1].innerHTML = `${taoSapSvgIcon(SAP_PATHS.cloud, "#ffffff", "13px")} Lưu Cloud`;
+        actionButtons[0].innerHTML = `☁️ Tự động lưu Cloud: BẬT`;
+        actionButtons[0].title = "Mọi thay đổi trên bảng báo giá đều được tự động lưu thẳng lên Cloud";
+        actionButtons[1].innerHTML = `${taoSapSvgIcon(SAP_PATHS.cloud, "#ffffff", "13px")} Lưu Cloud Ngay`;
         actionButtons[2].innerHTML = `${taoSapSvgIcon(SAP_PATHS.pdf, "#ffffff", "13px")} Tải PDF`;
         actionButtons[3].innerHTML = `${taoSapSvgIcon(SAP_PATHS.mail, "#ffffff", "13px")} Tải PDF &amp; Gửi Mail`;
       }
@@ -4088,8 +4193,10 @@
     // =====================================================
     // KHỞI CHẠY HỆ THỐNG KHI MỞ WEB
     // =====================================================
-    window.addEventListener('DOMContentLoaded', () => {
-      // 1. Luôn đóng khung Joule AI khi mới mở web (chỉ hiện khi người dùng bấm mở)
+    window.addEventListener('DOMContentLoaded', async () => {
+      khoiTaoGiaoDienThongBaoSAP();
+
+      // 1. Tắt tự động hiện Joule AI khi mới mở trang (chỉ mở khi người dùng bấm)
       document.getElementById('sapJouleDrawer')?.classList.remove('open');
 
       // 2. Thu gọn menu trái trên màn hình nhỏ / điện thoại
@@ -4105,14 +4212,15 @@
       // 4. Đồng bộ Icon SAP, Logo, Watermark & Master Data
       dongBoSapIconsToanHeThong();
       khoiPhucLogoVaWatermarkTuBoNho();
-      taiDuLieuMasterTuFirestore();
-      taiDanhSachDonLuuApp();
-
-      // 5. Mở màn hình Studio và tự động khôi phục bản báo giá nháp nếu có
       window.chuyenManHinhKapella('STUDIO');
-      const daKhoiPhuc = window.khoiPhucDonNhapTuDong();
-      if (!daKhoiPhuc) {
-        window.doiCheDo('BG_VN');
+      window.doiCheDo('BG_VN');
+
+      await taiDuLieuMasterTuFirestore();
+      const danhSachDonCloud = await taiDanhSachDonLuuApp();
+
+      // 5. Tự động nạp đơn hàng gần nhất từ Cloud nếu bảng đang trống
+      if (danhSachDonCloud && danhSachDonCloud.length > 0 && window.gioHang.length === 0 && !document.getElementById('inKhach')?.value.trim()) {
+        window.taiDonTuApp(danhSachDonCloud[0].id, true);
       }
 
       // 6. Tải tỷ giá ngân hàng Việt Nam hôm nay
