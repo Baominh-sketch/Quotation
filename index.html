@@ -1067,7 +1067,7 @@
           <button class="sap-seg-btn" id="segBtnMaster" onclick="chuyenManHinhKapella('MASTER')">📦 Master Data</button>
         </div>
 
-<div class="sap-pill-bar">
+        <div class="sap-pill-bar">
           <button class="sap-btn" onclick="batTatPopupFont(true)" title="Tùy chỉnh phông chữ & định dạng" style="background:#f3efff !important; color:#6828e0 !important; border:1.5px solid #d8c8ff !important;">
             <i class="mdi mdi-format-font"></i> Font Chữ
           </button>
@@ -1084,6 +1084,7 @@
             <i class="mdi mdi-email-fast-outline"></i> Tải PDF &amp; Gửi Mail
           </button>
         </div>
+      </div>
 
       <!-- ========================================================= -->
       <!-- MÀN HÌNH 1: LAUNCHPAD DASHBOARD                           -->
@@ -4537,10 +4538,10 @@ if (syswebsite) syswebsite.innerText = isEN ? 'www.golifresh.com' : 'www.golifre
       if (btn) btn.innerText = isCollapsed ? '[+] Mở rộng' : '[-] Thu gọn';
     };
   </script>
-  <!-- NÚT BẤM VÀ KHUNG POPUP CHỈNH FONT CHỮ ĐỘC LẬP BÊN NGOÀI -->
+<!-- NÚT BẤM VÀ KHUNG POPUP CHỈNH FONT CHỮ ĐỘC LẬP BÊN NGOÀI -->
   <div id="sapFontModalOverlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.45); backdrop-filter:blur(1.5px); z-index:999990; align-items:center; justify-content:center; padding:16px;">
     <div style="background:#ffffff; width:100%; max-width:400px; border-radius:14px; border:1px solid #cbd5e1; box-shadow:0 20px 35px rgba(15,23,42,0.25); overflow:hidden;">
-      <div style="padding:14px 18px; background:var(--sap-brand-light, #e8f3ff); border-bottom:1px solid #b8daff; display:flex; align-items:center; justify-content:between; font-weight:800; font-size:14px; color:var(--sap-brand, #0064d9);">
+      <div style="padding:14px 18px; background:#e8f3ff; border-bottom:1px solid #b8daff; display:flex; align-items:center; justify-content:space-between; font-weight:800; font-size:14px; color:#0064d9;">
         <span>🔤 Tùy Chỉnh Phông Chữ &amp; Định Dạng A4</span>
         <i class="mdi mdi-close" style="cursor:pointer; font-size:18px;" onclick="batTatPopupFont(false)"></i>
       </div>
