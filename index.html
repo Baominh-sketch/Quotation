@@ -1700,8 +1700,15 @@
   <script src="JS_State_CRUD.js"></script>
   <script src="JS_Render_PDF.js"></script>
 
- <!-- SCRIPT TÍCH HỢP TOÀN DIỆN (TOAST GIAO DIỆN, MODAL XÁC NHẬN & AUTO-SAVE CLOUD) -->
+<!-- SCRIPT TÍCH HỢP TOÀN DIỆN (ĐA NGƯỜI DÙNG REALTIME, BATCH DOM, AUTO-SAVE CLOUD & WEBSITE) -->
   <script>
+    // Bật bộ nhớ đệm IndexedDB đa tab cho Firebase giúp 4-5 người truy cập cực nhanh, không tốn băng thông tải lại ảnh Base64
+    try {
+      if (typeof db !== 'undefined' && db.enablePersistence) {
+        db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+      }
+    } catch (e) {}
+
     window.masterCache = { sp: {}, kh: {}, bank: {}, orders: {} };
     window.gioHang = [];
     window.cheDoHienTai = 'BG_VN';
@@ -1713,6 +1720,10 @@
     window.kpChartInstance = null;
     window.autoSaveCloudEnabled = true;
 
+    // Định danh phiên làm việc riêng cho từng nhân viên / trình duyệt (tránh 4-5 người đè đơn của nhau)
+    window.currentClientSessionId = sessionStorage.getItem('argon_client_sid') || ('USER_' + Math.random().toString(36).substring(2, 7).toUpperCase());
+    sessionStorage.setItem('argon_client_sid', window.currentClientSessionId);
+
     let dangSuaSPId = null;
     let dangSuaKHId = null;
     let dangSuaBankId = null;
@@ -1721,6 +1732,8 @@
     let currentMobileSubTab = 'FORM';
     let autoSaveCloudTimer = null;
     let dangNapDuLieuDon = false;
+    let duLieuDaThayDoiBoiNguoiDung = false;
+    let realtimeListenersInitialized = false;
 
     function escapeHtml(str) {
       return String(str || '')
@@ -1729,6 +1742,17 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+    }
+
+    // Tự động chèn dòng www.golifresh.com ngay dưới địa chỉ công ty trên tờ A4
+    function damBaoHienThiWebsiteCongTy() {
+      const diaChiEl = document.getElementById('sysDiaChi');
+      if (!diaChiEl || document.getElementById('sysWebsite')) return;
+      const webSpan = document.createElement('span');
+      webSpan.id = 'sysWebsite';
+      webSpan.style.cssText = 'display:inline-block; font-weight:700; color:var(--doc-primary, #007a3d); margin-top:2px;';
+      webSpan.innerHTML = `Website: <a href="https://www.golifresh.com" target="_blank" style="color:inherit; text-decoration:none;">www.golifresh.com</a><br>`;
+      diaChiEl.insertAdjacentElement('afterend', webSpan);
     }
 
     // =====================================================
@@ -1838,12 +1862,10 @@
       }, 2800);
     };
 
-    // Ghi đè toàn bộ alert() sang Toast trong giao diện
     window.alert = function(msg) {
       window.hienToast(msg);
     };
 
-    // Hộp thoại xác nhận ngay trong giao diện (thay thế hoàn toàn confirm() của trình duyệt)
     window.hienHopThoaiXacNhan = function(message, onConfirm) {
       khoiTaoGiaoDienThongBaoSAP();
       const overlay = document.getElementById('sapConfirmModalOverlay');
@@ -1883,8 +1905,15 @@
     };
 
     // =====================================================
-    // TỰ ĐỘNG LƯU BẢNG BÁO GIÁ LÊN CLOUD (AUTO-SAVE CLOUD)
+    // TỰ ĐỘNG LƯU BẢNG BÁO GIÁ LÊN CLOUD (CHỐNG XUNG ĐỘT ĐA NGƯỜI DÙNG)
     // =====================================================
+    function taoMaDonNgauNhienKhongTrung() {
+      const nam = new Date().getFullYear();
+      const phutGiay = String(new Date().getMinutes()).padStart(2, '0') + String(new Date().getSeconds()).padStart(2, '0');
+      const rand = Math.floor(10 + Math.random() * 89);
+      return `QUO-${nam}-${phutGiay}${rand}`;
+    }
+
     function thuThapDuLieuDonHangHienTai() {
       const maDon = document.getElementById('inMa')?.value.trim() || 'QUO-2026-001';
       return {
@@ -1908,6 +1937,7 @@
         emailKhach: document.getElementById('inEmailKhach')?.value.trim() || '',
         thongTinLienHeMail: document.getElementById('inThongTinLienHeMail')?.value.trim() || '',
         gioHang: window.gioHang || [],
+        lastEditorSession: window.currentClientSessionId,
         updatedAt: new Date().toISOString()
       };
     }
@@ -1915,19 +1945,17 @@
     function capNhatTrangThaiNutAutoCloud(text, isSaving = false) {
       const btnAuto = document.querySelector('.sap-pill-bar button:first-child');
       if (btnAuto) {
-        btnAuto.innerHTML = isSaving
-          ? `⏳ ${text}`
-          : `☁️ ${text}`;
+        btnAuto.innerHTML = isSaving ? `⏳ ${text}` : `☁️ ${text}`;
       }
       const bc = document.getElementById('sapShellBreadcrumb');
       const maVal = document.getElementById('inMa')?.value || 'QUO-2026-001';
       if (bc) {
-        bc.innerText = `Chứng từ: ${maVal} — ${text}`;
+        bc.innerText = `🟢 Đa người dùng (Realtime) — Chứng từ: ${maVal} (${text})`;
       }
     }
 
     window.tuDongLuuLenCloud = function() {
-      if (dangNapDuLieuDon || !window.autoSaveCloudEnabled) return;
+      if (dangNapDuLieuDon || !window.autoSaveCloudEnabled || !duLieuDaThayDoiBoiNguoiDung) return;
 
       const khachRaw = document.getElementById('inKhach')?.value.trim() || '';
       const lienHeRaw = document.getElementById('inLienHe')?.value.trim() || '';
@@ -1941,28 +1969,30 @@
       autoSaveCloudTimer = setTimeout(async () => {
         try {
           const orderData = thuThapDuLieuDonHangHienTai();
+          sessionStorage.setItem('argon_active_ma_don', orderData.maDon);
           await db.collection("DonHang").doc(orderData.maDon).set(orderData, { merge: true });
           window.masterCache.orders[orderData.maDon] = orderData;
 
           const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
           capNhatTrangThaiNutAutoCloud(`Đã tự lưu Cloud (${timeStr})`, false);
-
-          // Đồng bộ lại danh sách chọn đơn Cloud ngầm mà không làm giật màn hình
-          const sel = document.getElementById('savedOrdersSelect');
-          if (sel && !sel.querySelector(`option[value="${CSS.escape(orderData.maDon)}"]`)) {
-            taiDanhSachDonLuuApp();
-          }
         } catch (err) {
           console.warn("Lỗi tự động lưu Cloud:", err);
           capNhatTrangThaiNutAutoCloud('Chờ đồng bộ Cloud', false);
         }
-      }, 1200);
+      }, 1100);
     };
 
-    // Đổi nút "Lưu Nháp" cũ thành nút kích hoạt & bật/tắt Tự động lưu Cloud
     window.luuDonNháp = async function() {
+      duLieuDaThayDoiBoiNguoiDung = true;
       await window.luuVaoAppSheet();
     };
+
+    // Lắng nghe sự kiện người dùng thực sự gõ phím/thay đổi trên Form để kích hoạt cờ Dirty-Check
+    document.addEventListener('input', (e) => {
+      if (e.target && e.target.closest('#panelLeftForm')) {
+        duLieuDaThayDoiBoiNguoiDung = true;
+      }
+    });
 
     // =====================================================
     // BỘ NÃO TRỢ LÝ JOULE AI PRO — TỰ ĐỘNG HÓA BÁO GIÁ & XNK
@@ -1994,6 +2024,7 @@
         jouleAppendMsg("⚠️ Giỏ hàng đang trống! Hãy thêm sản phẩm trước khi quy đổi tiền tệ.");
         return;
       }
+      duLieuDaThayDoiBoiNguoiDung = true;
       const rates = window.currentExchangeRates || { USD: 25809, CNY: 3889, EUR: 28531, GBP: 34481 };
       const usdRate = Number(rates.USD) || 25809;
       const cnyRate = Number(rates.CNY) || 3889;
@@ -2004,7 +2035,7 @@
         });
         if (document.getElementById('inCurrency')) document.getElementById('inCurrency').value = 'USD';
         window.doiCheDo('BG_EN');
-        jouleAppendMsg(`✅ Đã quy đổi toàn bộ đơn giá từ <b>VNĐ ➔ USD</b> theo tỷ giá <b>1 USD = ${usdRate.toLocaleString('vi-VN')} đ</b> và chuyển sang mẫu Quốc tế (EN)!`);
+        jouleAppendMsg(`✅ Đã quy đổi toàn bộ đơn giá từ <b>VNĐ ➔ USD</b> theo tỷ giá <b>1 USD = ${usdRate.toLocaleString('vi-VN')} đ</b>!`);
       } else if (direction === 'USD_TO_VND') {
         window.gioHang.forEach(item => {
           if (item.gia < 5000) item.gia = Math.round(item.gia * usdRate);
@@ -2031,6 +2062,7 @@
         jouleAppendMsg("⚠️ Vui lòng nhập số tiền Cước tàu ($) và Số thùng/Cont hợp lệ!");
         return;
       }
+      duLieuDaThayDoiBoiNguoiDung = true;
       const addPerCtn = Number((freight / ctnPerCont).toFixed(2));
       if (window.gioHang.length > 0) {
         window.gioHang.forEach(item => {
@@ -2047,6 +2079,7 @@
     };
 
     window.jouleThucThiLenh = function(cmd) {
+      duLieuDaThayDoiBoiNguoiDung = true;
       const dkEl = document.getElementById('inDieuKhoan');
       const bodyEl = document.getElementById('inEmailBody');
       const subEl = document.getElementById('inEmailSubject');
@@ -2082,13 +2115,13 @@
       } else if (cmd === 'MAIL_FOLLOW_UP') {
         if (subEl) subEl.value = `[GOODS LINK JSC] Follow-up on Official Quotation — Ref: ${ma}`;
         if (bodyEl) {
-          bodyEl.value = `Dear ${khach},\n\nI hope this email finds you well.\n\nWe are following up on our Official Quotation (Ref No: ${ma}) sent earlier regarding our agricultural export products.\n\nSince fresh raw material prices and reefers space fluctuate weekly, please let us know your feedback or target volume so we can lock in the best rate and priority shipment schedule for your esteemed company.\n\nLooking forward to hearing from you soon.\n\nBest regards,\nGOODS LINK JOINT STOCK COMPANY`;
+          bodyEl.value = `Dear ${khach},\n\nI hope this email finds you well.\n\nWe are following up on our Official Quotation (Ref No: ${ma}) sent earlier regarding our agricultural export products.\n\nSince fresh raw material prices and reefers space fluctuate weekly, please let us know your feedback or target volume so we can lock in the best rate and priority shipment schedule for your esteemed company.\n\nLooking forward to hearing from you soon.\n\nBest regards,\nGOODS LINK JOINT STOCK COMPANY\nWebsite: www.golifresh.com`;
         }
         jouleAppendMsg("📧 Đã soạn xong mẫu <b>Email Follow-up chốt đơn</b> bằng tiếng Anh thương mại vào mục số 4!");
       } else if (cmd === 'MAIL_REMIND_DEPOSIT') {
         if (subEl) subEl.value = `[GOODS LINK JSC] Kind Reminder: T/T Deposit for Order ${ma}`;
         if (bodyEl) {
-          bodyEl.value = `Dear ${khach},\n\nThank you very much for confirming Order Ref: ${ma}.\n\nTo enable us to secure raw materials from our farms and book the reefer container on schedule, please kindly arrange the T/T deposit as agreed in the Proforma Invoice and send us the bank swift copy.\n\nAs soon as we receive the remittance slip, we will immediately proceed with packing and phytosanitary inspection.\n\nBest regards,\nGOODS LINK JOINT STOCK COMPANY`;
+          bodyEl.value = `Dear ${khach},\n\nThank you very much for confirming Order Ref: ${ma}.\n\nTo enable us to secure raw materials from our farms and book the reefer container on schedule, please kindly arrange the T/T deposit as agreed in the Proforma Invoice and send us the bank swift copy.\n\nAs soon as we receive the remittance slip, we will immediately proceed with packing and phytosanitary inspection.\n\nBest regards,\nGOODS LINK JOINT STOCK COMPANY\nWebsite: www.golifresh.com`;
         }
         jouleAppendMsg("💰 Đã soạn xong mẫu <b>Email nhắc khách chuyển khoản cọc T/T & xin điện Swift</b> vào mục số 4!");
       } else if (cmd === 'AUDIT_ORDER') {
@@ -2123,6 +2156,7 @@
 
       const addMatch = txt.match(/(?:thêm|add|báo giá)\s+(\d+(?:[.,]\d+)?)\s*(ctn|thùng|kg|tấn|cont)?\s+(.+?)\s+(?:giá|price|@)\s*(\d+(?:[.,]\d+)?)/i);
       if (addMatch) {
+        duLieuDaThayDoiBoiNguoiDung = true;
         const sl = parseFloat(addMatch[1].replace(',', '.')) || 1;
         const dvt = (addMatch[2] || 'CTN').toUpperCase();
         const tenSP = addMatch[3].trim().toUpperCase();
@@ -2145,6 +2179,7 @@
       }
 
       if (lower.startsWith('khách ') || lower.includes('cnf ') || lower.includes('fob ') || lower.includes('cif ')) {
+        duLieuDaThayDoiBoiNguoiDung = true;
         const khMatch = txt.match(/khách\s+([^,]+)/i);
         if (khMatch && document.getElementById('inKhach')) {
           document.getElementById('inKhach').value = khMatch[1].trim();
@@ -2182,7 +2217,7 @@
             body: JSON.stringify({
               contents: [{
                 parts: [{
-                  text: `Bạn là trợ lý xuất nhập khẩu nông sản của Công ty Cổ phần Goods Link (Việt Nam). Trả lời ngắn gọn, súc tích, thực tế cho câu hỏi: ${txt}`
+                  text: `Bạn là trợ lý xuất nhập khẩu nông sản của Công ty Cổ phần Goods Link (Việt Nam - www.golifresh.com). Trả lời ngắn gọn, súc tích, thực tế cho câu hỏi: ${txt}`
                 }]
               }]
             })
@@ -2233,7 +2268,7 @@
     };
 
     // =====================================================
-    // 1. XỬ LÝ ẢNH HD & TÁCH NỀN TRẮNG CHO WATERMARK
+    // 1. XỬ LÝ ẢNH NÉN TỐI ƯU BĂNG THÔNG CHO ĐA NGƯỜI DÙNG
     // =====================================================
     function docFileAnhSangBase64(file, maxWidth, keepPng, callback) {
       if (!file) return;
@@ -2253,7 +2288,7 @@
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, w, h);
           const mime = (keepPng || file.type === 'image/png') ? 'image/png' : 'image/jpeg';
-          callback(canvas.toDataURL(mime, 0.92));
+          callback(canvas.toDataURL(mime, 0.86));
         };
         img.src = e.target.result;
       };
@@ -2268,7 +2303,7 @@
         const canvas = document.createElement('canvas');
         let w = img.width || 500;
         let h = img.height || 500;
-        const maxW = 700;
+        const maxW = 650;
         if (w > maxW) {
           h = Math.round((h * maxW) / w);
           w = maxW;
@@ -2305,7 +2340,7 @@
     window.loadLogo = function(input) {
       const file = input?.files?.[0];
       if (!file) return;
-      docFileAnhSangBase64(file, 600, true, function(dataUrl) {
+      docFileAnhSangBase64(file, 550, true, function(dataUrl) {
         apDungLogo(dataUrl);
         try { localStorage.setItem('argon_saved_logo', dataUrl); } catch (e) {}
         hienToast("✅ Đã cập nhật Logo công ty thành công!");
@@ -2337,7 +2372,7 @@
     window.loadWatermark = function(input) {
       const file = input?.files?.[0];
       if (!file) return;
-      docFileAnhSangBase64(file, 700, true, function(rawDataUrl) {
+      docFileAnhSangBase64(file, 650, true, function(rawDataUrl) {
         window.rawWatermarkBase64 = rawDataUrl;
         try { localStorage.setItem('argon_raw_wm', rawDataUrl); } catch (e) {}
 
@@ -2399,7 +2434,7 @@
     window.loadSpImage = function(input) {
       const file = input?.files?.[0];
       if (!file) return;
-      docFileAnhSangBase64(file, 700, false, function(dataUrl) {
+      docFileAnhSangBase64(file, 550, false, function(dataUrl) {
         window.currentSpImageBase64 = dataUrl;
         const preview = document.getElementById('spPreviewLeft');
         const btnClear = document.getElementById('btnClearSpImg');
@@ -2410,10 +2445,12 @@
         if (btnClear) btnClear.style.display = 'inline-block';
 
         if (dangSuaGioIndex >= 0 && window.gioHang[dangSuaGioIndex]) {
+          duLieuDaThayDoiBoiNguoiDung = true;
           window.gioHang[dangSuaGioIndex].anh = dataUrl;
           renderTable();
           hienToast("📸 Đã cập nhật ảnh vào dòng #" + (dangSuaGioIndex + 1));
         } else if (window.gioHang.length > 0 && !document.getElementById('inTenSP')?.value.trim()) {
+          duLieuDaThayDoiBoiNguoiDung = true;
           const lastIdx = window.gioHang.length - 1;
           window.gioHang[lastIdx].anh = dataUrl;
           renderTable();
@@ -2436,7 +2473,7 @@
     window.loadMasterSpImage = function(input) {
       const file = input?.files?.[0];
       if (!file) return;
-      docFileAnhSangBase64(file, 700, false, function(dataUrl) {
+      docFileAnhSangBase64(file, 550, false, function(dataUrl) {
         window.currentMasterSpImageBase64 = dataUrl;
         const img = document.getElementById('qtPreviewSP');
         if (img) { img.src = dataUrl; img.style.display = 'block'; }
@@ -2554,7 +2591,7 @@
     };
 
     // =====================================================
-    // 3. CHUYỂN ĐỔI 3 CHẾ ĐỘ & CẬP NHẬT BẢNG BÁO GIÁ A4
+    // 3. CHUYỂN ĐỔI 3 CHẾ ĐỘ & HIỂN THỊ WWW.GOLIFRESH.COM DƯỚI ĐỊA CHỈ
     // =====================================================
     window.doiCheDo = function(mode) {
       window.cheDoHienTai = mode;
@@ -2600,15 +2637,12 @@
       const sysTen = document.getElementById('sysTen');
       if (sysTen) sysTen.innerText = isEN ? 'GOODS LINK JOINT STOCK COMPANY' : 'CÔNG TY CỔ PHẦN GOODS LINK';
       const sysDiaChi = document.getElementById('sysDiaChi');
-      if (sysDiaChi) sysDiaChi.innerText = isEN ? '157/59/2T2 Duong Ba Trac Street , Chanh Hung Ward, Ho Chi Minh City, Viet Nam' : ' Số 157/59/2T2 Dương Bá Trạc, Phường Chánh Hưng, TP. Hồ Chí Minh, Việt Nam';
-let syswebsite = document.getElementById('syswebsite');
-      if (!syswebsite && sysDiaChi) {
-        syswebsite = document.createElement('div');
-        syswebsite.id = 'syswebsite';
-        syswebsite.style.fontWeight = '700';
-        sysDiaChi.insertAdjacentElement('afterend', syswebsite);
+      if (sysDiaChi) {
+        sysDiaChi.innerText = isEN
+          ? '157/59/2T2 Duong Ba Trac Street, Chanh Hung Ward, Ho Chi Minh City, Viet Nam'
+          : 'Số 157/59/2T2 Dương Bá Trạc, Phường Chánh Hưng, TP. Hồ Chí Minh, Việt Nam';
       }
-      if (syswebsite) syswebsite.innerText = isEN ? 'Website: www.golifresh.com' : 'Website: www.golifresh.com';
+      damBaoHienThiWebsiteCongTy();
 
       const signTitle = document.getElementById('signTitleName');
       const signSub = document.getElementById('signSubText');
@@ -2620,6 +2654,7 @@ let syswebsite = document.getElementById('syswebsite');
     };
 
     window.batTatCheDoPI = function() {
+      duLieuDaThayDoiBoiNguoiDung = true;
       window.doiCheDo('BG_EN');
     };
 
@@ -2641,19 +2676,20 @@ let syswebsite = document.getElementById('syswebsite');
       if (isEN) {
         const docTypeEN = isPI ? 'Proforma Invoice' : 'Official Quotation';
         subEl.value = `[GOODS LINK JSC] ${docTypeEN} — Ref No: ${ma}`;
-        bodyEl.value = `Dear ${khach},\n\nWarm greetings from Goods Link Joint Stock Company! Thank you very much for your interest in our products.\n\nWe are pleased to send you our ${docTypeEN} (Ref No: ${ma}, Date: ${ngay}) in the attached PDF file for your review.\n\nShould you have any questions or require any further discussion regarding specifications, packing, or shipment terms, please feel free to contact us${lienHe ? ' via: ' + lienHe : ''}.\n\nWe look forward to hearing from you and establishing a long-term business relationship with your esteemed company.\n\nBest regards,\nGOODS LINK JOINT STOCK COMPANY`;
+        bodyEl.value = `Dear ${khach},\n\nWarm greetings from Goods Link Joint Stock Company! Thank you very much for your interest in our products.\n\nWe are pleased to send you our ${docTypeEN} (Ref No: ${ma}, Date: ${ngay}) in the attached PDF file for your review.\n\nShould you have any questions or require any further discussion regarding specifications, packing, or shipment terms, please feel free to contact us${lienHe ? ' via: ' + lienHe : ''}.\n\nWe look forward to hearing from you and establishing a long-term business relationship with your esteemed company.\n\nBest regards,\nGOODS LINK JOINT STOCK COMPANY\nWebsite: www.golifresh.com`;
       } else if (isXK) {
         subEl.value = `[GOODS LINK JSC] Phiếu Xuất Kho Kiêm Vận Chuyển — Số phiếu: ${ma}`;
-        bodyEl.value = `Kính gửi: ${khach},\n\nCông ty Cổ phần Goods Link xin gửi kèm theo email này Phiếu Xuất Kho chi tiết (Số phiếu: ${ma}, ngày xuất: ${ngay}).\n\nQuý đối tác vui lòng kiểm tra thông tin hàng hóa và số lượng trong tệp PDF đính kèm${lienHe ? '.\nMọi thông tin xin liên hệ: ' + lienHe : ''}.\n\nTrân trọng cảm ơn!\nCÔNG TY CỔ PHẦN GOODS LINK`;
+        bodyEl.value = `Kính gửi: ${khach},\n\nCông ty Cổ phần Goods Link xin gửi kèm theo email này Phiếu Xuất Kho chi tiết (Số phiếu: ${ma}, ngày xuất: ${ngay}).\n\nQuý đối tác vui lòng kiểm tra thông tin hàng hóa và số lượng trong tệp PDF đính kèm${lienHe ? '.\nMọi thông tin xin liên hệ: ' + lienHe : ''}.\n\nTrân trọng cảm ơn!\nCÔNG TY CỔ PHẦN GOODS LINK\nWebsite: www.golifresh.com`;
       } else {
         subEl.value = `[GOODS LINK JSC] Bảng Báo Giá Sản Phẩm — Mã số: ${ma}`;
-        bodyEl.value = `Kính gửi: ${khach},\n\nCông ty Cổ phần Goods Link xin gửi lời chào trân trọng và cảm ơn sự quan tâm của Quý khách hàng / Đối tác.\n\nChúng tôi xin gửi kèm theo email này Bảng Báo Giá chi tiết (Mã chứng từ: ${ma}, ngày lập: ${ngay}) trong tệp PDF đính kèm.\n\nNếu cần trao đổi thêm về quy cách, số lượng hoặc điều khoản giao hàng, Quý khách vui lòng phản hồi lại email này${lienHe ? ' hoặc liên hệ trực tiếp: ' + lienHe : ''}.\n\nTrân trọng cảm ơn và rất mong được hợp tác!\nCÔNG TY CỔ PHẦN GOODS LINK`;
+        bodyEl.value = `Kính gửi: ${khach},\n\nCông ty Cổ phần Goods Link xin gửi lời chào trân trọng và cảm ơn sự quan tâm của Quý khách hàng / Đối tác.\n\nChúng tôi xin gửi kèm theo email này Bảng Báo Giá chi tiết (Mã chứng từ: ${ma}, ngày lập: ${ngay}) trong tệp PDF đính kèm.\n\nNếu cần trao đổi thêm về quy cách, số lượng hoặc điều khoản giao hàng, Quý khách vui lòng phản hồi lại email này${lienHe ? ' hoặc liên hệ trực tiếp: ' + lienHe : ''}.\n\nTrân trọng cảm ơn và rất mong được hợp tác!\nCÔNG TY CỔ PHẦN GOODS LINK\nWebsite: www.golifresh.com`;
       }
 
       if (showAlert) hienToast(isEN ? "🇬🇧 Đã cập nhật mẫu Email Tiếng Anh!" : "🇻🇳 Đã cập nhật mẫu Email Tiếng Việt!");
     };
 
     window.capNhatLienHeVaoA4 = function() {
+      duLieuDaThayDoiBoiNguoiDung = true;
       const info = document.getElementById('inThongTinLienHeMail')?.value.trim() || '';
       const sysLienHe = document.getElementById('sysLienHeCty');
       if (sysLienHe) sysLienHe.innerText = info;
@@ -2668,7 +2704,7 @@ let syswebsite = document.getElementById('syswebsite');
     };
 
     // =====================================================
-    // 4. GIỎ HÀNG & BẢNG A4
+    // 4. GIỎ HÀNG & BẢNG A4 (BATCH RENDER SIÊU MƯỢT)
     // =====================================================
     window.themVaoGio = function() {
       const maSP = document.getElementById('inMaSPMoi')?.value.trim() || ('SP' + (window.gioHang.length + 1));
@@ -2684,6 +2720,7 @@ let syswebsite = document.getElementById('syswebsite');
         return;
       }
 
+      duLieuDaThayDoiBoiNguoiDung = true;
       const itemObj = { id: Date.now(), maSP, tenSP, dvt, sl, gia, vat, anh };
 
       if (dangSuaGioIndex >= 0 && dangSuaGioIndex < window.gioHang.length) {
@@ -2737,6 +2774,7 @@ let syswebsite = document.getElementById('syswebsite');
     window.diChuyenGio = function(idx, dir) {
       const target = idx + dir;
       if (target < 0 || target >= window.gioHang.length) return;
+      duLieuDaThayDoiBoiNguoiDung = true;
       const temp = window.gioHang[idx];
       window.gioHang[idx] = window.gioHang[target];
       window.gioHang[target] = temp;
@@ -2745,6 +2783,7 @@ let syswebsite = document.getElementById('syswebsite');
     };
 
     window.xoaKhoiGio = function(idx) {
+      duLieuDaThayDoiBoiNguoiDung = true;
       window.gioHang.splice(idx, 1);
       if (dangSuaGioIndex === idx) {
         dangSuaGioIndex = -1;
@@ -2774,10 +2813,10 @@ let syswebsite = document.getElementById('syswebsite');
       if (window.gioHang.length === 0) {
         miniBody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--sap-muted);">Chưa có sản phẩm</td></tr>';
       } else {
-        miniBody.innerHTML = '';
+        const miniRows = [];
         window.gioHang.forEach((item, idx) => {
           const tenNgan = (item.tenSP || '').split('\n')[0];
-          miniBody.innerHTML += `
+          miniRows.push(`
             <tr>
               <td><b>${escapeHtml(item.maSP)}</b><br><span style="font-size:11px; color:#475569;">${escapeHtml(tenNgan)}</span></td>
               <td>${item.sl} ${escapeHtml(item.dvt)}</td>
@@ -2788,8 +2827,9 @@ let syswebsite = document.getElementById('syswebsite');
                 <button type="button" onclick="suaSanPhamTrongGio(${idx})" style="background:#fff8f1; color:#e76500; border:1px solid #e76500; padding:2px 7px; border-radius:10px; font-size:10px; font-weight:700; cursor:pointer;">Sửa</button>
                 <button type="button" onclick="xoaKhoiGio(${idx})" style="background:#fff1f1; color:#aa0808; border:1px solid #aa0808; padding:2px 7px; border-radius:10px; font-size:10px; font-weight:700; cursor:pointer;">Xóa</button>
               </td>
-            </tr>`;
+            </tr>`);
         });
+        miniBody.innerHTML = miniRows.join('');
       }
 
       const showImage = document.getElementById('chkShowImage')?.checked ?? true;
@@ -2798,7 +2838,7 @@ let syswebsite = document.getElementById('syswebsite');
       const currency = document.getElementById('inCurrency')?.value || 'USD';
       const volType = document.getElementById('inVolumeType')?.value || '(CTNS/40RF)';
 
-      preTable.innerHTML = '';
+      const tableRows = [];
       let tongTien = 0;
 
       if (mode === 'BG_VN') {
@@ -2815,7 +2855,7 @@ let syswebsite = document.getElementById('syswebsite');
 
         const colSpanEmpty = showImage ? 8 : 7;
         if (window.gioHang.length === 0) {
-          preTable.innerHTML = `<tr><td colspan="${colSpanEmpty}" style="text-align:center;color:#94a3b8;padding:20px;font-style:italic;">Chưa có sản phẩm trong bảng báo giá</td></tr>`;
+          tableRows.push(`<tr><td colspan="${colSpanEmpty}" style="text-align:center;color:#94a3b8;padding:20px;font-style:italic;">Chưa có sản phẩm trong bảng báo giá</td></tr>`);
         } else {
           window.gioHang.forEach((item, idx) => {
             const tienTruocThue = item.sl * item.gia;
@@ -2823,7 +2863,7 @@ let syswebsite = document.getElementById('syswebsite');
             const thanhTien = tienTruocThue + (tienTruocThue * vatNum / 100);
             tongTien += thanhTien;
 
-            preTable.innerHTML += `
+            tableRows.push(`
               <tr>
                 <td style="text-align:center;font-weight:700;vertical-align:middle;">${idx + 1}</td>
                 <td style="white-space:pre-line;font-weight:600;color:#0f172a;text-align:left;vertical-align:middle;">${escapeHtml(item.tenSP)}</td>
@@ -2833,15 +2873,15 @@ let syswebsite = document.getElementById('syswebsite');
                 <td style="text-align:center;vertical-align:middle;">${item.vat === 'KKKNT' ? 'KKKNT' : item.vat + '%'}</td>
                 <td style="text-align:right;font-weight:700;vertical-align:middle;">${Math.round(thanhTien).toLocaleString('vi-VN')}</td>
                 ${showImage ? `<td style="text-align:center;vertical-align:middle;padding:8px;">${item.anh ? `<img src="${item.anh}" class="pdf-product-img">` : ''}</td>` : ''}
-              </tr>`;
+              </tr>`);
           });
 
           if (showTotal) {
-            preTable.innerHTML += `
+            tableRows.push(`
               <tr style="background:#f8fafc; font-weight:800;">
                 <td colspan="6" style="text-align:right; padding-right:12px;">TỔNG CỘNG THANH TOÁN (ĐÃ GỒM VAT):</td>
                 <td colspan="${showImage ? 2 : 1}" style="text-align:right; color:var(--doc-primary); font-size:13.5px;">${Math.round(tongTien).toLocaleString('vi-VN')} VNĐ</td>
-              </tr>`;
+              </tr>`);
           }
         }
 
@@ -2880,14 +2920,14 @@ let syswebsite = document.getElementById('syswebsite');
 
         const colSpanEmpty = isPI ? (showImage ? 6 : 5) : (showImage ? 5 : 4);
         if (window.gioHang.length === 0) {
-          preTable.innerHTML = `<tr><td colspan="${colSpanEmpty}" style="text-align:center;color:#94a3b8;padding:20px;font-style:italic;">No items added yet</td></tr>`;
+          tableRows.push(`<tr><td colspan="${colSpanEmpty}" style="text-align:center;color:#94a3b8;padding:20px;font-style:italic;">No items added yet</td></tr>`);
         } else {
           window.gioHang.forEach((item, idx) => {
             const amount = item.sl * item.gia;
             tongTien += amount;
 
             if (isPI) {
-              preTable.innerHTML += `
+              tableRows.push(`
                 <tr>
                   <td style="text-align:center;font-weight:700;vertical-align:middle;">${idx + 1}</td>
                   <td style="white-space:pre-line;font-weight:600;color:#0f172a;text-align:left;vertical-align:middle;">${escapeHtml(item.tenSP)}</td>
@@ -2895,25 +2935,25 @@ let syswebsite = document.getElementById('syswebsite');
                   <td style="text-align:center;font-weight:700;vertical-align:middle;">${item.gia.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   <td style="text-align:right;font-weight:700;vertical-align:middle;">${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   ${showImage ? `<td style="text-align:center;vertical-align:middle;padding:8px;">${item.anh ? `<img src="${item.anh}" class="pdf-product-img">` : ''}</td>` : ''}
-                </tr>`;
+                </tr>`);
             } else {
-              preTable.innerHTML += `
+              tableRows.push(`
                 <tr>
                   <td style="text-align:center;font-weight:700;vertical-align:middle;">${idx + 1}</td>
                   <td style="white-space:pre-line;font-weight:600;color:#0f172a;text-align:left;vertical-align:middle;">${escapeHtml(item.tenSP)}</td>
                   <td style="text-align:center;font-weight:700;vertical-align:middle;">${item.sl.toLocaleString('en-US')}</td>
                   <td style="text-align:center;font-weight:700;font-size:13.5px;vertical-align:middle;">${item.gia.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   ${showImage ? `<td style="text-align:center;vertical-align:middle;padding:8px;">${item.anh ? `<img src="${item.anh}" class="pdf-product-img">` : ''}</td>` : ''}
-                </tr>`;
+                </tr>`);
             }
           });
 
           if (isPI && showTotal) {
-            preTable.innerHTML += `
+            tableRows.push(`
               <tr style="background:#f8fafc; font-weight:800;">
                 <td colspan="4" style="text-align:right; padding-right:12px;">TOTAL AMOUNT (${currency}):</td>
                 <td colspan="${showImage ? 2 : 1}" style="text-align:right; color:var(--doc-primary); font-size:14px;">${tongTien.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}</td>
-              </tr>`;
+              </tr>`);
           }
         }
 
@@ -2941,28 +2981,30 @@ let syswebsite = document.getElementById('syswebsite');
 
         const colSpanEmpty = showImage ? 5 : 4;
         if (window.gioHang.length === 0) {
-          preTable.innerHTML = `<tr><td colspan="${colSpanEmpty}" style="text-align:center;color:#94a3b8;padding:20px;font-style:italic;">Chưa có hàng hóa xuất kho</td></tr>`;
+          tableRows.push(`<tr><td colspan="${colSpanEmpty}" style="text-align:center;color:#94a3b8;padding:20px;font-style:italic;">Chưa có hàng hóa xuất kho</td></tr>`);
         } else {
           let tongSL = 0;
           window.gioHang.forEach((item, idx) => {
             tongSL += Number(item.sl) || 0;
-            preTable.innerHTML += `
+            tableRows.push(`
               <tr>
                 <td style="text-align:center;font-weight:700;vertical-align:middle;">${idx + 1}</td>
                 <td style="white-space:pre-line;font-weight:600;color:#0f172a;text-align:left;vertical-align:middle;">${escapeHtml(item.tenSP)}</td>
                 <td style="text-align:center;vertical-align:middle;">${escapeHtml(item.dvt)}</td>
                 <td style="text-align:center;font-weight:700;vertical-align:middle;">${item.sl.toLocaleString('vi-VN')}</td>
                 ${showImage ? `<td style="text-align:center;vertical-align:middle;padding:8px;">${item.anh ? `<img src="${item.anh}" class="pdf-product-img">` : ''}</td>` : ''}
-              </tr>`;
+              </tr>`);
           });
-          preTable.innerHTML += `
+          tableRows.push(`
             <tr style="background:#f8fafc; font-weight:800;">
               <td colspan="3" style="text-align:right; padding-right:12px;">TỔNG SỐ LƯỢNG XUẤT:</td>
               <td colspan="${showImage ? 2 : 1}" style="text-align:center; color:var(--doc-primary); font-size:14px;">${tongSL.toLocaleString('vi-VN')}</td>
-            </tr>`;
+            </tr>`);
         }
         if (boxWords) boxWords.style.display = 'none';
       }
+
+      preTable.innerHTML = tableRows.join('');
 
       if (window.innerWidth <= 768) {
         setTimeout(window.tuDongZoomA4TrenMobile, 60);
@@ -2975,6 +3017,8 @@ let syswebsite = document.getElementById('syswebsite');
       const isEN = (mode === 'BG_EN');
       const isXK = (mode === 'XK');
       const isPI = isEN && (document.getElementById('chkIsPI')?.checked ?? false);
+
+      damBaoHienThiWebsiteCongTy();
 
       const docTitle = document.getElementById('docTitleMain');
       if (docTitle) {
@@ -3049,6 +3093,7 @@ let syswebsite = document.getElementById('syswebsite');
     };
 
     window.chenIncotermThongMinh = function() {
+      duLieuDaThayDoiBoiNguoiDung = true;
       const inc = document.getElementById('selIncoterm')?.value || 'FOB';
       const port = (document.getElementById('inPortName')?.value.trim() || 'HO CHI MINH CITY').toUpperCase();
       const lead = document.getElementById('inLeadTime')?.value.trim();
@@ -3063,22 +3108,26 @@ let syswebsite = document.getElementById('syswebsite');
 
     window.taoDonMoi = function() {
       dangNapDuLieuDon = true;
+      duLieuDaThayDoiBoiNguoiDung = false;
       window.gioHang = [];
       dangSuaGioIndex = -1;
+      const maMoi = taoMaDonNgauNhienKhongTrung();
+      sessionStorage.setItem('argon_active_ma_don', maMoi);
+
       document.getElementById('inKhach').value = '';
       document.getElementById('inLienHe').value = '';
-      document.getElementById('inMa').value = 'QUO-' + new Date().getFullYear() + '-' + Math.floor(100 + Math.random() * 900);
+      document.getElementById('inMa').value = maMoi;
       document.getElementById('inNgay').value = new Date().toLocaleDateString('vi-VN');
       xoaAnhSpTam();
       renderTable();
       updatePreview();
       dangNapDuLieuDon = false;
       capNhatTrangThaiNutAutoCloud('Tự động lưu Cloud: BẬT', false);
-      hienToast("✨ Đã khởi tạo đơn báo giá mới!");
+      hienToast(`✨ Đã tạo đơn mới [${maMoi}]!`);
     };
 
     // =====================================================
-    // 5. LƯU ĐƠN HÀNG LÊN CLOUD FIRESTORE & DASHBOARD
+    // 5. LƯU ĐƠN HÀNG LÊN CLOUD FIRESTORE & ĐỒNG BỘ REALTIME 4-5 NGƯỜI
     // =====================================================
     window.luuVaoAppSheet = async function() {
       const maDon = document.getElementById('inMa')?.value.trim();
@@ -3091,10 +3140,10 @@ let syswebsite = document.getElementById('syswebsite');
       if (overlay) overlay.style.display = 'flex';
 
       const orderData = thuThapDuLieuDonHangHienTai();
+      sessionStorage.setItem('argon_active_ma_don', maDon);
 
       try {
         await db.collection("DonHang").doc(maDon).set(orderData, { merge: true });
-        await taiDanhSachDonLuuApp();
         const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
         capNhatTrangThaiNutAutoCloud(`Đã lưu Cloud (${timeStr})`, false);
         hienToast(`✅ Đã lưu đơn [${maDon}] lên Cloud thành công!`);
@@ -3106,13 +3155,24 @@ let syswebsite = document.getElementById('syswebsite');
       }
     };
 
+    function capNhatGiaoDienDanhSachDon(arr) {
+      const sel = document.getElementById('savedOrdersSelect');
+      if (sel) {
+        const curVal = sel.value;
+        const opts = ['<option value="">-- Chọn đơn hàng lưu trên Cloud --</option>'];
+        arr.forEach(item => {
+          const labelMode = item.cheDo === 'BG_EN' ? (item.isPI ? 'PI-EN' : 'Quote-EN') : (item.cheDo === 'XK' ? 'Xuất Kho' : 'BG-VN');
+          opts.push(`<option value="${escapeHtml(item.id)}" ${item.id === curVal ? 'selected' : ''}>[${escapeHtml(item.id)}] ${escapeHtml(item.tenKhach || '...')} (${labelMode})</option>`);
+        });
+        sel.innerHTML = opts.join('');
+      }
+      renderKapellaDashboard();
+    }
+
     window.taiDanhSachDonLuuApp = async function() {
       try {
         const snap = await db.collection("DonHang").get();
         window.masterCache.orders = {};
-        const sel = document.getElementById('savedOrdersSelect');
-        if (sel) sel.innerHTML = '<option value="">-- Chọn đơn hàng lưu trên Cloud --</option>';
-
         const arr = [];
         snap.forEach(doc => {
           const d = doc.data();
@@ -3120,17 +3180,8 @@ let syswebsite = document.getElementById('syswebsite');
           window.masterCache.orders[id] = d;
           arr.push({ id, ...d });
         });
-
         arr.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
-
-        arr.forEach(item => {
-          if (sel) {
-            const labelMode = item.cheDo === 'BG_EN' ? (item.isPI ? 'PI-EN' : 'Quote-EN') : (item.cheDo === 'XK' ? 'Xuất Kho' : 'BG-VN');
-            sel.innerHTML += `<option value="${escapeHtml(item.id)}">[${escapeHtml(item.id)}] ${escapeHtml(item.tenKhach || '...')} (${labelMode})</option>`;
-          }
-        });
-
-        renderKapellaDashboard();
+        capNhatGiaoDienDanhSachDon(arr);
         return arr;
       } catch (err) {
         console.error("Lỗi tải danh sách đơn Cloud:", err);
@@ -3170,7 +3221,7 @@ let syswebsite = document.getElementById('syswebsite');
         if (filtered.length === 0) {
           tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:20px;">Chưa có đơn hàng nào được lưu trên Cloud</td></tr>';
         } else {
-          tbody.innerHTML = '';
+          const rowsHtml = [];
           filtered.forEach(o => {
             const ma = o.maDon || '';
             let badge = '<span style="background:#f1fdf6;color:#256f3a;border:1px solid #256f3a;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;">🇻🇳 Báo Giá VN</span>';
@@ -3182,7 +3233,7 @@ let syswebsite = document.getElementById('syswebsite');
               badge = '<span style="background:#f3e8ff;color:#6b21a8;border:1px solid #6b21a8;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;">📦 Xuất Kho</span>';
             }
 
-            tbody.innerHTML += `
+            rowsHtml.push(`
               <tr style="border-bottom:1px solid #f1f5f9;">
                 <td style="padding:10px 8px;font-weight:800;color:#0f172a;">${escapeHtml(ma)}</td>
                 <td style="padding:10px 8px;">${badge}</td>
@@ -3192,30 +3243,33 @@ let syswebsite = document.getElementById('syswebsite');
                   <button onclick="taiDonTuApp('${escapeHtml(ma)}')" class="sap-btn sap-btn-emphasized" style="padding:4px 10px !important;font-size:11px !important;margin-right:4px;">📂 Mở đơn</button>
                   <button onclick="xoaDonTrongApp('${escapeHtml(ma)}')" class="sap-btn sap-btn-reject" style="padding:4px 10px !important;font-size:11px !important;">🗑️ Xóa</button>
                 </td>
-              </tr>`;
+              </tr>`);
           });
+          tbody.innerHTML = rowsHtml.join('');
         }
       }
 
-      const ctx = document.getElementById('kpOrderChart');
-      if (ctx && typeof Chart !== 'undefined') {
-        if (window.kpChartInstance) window.kpChartInstance.destroy();
-        window.kpChartInstance = new Chart(ctx, {
-          type: 'doughnut',
-          data: {
-            labels: ['Quốc Tế (Quote/PI)', 'Báo Giá Nội Địa (VN)', 'Phiếu Xuất Kho'],
-            datasets: [{
-              data: (total === 0) ? [1, 1, 1] : [countEN, countBGVN, countXK],
-              backgroundColor: ['#256f3a', '#e76500', '#0064d9'],
-              borderWidth: 0
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
-          }
-        });
+      if (currentMainTab === 'DASH') {
+        const ctx = document.getElementById('kpOrderChart');
+        if (ctx && typeof Chart !== 'undefined') {
+          if (window.kpChartInstance) window.kpChartInstance.destroy();
+          window.kpChartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels: ['Quốc Tế (Quote/PI)', 'Báo Giá Nội Địa (VN)', 'Phiếu Xuất Kho'],
+              datasets: [{
+                data: (total === 0) ? [1, 1, 1] : [countEN, countBGVN, countXK],
+                backgroundColor: ['#256f3a', '#e76500', '#0064d9'],
+                borderWidth: 0
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+            }
+          });
+        }
       }
     };
 
@@ -3232,6 +3286,9 @@ let syswebsite = document.getElementById('syswebsite');
       }
 
       dangNapDuLieuDon = true;
+      duLieuDaThayDoiBoiNguoiDung = false;
+      sessionStorage.setItem('argon_active_ma_don', d.maDon || maDon);
+
       if (document.getElementById('chkIsPI')) document.getElementById('chkIsPI').checked = !!d.isPI;
       if (document.getElementById('inTitleEN') && d.titleEN) document.getElementById('inTitleEN').value = d.titleEN;
       if (document.getElementById('inMa')) document.getElementById('inMa').value = d.maDon || maDon;
@@ -3256,6 +3313,7 @@ let syswebsite = document.getElementById('syswebsite');
       window.chuyenManHinhKapella('STUDIO');
       window.doiCheDo(d.cheDo || 'BG_VN');
       dangNapDuLieuDon = false;
+      capNhatTrangThaiNutAutoCloud('Tự động lưu Cloud: BẬT', false);
 
       if (!imLang) hienToast(`📂 Đã mở đơn hàng [${maDon}] từ Cloud thành công!`);
     };
@@ -3269,7 +3327,6 @@ let syswebsite = document.getElementById('syswebsite');
       window.hienHopThoaiXacNhan(`Bạn có chắc chắn muốn xóa đơn hàng [${maDon}] khỏi Cloud không?`, async function() {
         try {
           await db.collection("DonHang").doc(maDon).delete();
-          await taiDanhSachDonLuuApp();
           hienToast(`✅ Đã xóa đơn hàng [${maDon}] khỏi Cloud thành công!`);
         } catch (e) {
           hienToast("❌ Lỗi khi xóa đơn: " + e.message);
@@ -3281,6 +3338,7 @@ let syswebsite = document.getElementById('syswebsite');
     // 6. XUẤT FULL A4 PDF & GỬI MAIL KÈM PDF
     // =====================================================
     window.xuatPDF = async function(khongTaiXuong = false) {
+      damBaoHienThiWebsiteCongTy();
       const paper = document.getElementById('a4Paper');
       const wmImg = document.getElementById('watermarkImg');
       const overlay = document.getElementById('loading-overlay');
@@ -3470,7 +3528,7 @@ let syswebsite = document.getElementById('syswebsite');
     };
 
     // =====================================================
-    // 7. QUẢN LÝ MASTER DATA (THÔNG BÁO TRONG GIAO DIỆN)
+    // 7. QUẢN LÝ MASTER DATA (BATCH RENDER & REALTIME SYNC)
     // =====================================================
     window.themSanPhamNhanh = async function() {
       const maSP = document.getElementById('qtMaSP')?.value.trim();
@@ -3496,7 +3554,6 @@ let syswebsite = document.getElementById('syswebsite');
         }, { merge: true });
 
         huySuaSP();
-        await taiDuLieuMasterTuFirestore();
         hienToast(isEdit ? `✅ Đã cập nhật sản phẩm [${maSP}] thành công!` : `✅ Đã thêm sản phẩm [${maSP}] thành công!`);
       } catch (err) {
         hienToast("❌ Lỗi: " + err.message);
@@ -3557,7 +3614,6 @@ let syswebsite = document.getElementById('syswebsite');
           await db.collection("KhachHang").add({ tenKH, infoKH, createdAt: new Date().toISOString() });
         }
         huySuaKH();
-        await taiDuLieuMasterTuFirestore();
         hienToast(isEdit ? `✅ Đã cập nhật khách hàng [${tenKH}] thành công!` : `✅ Đã thêm khách hàng [${tenKH}] thành công!`);
       } catch (e) { hienToast("❌ Lỗi: " + e.message); }
     };
@@ -3598,7 +3654,6 @@ let syswebsite = document.getElementById('syswebsite');
           await db.collection("DM_Bank").add({ bankName, accName, accNo, swift, createdAt: new Date().toISOString() });
         }
         huySuaBank();
-        await taiDuLieuMasterTuFirestore();
         hienToast(isEdit ? `✅ Đã cập nhật ngân hàng [${bankName}] thành công!` : `✅ Đã thêm ngân hàng [${bankName}] thành công!`);
       } catch (e) { hienToast("❌ Lỗi: " + e.message); }
     };
@@ -3628,131 +3683,181 @@ let syswebsite = document.getElementById('syswebsite');
       document.getElementById('btnCancelBank').style.display = 'none';
     };
 
+    // Các hàm kết xuất Batch DOM cho từng bảng Master (không làm giật giao diện khi 4-5 người cùng thao tác)
+    function renderBangSanPhamMaster(spSnap) {
+      window.masterCache.sp = {};
+      const spSelect = document.getElementById('spSelect');
+      const tableSP = document.querySelector('#tableHistorySP tbody');
+      const curSpVal = spSelect?.value || '';
+
+      const opts = ['<option value="">-- Chọn sản phẩm từ Database --</option>'];
+      const rows = [];
+
+      spSnap.forEach(doc => {
+        const d = doc.data();
+        const docId = doc.id;
+        const ma = d.maSP || docId;
+        const ten = d.tenSP || '';
+        const moTa = d.moTaSP || d.moTa || d.chiTiet || '';
+        const dvt = d.dvt || 'CTN';
+        const gia = Number(d.gia) || 0;
+        const anhSP = d.anhSP || '';
+
+        window.masterCache.sp[docId] = { docId, maSP: ma, tenSP: ten, moTaSP: moTa, dvt, gia, anhSP };
+
+        opts.push(`<option value="${escapeHtml(docId)}" ${docId === curSpVal ? 'selected' : ''}>[${escapeHtml(ma)}] ${escapeHtml(ten)} — ${gia.toLocaleString('vi-VN')} (${escapeHtml(dvt)})</option>`);
+        rows.push(`
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:8px; vertical-align:top;">
+              <div style="display:flex;gap:8px;align-items:flex-start;">
+                ${anhSP ? `<img src="${anhSP}" loading="lazy" style="width:48px;height:48px;object-fit:cover;border-radius:4px;border:1px solid #cbd5e1;background:#fff;">` : ''}
+                <div>
+                  <div style="font-weight:700; color:#0f172a;">[${escapeHtml(ma)}] ${escapeHtml(ten)}</div>
+                  ${moTa ? `<div style="color:#475569; font-size:11px; white-space:pre-line; margin-top:3px;">📝 ${escapeHtml(moTa)}</div>` : `<div style="color:#94a3b8; font-size:11px; font-style:italic;">(Chưa có mô tả chi tiết)</div>`}
+                </div>
+              </div>
+            </td>
+            <td style="padding:8px; vertical-align:top; font-weight:700; color:var(--sap-success);">
+              ${gia.toLocaleString('vi-VN')}<br><span style="font-size:11px; color:#64748b;">ĐVT: ${escapeHtml(dvt)}</span>
+            </td>
+            <td style="padding:8px; text-align:right; vertical-align:top; white-space:nowrap;">
+              <button onclick="suaSanPham('${escapeHtml(docId)}')" style="background:#fff8f1; color:#e76500; border:1px solid #e76500; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; margin-right:3px;">Sửa</button>
+              <button onclick="xoaFirestore('Database', '${escapeHtml(docId)}', 'sản phẩm')" style="background:#fff1f1; color:#aa0808; border:1px solid #aa0808; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer;">Xóa</button>
+            </td>
+          </tr>`);
+      });
+
+      if (spSelect) spSelect.innerHTML = opts.join('');
+      if (tableSP) tableSP.innerHTML = rows.join('');
+      capNhatChiSoMasterCount();
+    }
+
+    function renderBangKhachHangMaster(khSnap) {
+      window.masterCache.kh = {};
+      const khSelect = document.getElementById('khSelect');
+      const tableKH = document.querySelector('#tableHistoryKH tbody');
+      const curKhVal = khSelect?.value || '';
+
+      const opts = ['<option value="">-- Chọn khách hàng lưu sẵn --</option>'];
+      const rows = [];
+
+      khSnap.forEach(doc => {
+        const d = doc.data();
+        const docId = doc.id;
+        const ten = d.tenKH || d.tenKhachHang || d.name || docId;
+        const info = d.infoKH || d.lienHe || d.thongTin || '';
+
+        window.masterCache.kh[docId] = { docId, tenKH: ten, infoKH: info };
+
+        opts.push(`<option value="${escapeHtml(docId)}" ${docId === curKhVal ? 'selected' : ''}>${escapeHtml(ten)}</option>`);
+        rows.push(`
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:8px; vertical-align:top;">
+              <div style="font-weight:700; color:var(--sap-brand);">${escapeHtml(ten)}</div>
+              ${info ? `<div style="color:#475569; font-size:11px; white-space:pre-line; margin-top:3px;">📍 ${escapeHtml(info)}</div>` : `<div style="color:#94a3b8; font-size:11px; font-style:italic;">(Chưa có thông tin liên hệ)</div>`}
+            </td>
+            <td style="padding:8px; text-align:right; vertical-align:top; white-space:nowrap;">
+              <button onclick="suaKhachHang('${escapeHtml(docId)}')" style="background:#fff8f1; color:#e76500; border:1px solid #e76500; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; margin-right:3px;">Sửa</button>
+              <button onclick="xoaFirestore('KhachHang', '${escapeHtml(docId)}', 'khách hàng')" style="background:#fff1f1; color:#aa0808; border:1px solid #aa0808; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer;">Xóa</button>
+            </td>
+          </tr>`);
+      });
+
+      if (khSelect) khSelect.innerHTML = opts.join('');
+      if (tableKH) tableKH.innerHTML = rows.join('');
+      capNhatChiSoMasterCount();
+    }
+
+    function renderBangBankMaster(bankSnap) {
+      window.masterCache.bank = {};
+      const bankSelect = document.getElementById('bankSelect');
+      const tableBank = document.querySelector('#tableHistoryBank tbody');
+      const curBankVal = bankSelect?.value || '';
+
+      const opts = ['<option value="">-- Chọn Bank từ Database --</option>'];
+      const rows = [];
+
+      bankSnap.forEach(doc => {
+        const d = doc.data();
+        const docId = doc.id;
+        const bName = d.bankName || d.tenBank || '';
+        const accName = d.accName || d.tenTaiKhoan || '';
+        const accNo = d.accNo || d.soTaiKhoan || '';
+        const swift = d.swift || d.swiftCode || '';
+
+        window.masterCache.bank[docId] = { docId, bankName: bName, accName, accNo, swift };
+
+        opts.push(`<option value="${escapeHtml(docId)}" ${docId === curBankVal ? 'selected' : ''}>${escapeHtml(bName)} — A/C: ${escapeHtml(accNo)}</option>`);
+        rows.push(`
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:8px; vertical-align:top;">
+              <div style="font-weight:700; color:var(--sap-warning);">🏦 ${escapeHtml(bName)}</div>
+              <div style="color:#0f172a; font-size:11.5px;">👤 <b>Chủ TK:</b> ${escapeHtml(accName || '---')}</div>
+              <div style="color:#0f172a; font-size:11.5px;">💳 <b>Số TK:</b> ${escapeHtml(accNo)}</div>
+              <div style="color:#475569; font-size:11px;">🌐 <b>Swift:</b> ${escapeHtml(swift || '---')}</div>
+            </td>
+            <td style="padding:8px; text-align:right; vertical-align:top; white-space:nowrap;">
+              <button onclick="suaBank('${escapeHtml(docId)}')" style="background:#fff8f1; color:#e76500; border:1px solid #e76500; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; margin-right:3px;">Sửa</button>
+              <button onclick="xoaFirestore('DM_Bank', '${escapeHtml(docId)}', 'ngân hàng')" style="background:#fff1f1; color:#aa0808; border:1px solid #aa0808; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer;">Xóa</button>
+            </td>
+          </tr>`);
+      });
+
+      if (bankSelect) bankSelect.innerHTML = opts.join('');
+      if (tableBank) tableBank.innerHTML = rows.join('');
+    }
+
+    function capNhatChiSoMasterCount() {
+      const countSP = Object.keys(window.masterCache.sp || {}).length;
+      const countKH = Object.keys(window.masterCache.kh || {}).length;
+      const kpCountMaster = document.getElementById('kpCountMaster');
+      if (kpCountMaster) kpCountMaster.innerText = `${countSP} SP / ${countKH} KH`;
+    }
+
+    // Kích hoạt đồng bộ Realtime cho 4-5 người dùng cùng lúc
+    function kichHoatDongBoRealtimeDaNguoiDung() {
+      if (realtimeListenersInitialized || typeof db === 'undefined') return;
+      realtimeListenersInitialized = true;
+
+      db.collection("Database").onSnapshot(snap => {
+        requestAnimationFrame(() => renderBangSanPhamMaster(snap));
+      }, err => console.warn("Realtime SP:", err));
+
+      db.collection("KhachHang").onSnapshot(snap => {
+        requestAnimationFrame(() => renderBangKhachHangMaster(snap));
+      }, err => console.warn("Realtime KH:", err));
+
+      db.collection("DM_Bank").onSnapshot(snap => {
+        requestAnimationFrame(() => renderBangBankMaster(snap));
+      }, err => console.warn("Realtime Bank:", err));
+
+      db.collection("DonHang").onSnapshot(snap => {
+        requestAnimationFrame(() => {
+          window.masterCache.orders = {};
+          const arr = [];
+          snap.forEach(doc => {
+            const d = doc.data();
+            const id = doc.id;
+            window.masterCache.orders[id] = d;
+            arr.push({ id, ...d });
+          });
+          arr.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
+          capNhatGiaoDienDanhSachDon(arr);
+        });
+      }, err => console.warn("Realtime DonHang:", err));
+    }
+
+    // Tải song song toàn bộ Master Data trong 1 nhịp duy nhất
     window.taiDuLieuMasterTuFirestore = async function() {
       try {
-        window.masterCache.sp = {};
-        window.masterCache.kh = {};
-        window.masterCache.bank = {};
-
-        const spSnap = await db.collection("Database").get();
-        const spSelect = document.getElementById('spSelect');
-        const tableSP = document.querySelector('#tableHistorySP tbody');
-        if (spSelect) spSelect.innerHTML = '<option value="">-- Chọn sản phẩm từ Database --</option>';
-        if (tableSP) tableSP.innerHTML = '';
-
-        let countSP = 0;
-        spSnap.forEach(doc => {
-          countSP++;
-          const d = doc.data();
-          const docId = doc.id;
-          const ma = d.maSP || docId;
-          const ten = d.tenSP || '';
-          const moTa = d.moTaSP || d.moTa || d.chiTiet || '';
-          const dvt = d.dvt || 'CTN';
-          const gia = Number(d.gia) || 0;
-          const anhSP = d.anhSP || '';
-
-          window.masterCache.sp[docId] = { docId, maSP: ma, tenSP: ten, moTaSP: moTa, dvt, gia, anhSP };
-
-          if (spSelect) {
-            spSelect.innerHTML += `<option value="${escapeHtml(docId)}">[${escapeHtml(ma)}] ${escapeHtml(ten)} — ${gia.toLocaleString('vi-VN')} (${escapeHtml(dvt)})</option>`;
-          }
-          if (tableSP) {
-            tableSP.innerHTML += `
-              <tr style="border-bottom:1px solid #f1f5f9;">
-                <td style="padding:8px; vertical-align:top;">
-                  <div style="display:flex;gap:8px;align-items:flex-start;">
-                    ${anhSP ? `<img src="${anhSP}" style="width:48px;height:48px;object-fit:cover;border-radius:4px;border:1px solid #cbd5e1;background:#fff;">` : ''}
-                    <div>
-                      <div style="font-weight:700; color:#0f172a;">[${escapeHtml(ma)}] ${escapeHtml(ten)}</div>
-                      ${moTa ? `<div style="color:#475569; font-size:11px; white-space:pre-line; margin-top:3px;">📝 ${escapeHtml(moTa)}</div>` : `<div style="color:#94a3b8; font-size:11px; font-style:italic;">(Chưa có mô tả chi tiết)</div>`}
-                    </div>
-                  </div>
-                </td>
-                <td style="padding:8px; vertical-align:top; font-weight:700; color:var(--sap-success);">
-                  ${gia.toLocaleString('vi-VN')}<br><span style="font-size:11px; color:#64748b;">ĐVT: ${escapeHtml(dvt)}</span>
-                </td>
-                <td style="padding:8px; text-align:right; vertical-align:top; white-space:nowrap;">
-                  <button onclick="suaSanPham('${escapeHtml(docId)}')" style="background:#fff8f1; color:#e76500; border:1px solid #e76500; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; margin-right:3px;">Sửa</button>
-                  <button onclick="xoaFirestore('Database', '${escapeHtml(docId)}', 'sản phẩm')" style="background:#fff1f1; color:#aa0808; border:1px solid #aa0808; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer;">Xóa</button>
-                </td>
-              </tr>`;
-          }
-        });
-
-        const khSnap = await db.collection("KhachHang").get();
-        const khSelect = document.getElementById('khSelect');
-        const tableKH = document.querySelector('#tableHistoryKH tbody');
-        if (khSelect) khSelect.innerHTML = '<option value="">-- Chọn khách hàng lưu sẵn --</option>';
-        if (tableKH) tableKH.innerHTML = '';
-
-        let countKH = 0;
-        khSnap.forEach(doc => {
-          countKH++;
-          const d = doc.data();
-          const docId = doc.id;
-          const ten = d.tenKH || d.tenKhachHang || d.name || docId;
-          const info = d.infoKH || d.lienHe || d.thongTin || '';
-
-          window.masterCache.kh[docId] = { docId, tenKH: ten, infoKH: info };
-
-          if (khSelect) {
-            khSelect.innerHTML += `<option value="${escapeHtml(docId)}">${escapeHtml(ten)}</option>`;
-          }
-          if (tableKH) {
-            tableKH.innerHTML += `
-              <tr style="border-bottom:1px solid #f1f5f9;">
-                <td style="padding:8px; vertical-align:top;">
-                  <div style="font-weight:700; color:var(--sap-brand);">${escapeHtml(ten)}</div>
-                  ${info ? `<div style="color:#475569; font-size:11px; white-space:pre-line; margin-top:3px;">📍 ${escapeHtml(info)}</div>` : `<div style="color:#94a3b8; font-size:11px; font-style:italic;">(Chưa có thông tin liên hệ)</div>`}
-                </td>
-                <td style="padding:8px; text-align:right; vertical-align:top; white-space:nowrap;">
-                  <button onclick="suaKhachHang('${escapeHtml(docId)}')" style="background:#fff8f1; color:#e76500; border:1px solid #e76500; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; margin-right:3px;">Sửa</button>
-                  <button onclick="xoaFirestore('KhachHang', '${escapeHtml(docId)}', 'khách hàng')" style="background:#fff1f1; color:#aa0808; border:1px solid #aa0808; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer;">Xóa</button>
-                </td>
-              </tr>`;
-          }
-        });
-
-        const bankSnap = await db.collection("DM_Bank").get();
-        const bankSelect = document.getElementById('bankSelect');
-        const tableBank = document.querySelector('#tableHistoryBank tbody');
-        if (bankSelect) bankSelect.innerHTML = '<option value="">-- Chọn Bank từ Database --</option>';
-        if (tableBank) tableBank.innerHTML = '';
-
-        bankSnap.forEach(doc => {
-          const d = doc.data();
-          const docId = doc.id;
-          const bName = d.bankName || d.tenBank || '';
-          const accName = d.accName || d.tenTaiKhoan || '';
-          const accNo = d.accNo || d.soTaiKhoan || '';
-          const swift = d.swift || d.swiftCode || '';
-
-          window.masterCache.bank[docId] = { docId, bankName: bName, accName, accNo, swift };
-
-          if (bankSelect) {
-            bankSelect.innerHTML += `<option value="${escapeHtml(docId)}">${escapeHtml(bName)} — A/C: ${escapeHtml(accNo)}</option>`;
-          }
-          if (tableBank) {
-            tableBank.innerHTML += `
-              <tr style="border-bottom:1px solid #f1f5f9;">
-                <td style="padding:8px; vertical-align:top;">
-                  <div style="font-weight:700; color:var(--sap-warning);">🏦 ${escapeHtml(bName)}</div>
-                  <div style="color:#0f172a; font-size:11.5px;">👤 <b>Chủ TK:</b> ${escapeHtml(accName || '---')}</div>
-                  <div style="color:#0f172a; font-size:11.5px;">💳 <b>Số TK:</b> ${escapeHtml(accNo)}</div>
-                  <div style="color:#475569; font-size:11px;">🌐 <b>Swift:</b> ${escapeHtml(swift || '---')}</div>
-                </td>
-                <td style="padding:8px; text-align:right; vertical-align:top; white-space:nowrap;">
-                  <button onclick="suaBank('${escapeHtml(docId)}')" style="background:#fff8f1; color:#e76500; border:1px solid #e76500; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; margin-right:3px;">Sửa</button>
-                  <button onclick="xoaFirestore('DM_Bank', '${escapeHtml(docId)}', 'ngân hàng')" style="background:#fff1f1; color:#aa0808; border:1px solid #aa0808; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer;">Xóa</button>
-                </td>
-              </tr>`;
-          }
-        });
-
-        const kpCountMaster = document.getElementById('kpCountMaster');
-        if (kpCountMaster) kpCountMaster.innerText = `${countSP} SP / ${countKH} KH`;
-
+        const [spSnap, khSnap, bankSnap] = await Promise.all([
+          db.collection("Database").get(),
+          db.collection("KhachHang").get(),
+          db.collection("DM_Bank").get()
+        ]);
+        renderBangSanPhamMaster(spSnap);
+        renderBangKhachHangMaster(khSnap);
+        renderBangBankMaster(bankSnap);
       } catch (err) {
         console.error("Lỗi tải Master:", err);
       }
@@ -3762,7 +3867,6 @@ let syswebsite = document.getElementById('syswebsite');
       window.hienHopThoaiXacNhan(`Bạn có chắc chắn muốn xóa ${tenLoai} này khỏi hệ thống không?`, async function() {
         try {
           await db.collection(collectionName).doc(docId).delete();
-          await taiDuLieuMasterTuFirestore();
           hienToast(`✅ Đã xóa ${tenLoai} thành công!`);
         } catch (e) {
           hienToast("❌ Lỗi: " + e.message);
@@ -3796,6 +3900,7 @@ let syswebsite = document.getElementById('syswebsite');
       if (!sel || !sel.value) return;
       const kh = window.masterCache.kh[sel.value];
       if (!kh) return;
+      duLieuDaThayDoiBoiNguoiDung = true;
       if (document.getElementById('inKhach')) document.getElementById('inKhach').value = kh.tenKH || '';
       if (document.getElementById('inLienHe')) document.getElementById('inLienHe').value = kh.infoKH || '';
       updatePreview();
@@ -3806,6 +3911,7 @@ let syswebsite = document.getElementById('syswebsite');
       if (!sel || !sel.value) return;
       const b = window.masterCache.bank[sel.value];
       if (!b) return;
+      duLieuDaThayDoiBoiNguoiDung = true;
 
       const lines = [];
       if (b.bankName) lines.push(`Bank Name: ${b.bankName}`);
@@ -3825,7 +3931,6 @@ let syswebsite = document.getElementById('syswebsite');
       if (!tenKH) { hienToast("⚠️ Vui lòng nhập Tên khách hàng!"); return; }
       try {
         await db.collection("KhachHang").add({ tenKH, infoKH, createdAt: new Date().toISOString() });
-        await taiDuLieuMasterTuFirestore();
         hienToast(`✅ Đã thêm khách hàng [${tenKH}] thành công!`);
       } catch (e) { hienToast("❌ Lỗi: " + e.message); }
     };
@@ -3846,7 +3951,6 @@ let syswebsite = document.getElementById('syswebsite');
         await db.collection("Database").doc(maSP).set({
           maSP, tenSP, moTaSP, dvt, gia, anhSP, updatedAt: new Date().toISOString()
         }, { merge: true });
-        await taiDuLieuMasterTuFirestore();
         hienToast(`✅ Đã thêm sản phẩm [${maSP}] thành công!`);
       } catch (e) { hienToast("❌ Lỗi: " + e.message); }
     };
@@ -3854,6 +3958,7 @@ let syswebsite = document.getElementById('syswebsite');
     window.chenMauNhanh = function(elementId, text) {
       const el = document.getElementById(elementId);
       if (el) {
+        duLieuDaThayDoiBoiNguoiDung = true;
         el.value = text;
         el.dispatchEvent(new Event('input'));
         updatePreview();
@@ -4025,6 +4130,19 @@ let syswebsite = document.getElementById('syswebsite');
 
       if (!bankRates) {
         try {
+          if (typeof db !== 'undefined') {
+            const snap = await db.collection("DM_TyGia").doc(`VN_${bankKey}`).get();
+            if (snap.exists && snap.data()?.date === todayKey && snap.data()?.rates) {
+              bankRates = snap.data().rates;
+              sourceLabel = 'Cloud Hôm nay';
+              try { localStorage.setItem(cacheKey, JSON.stringify(bankRates)); } catch (e) {}
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (!bankRates) {
+        try {
           const url = `https://webgia.com/ty-gia/${bankInfo.slug}/`;
           const html = await fetchQuaCorsProxy(url);
           const parsed = bocTachBangWebGia(html);
@@ -4042,20 +4160,8 @@ let syswebsite = document.getElementById('syswebsite');
             }
           }
         } catch (err) {
-          console.warn(`⚠️ Proxy WebGia (${bankKey}) phản hồi chậm, chuyển sang Cloud/Live API:`, err.message);
+          console.warn(`⚠️ Proxy WebGia (${bankKey}) phản hồi chậm, chuyển sang Live API:`, err.message);
         }
-      }
-
-      if (!bankRates) {
-        try {
-          if (typeof db !== 'undefined') {
-            const snap = await db.collection("DM_TyGia").doc(`VN_${bankKey}`).get();
-            if (snap.exists && snap.data()?.date === todayKey && snap.data()?.rates) {
-              bankRates = snap.data().rates;
-              sourceLabel = 'Cloud Hôm nay';
-            }
-          }
-        } catch (e) {}
       }
 
       if (!bankRates) {
@@ -4199,12 +4305,13 @@ let syswebsite = document.getElementById('syswebsite');
     }
 
     // =====================================================
-    // KHỞI CHẠY HỆ THỐNG KHI MỞ WEB
+    // KHỞI CHẠY HỆ THỐNG KHI MỞ WEB (CHẾ ĐỘ ĐA NGƯỜI DÙNG)
     // =====================================================
     window.addEventListener('DOMContentLoaded', async () => {
       khoiTaoGiaoDienThongBaoSAP();
+      damBaoHienThiWebsiteCongTy();
 
-      // 1. Tắt tự động hiện Joule AI khi mới mở trang (chỉ mở khi người dùng bấm)
+      // 1. Tắt tự động hiện Joule AI khi mới mở trang
       document.getElementById('sapJouleDrawer')?.classList.remove('open');
 
       // 2. Thu gọn menu trái trên màn hình nhỏ / điện thoại
@@ -4212,29 +4319,31 @@ let syswebsite = document.getElementById('syswebsite');
         document.getElementById('sapSideNav')?.classList.add('collapsed');
       }
 
-      // 3. Khởi tạo ngày lập mặc định
+      // 3. Khởi tạo ngày lập & mã đơn riêng biệt cho mỗi người truy cập (tránh 4-5 người đè đơn QUO-2026-001)
       if (document.getElementById('inNgay') && !document.getElementById('inNgay').value) {
         document.getElementById('inNgay').value = new Date().toLocaleDateString('vi-VN');
       }
+      const inMaEl = document.getElementById('inMa');
+      const savedSessionMa = sessionStorage.getItem('argon_active_ma_don');
+      if (inMaEl && (!inMaEl.value || inMaEl.value === 'QUO-2026-001')) {
+        const maRieng = savedSessionMa || taoMaDonNgauNhienKhongTrung();
+        inMaEl.value = maRieng;
+        sessionStorage.setItem('argon_active_ma_don', maRieng);
+      }
 
-      // 4. Đồng bộ Icon SAP, Logo, Watermark & Master Data
+      // 4. Đồng bộ Icon SAP, Logo, Watermark
       dongBoSapIconsToanHeThong();
       khoiPhucLogoVaWatermarkTuBoNho();
       window.chuyenManHinhKapella('STUDIO');
       window.doiCheDo('BG_VN');
 
-      await taiDuLieuMasterTuFirestore();
-      const danhSachDonCloud = await taiDanhSachDonLuuApp();
+      // 5. Kích hoạt lắng nghe Realtime Firestore cho 4-5 người dùng đồng thời
+      kichHoatDongBoRealtimeDaNguoiDung();
 
-      // 5. Tự động nạp đơn hàng gần nhất từ Cloud nếu bảng đang trống
-      if (danhSachDonCloud && danhSachDonCloud.length > 0 && window.gioHang.length === 0 && !document.getElementById('inKhach')?.value.trim()) {
-        window.taiDonTuApp(danhSachDonCloud[0].id, true);
-      }
-
-      // 6. Tải tỷ giá ngân hàng Việt Nam hôm nay
+      // 6. Tải tỷ giá ngân hàng Việt Nam hôm nay (ưu tiên đọc từ Cloud chung của cả nhóm)
       setTimeout(() => {
         taiTyGiaNgoaiTeClient(false);
-      }, 400);
+      }, 300);
     });
 
     window.addEventListener('load', () => {
