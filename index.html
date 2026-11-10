@@ -1068,11 +1068,12 @@
         </div>
 
         <div class="sap-pill-bar">
-          <!-- NÚT MỞ BẢNG FONT CHỮ MÀU TÍM -->
+          <!-- 1. NÚT MỞ BẢNG FONT CHỮ MÀU TÍM -->
           <button class="sap-btn" onclick="batTatPopupFont(true)" title="Tùy chỉnh phông chữ & định dạng" style="background:#f3efff !important; color:#6828e0 !important; border:1.5px solid #d8c8ff !important;">
             <i class="mdi mdi-format-font"></i> Font Chữ
           </button>
 
+          <!-- 2. CÁC NÚT THAO TÁC HỆ THỐNG -->
           <button class="sap-btn sap-btn-accept-outline" onclick="luuDonNháp()" title="Lưu nháp đơn hàng">
             <i class="mdi mdi-content-save-outline"></i> Tự động lưu Cloud: BẬT
           </button>
@@ -1086,6 +1087,7 @@
             <i class="mdi mdi-email-fast-outline"></i> Tải PDF &amp; Gửi Mail
           </button>
         </div>
+      </div>
 
       <!-- ========================================================= -->
       <!-- MÀN HÌNH 1: LAUNCHPAD DASHBOARD                           -->
@@ -4321,13 +4323,13 @@ if (syswebsite) syswebsite.innerText = isEN ? 'www.golifresh.com' : 'www.golifre
         createBtn.innerHTML = `${taoSapSvgIcon(SAP_PATHS.add, "#ffffff", "13px")} Tạo Đơn Mới`;
       }
 
+      // Chỉ cập nhật các nút phía sau, giữ nguyên nút Font Chữ ở đầu tiên
       const actionButtons = document.querySelectorAll('.sap-pill-bar button');
-      if (actionButtons.length >= 4) {
-        actionButtons[0].innerHTML = `☁️ Tự động lưu Cloud: BẬT`;
-        actionButtons[0].title = "Mọi thay đổi trên bảng báo giá đều được tự động lưu thẳng lên Cloud";
-        actionButtons[1].innerHTML = `${taoSapSvgIcon(SAP_PATHS.cloud, "#ffffff", "13px")} Lưu Cloud Ngay`;
-        actionButtons[2].innerHTML = `${taoSapSvgIcon(SAP_PATHS.pdf, "#ffffff", "13px")} Tải PDF`;
-        actionButtons[3].innerHTML = `${taoSapSvgIcon(SAP_PATHS.mail, "#ffffff", "13px")} Tải PDF &amp; Gửi Mail`;
+      if (actionButtons.length >= 5) {
+        actionButtons[1].innerHTML = `<i class="mdi mdi-content-save-outline"></i> Tự động lưu Cloud: BẬT`;
+        actionButtons[2].innerHTML = `${taoSapSvgIcon(SAP_PATHS.cloud, "#ffffff", "13px")} Lưu Cloud Ngay`;
+        actionButtons[3].innerHTML = `${taoSapSvgIcon(SAP_PATHS.pdf, "#ffffff", "13px")} Tải PDF`;
+        actionButtons[4].innerHTML = `${taoSapSvgIcon(SAP_PATHS.mail, "#ffffff", "13px")} Tải PDF &amp; Gửi Mail`;
       }
 
       const cardTitles = document.querySelectorAll('#panelLeftForm .argon-card-title');
