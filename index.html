@@ -1167,39 +1167,56 @@
               <button class="mode-btn" id="btnXK" onclick="doiCheDo('XK')">📦 Xuất Kho</button>
             </div>
           </div>
-<!-- NÚT ĐÓNG MỞ VÀ THANH CÔNG CỤ FONT Ở CỘT TRÁI -->
-          <div class="argon-card" style="margin-bottom: 10px; padding: 10px !important;">
-            <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="batTatThanhFontLeft()">
-              <span style="font-size: 12px; font-weight: 800; color: var(--sap-brand);">🔤 Thanh Công Cụ Định Dạng Font</span>
-              <button type="button" id="btnToggleFontPanel" style="background: none; border: none; font-weight: 800; color: var(--sap-brand); cursor: pointer;">[-] Thu gọn</button>
+<!-- THANH CÔNG CỤ ĐỊNH DẠNG FONT CHUẨN WORD Ở CỘT TRÁI -->
+          <div class="argon-card" style="margin-bottom: 12px; padding: 12px !important; background: #ffffff !important; border: 1px solid var(--sap-border) !important;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 12.5px; font-weight: 800; color: var(--sap-brand); display: flex; align-items: center; gap: 5px;">
+                🔤 Định Dạng Font Văn Phòng
+              </span>
+              <button type="button" id="btnToggleFontPanel" onclick="batTatThanhFontLeft()" style="background: none; border: none; font-weight: 800; font-size: 11.5px; color: var(--sap-brand); cursor: pointer;">[-] Thu gọn</button>
             </div>
 
-            <div id="word2026FontRibbon" class="word-2026-ribbon" style="width: 100%; margin-top: 8px; margin-bottom: 0; display: flex; flex-direction: column; align-items: center; border: 1px solid #d1d5db; border-radius: 8px; padding: 6px; background: #f8f9fa;">
-              <!-- Hàng 1: Font chữ, Cỡ chữ, Tăng giảm, Aa, Xóa định dạng -->
-              <div class="word-ribbon-row" style="display: flex; gap: 4px; align-items: center; width: 100%; justify-content: space-between; margin-bottom: 4px;">
-                <select id="wordFontFamilySelect" class="word-font-select" onchange="apDungFontWord2026(this.value)" style="width: 52%; font-size: 11.5px; height: 26px;">
+            <div id="word2026FontRibbon" style="display: flex; flex-direction: column; gap: 6px; transition: all 0.25s ease; overflow: hidden;">
+              <!-- Hàng 1: Chọn Font và Cỡ chữ -->
+              <div style="display: flex; gap: 6px; width: 100%;">
+                <select id="wordFontFamilySelect" onchange="apDungFontWord2026(this.value)" style="flex: 1.4; height: 30px; padding: 2px 6px; font-size: 12px; font-weight: 700; border: 1px solid #9ca3af; border-radius: 6px; background: #fff;">
                   <option value="'Segoe UI', 'Inter', sans-serif">Aptos (Body)</option>
-                  <option value="'72', 'Plus Jakarta Sans', sans-serif">SAP 72</option>
+                  <option value="'72', 'Plus Jakarta Sans', sans-serif">SAP 72 (Horizon)</option>
                   <option value="'Times New Roman', Times, serif">Times New Roman</option>
-                  <option value="Calibri, sans-serif">Calibri</option>
+                  <option value="Calibri, sans-serif">Calibri (Body)</option>
                   <option value="Arial, sans-serif">Arial</option>
-                <option value="'Plus Jakarta Sans', sans-serif">Plus Jakarta Sans</option>
-                <option value="Tahoma, sans-serif">Tahoma</option>
-                <option value="Georgia, serif">Georgia</option>
+                  <option value="'Plus Jakarta Sans', sans-serif">Plus Jakarta Sans</option>
+                  <option value="Tahoma, sans-serif">Tahoma</option>
+                  <option value="Georgia, serif">Georgia</option>
                 </select>
-                <select id="wordFontSizeSelect" class="word-size-select" onchange="apDungCoChuWord2026(this.value)" style="width: 44%; font-size: 11.5px; height: 26px;">
-                  <option value="10">10pt</option><option value="11">11pt</option><option value="12" selected>12pt</option><option value="14">14pt</option><option value="16">16pt</option>
+
+                <select id="wordFontSizeSelect" onchange="apDungCoChuWord2026(this.value)" style="flex: 0.8; height: 30px; padding: 2px 6px; font-size: 12px; font-weight: 700; border: 1px solid #9ca3af; border-radius: 6px; background: #fff;">
+                  <option value="10">10pt</option>
+                  <option value="11">11pt</option>
+                  <option value="12" selected>12pt</option>
+                  <option value="13">13pt</option>
+                  <option value="14">14pt</option>
+                  <option value="16">16pt</option>
+                  <option value="18">18pt</option>
                 </select>
               </div>
 
-              <!-- Hàng 2: Các nút định dạng B, I, U, Màu sắc -->
-              <div class="word-ribbon-row" style="display: flex; gap: 3px; align-items: center; width: 100%; justify-content: space-between;">
-                <button type="button" class="word-tool-btn" onclick="dinhDangChuWord2026('bold')" style="height:24px; padding:0 6px; font-size:11px;"><b>B</b></button>
-                <button type="button" class="word-tool-btn" onclick="dinhDangChuWord2026('italic')" style="height:24px; padding:0 6px; font-size:11px;"><i>I</i></button>
-                <button type="button" class="word-tool-btn" onclick="dinhDangChuWord2026('underline')" style="height:24px; padding:0 6px; font-size:11px;"><u>U</u></button>
-                <button type="button" class="word-tool-btn" onclick="dinhDangChuWord2026('strikeThrough')" style="height:24px; padding:0 6px; font-size:11px;"><s>ab</s></button>
-                <label title="Highlight" style="cursor:pointer; font-size:11px;">🖍️<input type="color" value="#ffff00" oninput="toDaQuangWord2026(this.value)" style="width:14px;height:14px;border:none;background:none;vertical-align:middle;"></label>
-                <label title="Màu chữ" style="cursor:pointer; font-size:11px; font-weight:800; color:#dc2626;">A<input type="color" value="#dc2626" oninput="doiMauChuWord2026(this.value)" style="width:14px;height:14px;border:none;background:none;vertical-align:middle;"></label>
+              <!-- Hàng 2: Các nút định dạng B, I, U, Strikethrough, Highlight, Màu chữ -->
+              <div style="display: flex; gap: 4px; align-items: center; justify-content: space-between; background: #f8fafc; padding: 5px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                <button type="button" onclick="dinhDangChuWord2026('bold')" title="In đậm (Bold)" style="height: 26px; min-width: 26px; border: 1px solid #cbd5e1; border-radius: 4px; background: #fff; font-weight: 800; cursor: pointer;">B</button>
+                <button type="button" onclick="dinhDangChuWord2026('italic')" title="In nghiêng (Italic)" style="height: 26px; min-width: 26px; border: 1px solid #cbd5e1; border-radius: 4px; background: #fff; font-style: italic; font-weight: 700; cursor: pointer;">I</button>
+                <button type="button" onclick="dinhDangChuWord2026('underline')" title="Gạch chân (Underline)" style="height: 26px; min-width: 26px; border: 1px solid #cbd5e1; border-radius: 4px; background: #fff; text-decoration: underline; font-weight: 700; cursor: pointer;">U</button>
+                <button type="button" onclick="dinhDangChuWord2026('strikeThrough')" title="Gạch ngang chữ" style="height: 26px; min-width: 26px; border: 1px solid #cbd5e1; border-radius: 4px; background: #fff; text-decoration: line-through; font-size: 11px; cursor: pointer;">ab</button>
+                
+                <span style="width: 1px; height: 18px; background: #cbd5e1; margin: 0 2px;"></span>
+
+                <label title="Tô màu dạ quang (Highlight)" style="cursor: pointer; height: 26px; padding: 0 6px; border: 1px solid #cbd5e1; border-radius: 4px; background: #fff; display: inline-flex; align-items: center; gap: 2px; font-size: 11px;">
+                  🖍️ <input type="color" value="#ffff00" oninput="toDaQuangWord2026(this.value)" style="width: 14px; height: 14px; border: none; background: none; cursor: pointer; padding: 0;">
+                </label>
+
+                <label title="Màu chữ (Font Color)" style="cursor: pointer; height: 26px; padding: 0 6px; border: 1px solid #cbd5e1; border-radius: 4px; background: #fff; display: inline-flex; align-items: center; gap: 2px; font-size: 11px; font-weight: 800; color: #dc2626;">
+                  A <input type="color" value="#dc2626" oninput="doiMauChuWord2026(this.value)" style="width: 14px; height: 14px; border: none; background: none; cursor: pointer; padding: 0;">
+                </label>
               </div>
             </div>
           </div>

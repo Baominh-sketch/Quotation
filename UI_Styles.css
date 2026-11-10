@@ -444,17 +444,14 @@ body { flex-direction: column !important; overflow: hidden; }
 .kp-badge-vn { background: #e0e7ff; color: #4338ca; }
 .kp-badge-en { background: #dcfce7; color: #15803d; }
 .kp-badge-xk { background: #ffedd5; color: #c2410c; }
-/* Thanh công cụ font chữ chuyển sang cột trái, có thể đóng/mở */
-    #word2026FontRibbon {
-      transition: all 0.25s ease;
-      max-height: 250px;
-      overflow: hidden;
+#word2026FontRibbon {
+      transition: all 0.22s ease-in-out;
+      max-height: 120px;
     }
     #word2026FontRibbon.collapsed {
-      max-height: 0;
-      opacity: 0;
-      padding-top: 0;
-      padding-bottom: 0;
-      margin-bottom: 0;
-      border: none;
+      max-height: 0 !important;
+      opacity: 0 !important;
+      margin-top: 0 !important;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
     }
