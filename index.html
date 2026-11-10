@@ -1169,6 +1169,39 @@
           </div>
 
           <div class="panel-scroll-body">
+            <!-- NÚT ĐÓNG MỞ VÀ THANH CÔNG CỤ FONT Ở CỘT TRÁI -->
+          <div class="argon-card" style="margin-bottom: 10px; padding: 10px !important;">
+            <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="batTatThanhFontLeft()">
+              <span style="font-size: 12px; font-weight: 800; color: var(--sap-brand);">🔤 Thanh Công Cụ Định Dạng Font</span>
+              <button type="button" id="btnToggleFontPanel" style="background: none; border: none; font-weight: 800; color: var(--sap-brand); cursor: pointer;">[-] Thu gọn</button>
+            </div>
+
+            <div id="word2026FontRibbon" class="word-2026-ribbon" style="width: 100%; margin-top: 8px; margin-bottom: 0; display: flex; flex-direction: column; align-items: center; border: 1px solid #d1d5db; border-radius: 8px; padding: 6px; background: #f8f9fa;">
+              <!-- Hàng 1: Font chữ, Cỡ chữ, Tăng giảm, Aa, Xóa định dạng -->
+              <div class="word-ribbon-row" style="display: flex; gap: 4px; align-items: center; width: 100%; justify-content: space-between; margin-bottom: 4px;">
+                <select id="wordFontFamilySelect" class="word-font-select" onchange="apDungFontWord2026(this.value)" style="width: 52%; font-size: 11.5px; height: 26px;">
+                  <option value="'Segoe UI', 'Inter', sans-serif">Aptos (Body)</option>
+                  <option value="'72', 'Plus Jakarta Sans', sans-serif">SAP 72</option>
+                  <option value="'Times New Roman', Times, serif">Times New Roman</option>
+                  <option value="Calibri, sans-serif">Calibri</option>
+                  <option value="Arial, sans-serif">Arial</option>
+                </select>
+                <select id="wordFontSizeSelect" class="word-size-select" onchange="apDungCoChuWord2026(this.value)" style="width: 44%; font-size: 11.5px; height: 26px;">
+                  <option value="10">10pt</option><option value="11">11pt</option><option value="12" selected>12pt</option><option value="14">14pt</option><option value="16">16pt</option>
+                </select>
+              </div>
+
+              <!-- Hàng 2: Các nút định dạng B, I, U, Màu sắc -->
+              <div class="word-ribbon-row" style="display: flex; gap: 3px; align-items: center; width: 100%; justify-content: space-between;">
+                <button type="button" class="word-tool-btn" onclick="dinhDangChuWord2026('bold')" style="height:24px; padding:0 6px; font-size:11px;"><b>B</b></button>
+                <button type="button" class="word-tool-btn" onclick="dinhDangChuWord2026('italic')" style="height:24px; padding:0 6px; font-size:11px;"><i>I</i></button>
+                <button type="button" class="word-tool-btn" onclick="dinhDangChuWord2026('underline')" style="height:24px; padding:0 6px; font-size:11px;"><u>U</u></button>
+                <button type="button" class="word-tool-btn" onclick="dinhDangChuWord2026('strikeThrough')" style="height:24px; padding:0 6px; font-size:11px;"><s>ab</s></button>
+                <label title="Highlight" style="cursor:pointer; font-size:11px;">🖍️<input type="color" value="#ffff00" oninput="toDaQuangWord2026(this.value)" style="width:14px;height:14px;border:none;background:none;vertical-align:middle;"></label>
+                <label title="Màu chữ" style="cursor:pointer; font-size:11px; font-weight:800; color:#dc2626;">A<input type="color" value="#dc2626" oninput="doiMauChuWord2026(this.value)" style="width:14px;height:14px;border:none;background:none;vertical-align:middle;"></label>
+              </div>
+            </div>
+          </div>
             <!-- KHO CLOUD -->
             <div class="argon-card">
               <div class="argon-card-header"><div class="argon-card-title" style="color:var(--sap-brand);">☁️ Kho Đơn Hàng Lưu (Cloud)</div></div>
@@ -4581,6 +4614,17 @@ if (syswebsite) syswebsite.innerText = isEN ? 'www.golifresh.com' : 'www.golifre
       } else {
         if (termsSectionBox) termsSectionBox.style.display = 'none';
       }
+    };
+  </script>
+  <script>
+    window.batTatThanhFontLeft = function() {
+      const ribbon = document.getElementById('word2026FontRibbon');
+      const btn = document.getElementById('btnToggleFontPanel');
+      if (!ribbon) return;
+      
+      ribbon.classList.toggle('collapsed');
+      const isCollapsed = ribbon.classList.contains('collapsed');
+      if (btn) btn.innerText = isCollapsed ? '[+] Mở rộng' : '[-] Thu gọn';
     };
   </script>
 </body>
