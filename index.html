@@ -1183,6 +1183,9 @@
                   <option value="'Times New Roman', Times, serif">Times New Roman</option>
                   <option value="Calibri, sans-serif">Calibri</option>
                   <option value="Arial, sans-serif">Arial</option>
+                <option value="'Plus Jakarta Sans', sans-serif">Plus Jakarta Sans</option>
+                <option value="Tahoma, sans-serif">Tahoma</option>
+                <option value="Georgia, serif">Georgia</option>
                 </select>
                 <select id="wordFontSizeSelect" class="word-size-select" onchange="apDungCoChuWord2026(this.value)" style="width: 44%; font-size: 11.5px; height: 26px;">
                   <option value="10">10pt</option><option value="11">11pt</option><option value="12" selected>12pt</option><option value="14">14pt</option><option value="16">16pt</option>
@@ -1462,64 +1465,6 @@
               <input type="text" id="liveColorHex" value="#007A3D" maxlength="7" placeholder="#000000" oninput="dongBoMauTuText(this.value)" style="width:68px;padding:3px 5px;font-size:11px;font-weight:700;font-family:monospace;text-transform:uppercase;text-align:center;">
             </div>
             <button class="sap-btn sap-btn-emphasized" onclick="xuatPDF()" style="padding:5px 12px !important;">🖨️ Tải PDF</button>
-          </div>
-<!-- THANH CÔNG CỤ ĐỔI FONT CHỮ CHUẨN WORD 2026 -->
-          <div id="word2026FontRibbon" style="background:#f8f9fa; border:1px solid #d1d5db; border-radius:10px; padding:8px 12px 4px 12px; margin-bottom:12px; display:inline-flex; flex-direction:column; align-items:center; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
-            <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
-              <select id="wordFontFamilySelect" onchange="apDungFontWord2026(this.value)" style="height:28px; padding:2px 8px; font-size:12.5px; border:1px solid #9ca3af; border-radius:4px; min-width:145px; font-weight:600;">
-                <option value="'Segoe UI', 'Inter', sans-serif">Aptos (Body)</option>
-                <option value="'72', 'Plus Jakarta Sans', sans-serif">SAP 72 (Horizon)</option>
-                <option value="'Times New Roman', Times, serif">Times New Roman</option>
-                <option value="Calibri, 'Segoe UI', sans-serif">Calibri (Body)</option>
-                <option value="Arial, Helvetica, sans-serif">Arial</option>
-                <option value="'Plus Jakarta Sans', sans-serif">Plus Jakarta Sans</option>
-                <option value="Tahoma, sans-serif">Tahoma</option>
-                <option value="Georgia, serif">Georgia</option>
-              </select>
-
-              <select id="wordFontSizeSelect" onchange="apDungCoChuWord2026(this.value)" style="height:28px; padding:2px 6px; font-size:12.5px; border:1px solid #9ca3af; border-radius:4px; width:56px; font-weight:600;">
-                <option value="10">10</option>
-                <option value="11">11</option>
-                <option value="12" selected>12</option>
-                <option value="13">13</option>
-                <option value="14">14</option>
-                <option value="16">16</option>
-                <option value="18">18</option>
-              </select>
-
-              <button type="button" onclick="tangGiamCoChuWord2026(1)" title="Tăng cỡ chữ" style="height:28px; min-width:30px; border:1px solid #d1d5db; border-radius:4px; background:#fff; cursor:pointer; font-weight:700;">A<sup style="color:#0064d9;font-size:8px;">▲</sup></button>
-              <button type="button" onclick="tangGiamCoChuWord2026(-1)" title="Giảm cỡ chữ" style="height:28px; min-width:30px; border:1px solid #d1d5db; border-radius:4px; background:#fff; cursor:pointer; font-weight:700;">A<sup style="color:#0064d9;font-size:8px;">▼</sup></button>
-
-              <span style="width:1px; height:20px; background:#d1d5db; margin:0 3px;"></span>
-
-              <select onchange="doiHoaThuongWord2026(this.value); this.value='';" style="height:28px; padding:2px 4px; font-size:12px; border:1px solid #9ca3af; border-radius:4px; width:56px; font-weight:600;">
-                <option value="" selected disabled>Aa ▾</option>
-                <option value="UPPER">IN HOA</option>
-                <option value="LOWER">chữ thường</option>
-              </select>
-
-              <button type="button" onclick="xoaDinhDangWord2026()" title="Xóa định dạng" style="height:28px; min-width:30px; border:1px solid #d1d5db; border-radius:4px; background:#fff; cursor:pointer; font-weight:700;">A<span style="color:#9333ea;font-size:10px;">⌫</span></button>
-            </div>
-
-            <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap; margin-top:6px; width:100%;">
-              <button type="button" onclick="dinhDangChuWord2026('bold')" title="In đậm (Bold)" style="height:28px; min-width:28px; border:1px solid #d1d5db; border-radius:4px; background:#fff; cursor:pointer;"><b>B</b></button>
-              <button type="button" onclick="dinhDangChuWord2026('italic')" title="In nghiêng (Italic)" style="height:28px; min-width:28px; border:1px solid #d1d5db; border-radius:4px; background:#fff; cursor:pointer;"><i>I</i></button>
-              <button type="button" onclick="dinhDangChuWord2026('underline')" title="Gạch chân (Underline)" style="height:28px; min-width:28px; border:1px solid #d1d5db; border-radius:4px; background:#fff; cursor:pointer;"><u>U</u></button>
-              <button type="button" onclick="dinhDangChuWord2026('strikeThrough')" title="Gạch ngang chữ" style="height:28px; min-width:28px; border:1px solid #d1d5db; border-radius:4px; background:#fff; cursor:pointer;"><s>ab</s></button>
-              <button type="button" onclick="dinhDangChuWord2026('subscript')" title="Chỉ số dưới" style="height:28px; min-width:28px; border:1px solid #d1d5db; border-radius:4px; background:#fff; cursor:pointer;">x<sub style="color:#0284c7;font-weight:800;">2</sub></button>
-              <button type="button" onclick="dinhDangChuWord2026('superscript')" title="Chỉ số trên" style="height:28px; min-width:28px; border:1px solid #d1d5db; border-radius:4px; background:#fff; cursor:pointer;">x<sup style="color:#0284c7;font-weight:800;">2</sup></button>
-
-              <span style="width:1px; height:20px; background:#d1d5db; margin:0 3px;"></span>
-
-              <label title="Tô màu dạ quang (Highlight)" style="height:28px; padding:0 6px; border:1px solid #d1d5db; border-radius:4px; background:#fff; cursor:pointer; display:inline-flex; align-items:center; gap:3px; font-size:12px;">
-                🖍️ <input type="color" value="#ffff00" oninput="toDaQuangWord2026(this.value)" style="width:18px; height:18px; border:none; padding:0; background:none; cursor:pointer;">
-              </label>
-
-              <label title="Màu chữ (Font Color)" style="height:28px; padding:0 6px; border:1px solid #d1d5db; border-radius:4px; background:#fff; cursor:pointer; display:inline-flex; align-items:center; gap:3px; font-size:12px; font-weight:800; color:#dc2626;">
-                A <input type="color" value="#dc2626" oninput="doiMauChuWord2026(this.value)" style="width:18px; height:18px; border:none; padding:0; background:none; cursor:pointer;">
-              </label>
-            </div>
-            <div style="font-size:10.5px; color:#6b7280; margin-top:3px; font-weight:600;">Font</div>
           </div>
           <div class="a4-wrapper" id="a4Wrapper">
             <div class="a4-paper theme-executive" id="a4Paper">
