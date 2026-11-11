@@ -455,3 +455,15 @@ body { flex-direction: column !important; overflow: hidden; }
       padding-top: 0 !important;
       padding-bottom: 0 !important;
     }
+/* Tạo khoảng cách giữa thanh Tab (Báo Giá / Quote / Xuất Kho) và thẻ Kho Đơn Hàng Lưu */
+.panel-scroll-body {
+  padding-top: 16px !important;
+}
+
+.panel-scroll-body > .argon-card:first-child {
+  margin-top: 6px !important;
+}
+
+.panel-header, .studio-header {
+  padding-bottom: 12px !important;
+}
