@@ -3099,24 +3099,44 @@ if (syswebsite) syswebsite.innerText = isEN ? 'www.golifresh.com' : 'www.golifre
       document.getElementById('prePreparedBy').innerText = prepVal;
 
       const dieuKhoanVal = document.getElementById('inDieuKhoan')?.value.trim() || '';
-      const payVal = (!isXK) ? (document.getElementById('inPaymentTerm')?.value.trim() || '') : '';
-      const bankVal = (isEN && isPI) ? (document.getElementById('inBankInfo')?.value.trim() || '') : '';
+  const notesVal = document.getElementById('inNotesRieng')?.value.trim() || '';
+  const payVal = (!isXK) ? (document.getElementById('inPaymentTerm')?.value.trim() || '') : '';
+  const bankVal = (isEN && isPI) ? (document.getElementById('inBankInfo')?.value.trim() || '') : '';
 
-      document.getElementById('lblNotesHeader').innerText = isEN ? 'TERMS & NOTES:' : (isXK ? 'GHI CHÚ XUẤT KHO:' : 'ĐIỀU KHOẢN & GHI CHÚ:');
-      document.getElementById('lblPaymentHeader').innerText = isEN ? 'PAYMENT TERMS:' : 'PHƯƠNG THỨC THANH TOÁN:';
+  document.getElementById('lblNotesHeader').innerText = isEN ? 'TERMS:' : (isXK ? 'ĐIỀU KHOẢN XUẤT KHO:' : 'ĐIỀU KHOẢN THƯƠNG MẠI:');
+  const lblSeparateNotes = document.getElementById('lblSeparateNotesHeader');
+  if (lblSeparateNotes) lblSeparateNotes.innerText = isEN ? 'NOTES:' : 'GHI CHÚ:';
+  document.getElementById('lblPaymentHeader').innerText = isEN ? 'PAYMENT TERMS:' : 'PHƯƠNG THỨC THANH TOÁN:';
 
-      const termsBox = document.getElementById('termsSectionBox');
-      if (dieuKhoanVal || payVal || bankVal) {
-        termsBox.style.display = 'block';
-        document.getElementById('boxNotesSection').style.display = dieuKhoanVal ? 'block' : 'none';
-        document.getElementById('preDieuKhoan').innerText = dieuKhoanVal;
-        document.getElementById('boxPaymentTermPre').style.display = payVal ? 'block' : 'none';
-        document.getElementById('prePaymentTerm').innerText = payVal;
-        document.getElementById('boxBankInfoPre').style.display = bankVal ? 'block' : 'none';
-        document.getElementById('preBankInfo').innerText = bankVal;
-      } else {
-        termsBox.style.display = 'none';
-      }
+  const termsBox = document.getElementById('termsSectionBox');
+  if (dieuKhoanVal || notesVal || payVal || bankVal) {
+    termsBox.style.display = 'block';
+
+    // 1. Hiển thị mục TERMS
+    document.getElementById('boxNotesSection').style.display = dieuKhoanVal ? 'block' : 'none';
+    document.getElementById('preDieuKhoan').innerText = dieuKhoanVal;
+
+    // 2. Hiển thị mục NOTES riêng
+    const boxNotesRieng = document.getElementById('boxSeparateNotesSection');
+    const preNotesRieng = document.getElementById('preNotesRieng');
+    if (boxNotesRieng) {
+      boxNotesRieng.style.display = notesVal ? 'block' : 'none';
+      boxNotesRieng.style.borderTop = dieuKhoanVal ? '1px dashed #cbd5e1' : 'none';
+      boxNotesRieng.style.paddingTop = dieuKhoanVal ? '8px' : '0';
+      boxNotesRieng.style.marginTop = dieuKhoanVal ? '8px' : '0';
+    }
+    if (preNotesRieng) preNotesRieng.innerText = notesVal;
+
+    // 3. Hiển thị mục PAYMENT TERMS
+    document.getElementById('boxPaymentTermPre').style.display = payVal ? 'block' : 'none';
+    document.getElementById('prePaymentTerm').innerText = payVal;
+
+    // 4. Hiển thị mục BANKING INFO
+    document.getElementById('boxBankInfoPre').style.display = bankVal ? 'block' : 'none';
+    document.getElementById('preBankInfo').innerText = bankVal;
+  } else {
+    termsBox.style.display = 'none';
+  }
 
       const enNoteVal = document.getElementById('inEnNote')?.value.trim() || '';
       document.getElementById('boxEnNotePre').style.display = (isEN && enNoteVal) ? 'block' : 'none';
