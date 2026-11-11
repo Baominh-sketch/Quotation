@@ -1480,7 +1480,7 @@
                   <span id="preAmountInWords" style="font-weight:700;font-style:italic;"></span>
                 </div>
 
-                <<div class="terms-section" id="termsSectionBox" style="display:none;">
+                <div class="terms-section" id="termsSectionBox" style="display:none;">
                   <div class="terms-block" id="boxNotesSection" style="display:none;">
                     <div class="terms-title" id="lblNotesHeader">TERMS:</div>
                     <div class="terms-content" id="preDieuKhoan" style="white-space:pre-line;"></div>
@@ -1975,7 +1975,8 @@
     }
 
     function capNhatTrangThaiNutAutoCloud(text, isSaving = false) {
-      const btnAuto = document.querySelector('.sap-pill-bar button:first-child');
+      // Sửa lại: Chỉ cập nhật đúng nút Tự động lưu Cloud, tuyệt đối không đè lên nút Font Chữ
+      const btnAuto = document.querySelector('.sap-pill-bar button[onclick*="luuDon"]') || document.querySelectorAll('.sap-pill-bar button')[1];
       if (btnAuto) {
         btnAuto.innerHTML = isSaving ? `⏳ ${text}` : `☁️ ${text}`;
       }
@@ -4324,9 +4325,10 @@ if (syswebsite) syswebsite.innerText = isEN ? 'www.golifresh.com' : 'www.golifre
       }
 
       // Chỉ cập nhật các nút phía sau, giữ nguyên nút Font Chữ ở đầu tiên
-      const actionButtons = document.querySelectorAll('.sap-pill-bar button');
+const actionButtons = document.querySelectorAll('.sap-pill-bar button');
       if (actionButtons.length >= 5) {
-        actionButtons[1].innerHTML = `<i class="mdi mdi-content-save-outline"></i> Tự động lưu Cloud: BẬT`;
+        actionButtons[0].innerHTML = `<i class="mdi mdi-format-font"></i> Font Chữ`;
+        actionButtons[1].innerHTML = `☁️ Tự động lưu Cloud: BẬT`;
         actionButtons[2].innerHTML = `${taoSapSvgIcon(SAP_PATHS.cloud, "#ffffff", "13px")} Lưu Cloud Ngay`;
         actionButtons[3].innerHTML = `${taoSapSvgIcon(SAP_PATHS.pdf, "#ffffff", "13px")} Tải PDF`;
         actionButtons[4].innerHTML = `${taoSapSvgIcon(SAP_PATHS.mail, "#ffffff", "13px")} Tải PDF &amp; Gửi Mail`;
@@ -4383,150 +4385,190 @@ if (syswebsite) syswebsite.innerText = isEN ? 'www.golifresh.com' : 'www.golifre
       setTimeout(khoiPhucLogoVaWatermarkTuBoNho, 200);
     });
   </script>
-  <script>
+<script>
     window.currentWordFontSize = 12;
+    window.savedA4SelectionRange = null;
 
-    window.apDungFontWord2026 = function(fontFamilyVal) {
+    // 1. Tự động bật chế độ cho phép bôi đen & ghi nhớ chính xác đoạn chữ bạn vừa quét chọn trên tờ A4
+    function kichHoatChonVungTrenA4() {
       const paper = document.getElementById('a4Paper');
       if (!paper) return;
-      let st = document.getElementById('word2026CustomFontStyle');
-      if (!st) {
-        st = document.createElement('style');
-        st.id = 'word2026CustomFontStyle';
-        document.head.appendChild(st);
+      paper.setAttribute('contenteditable', 'true');
+      paper.style.outline = 'none';
+
+      const luuVungChon = () => {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+          const range = sel.getRangeAt(0);
+          if (paper.contains(range.commonAncestorContainer) && range.toString().trim().length > 0) {
+            window.savedA4SelectionRange = range.cloneRange();
+          }
+        }
+      };
+
+      paper.addEventListener('mouseup', luuVungChon);
+      paper.addEventListener('keyup', luuVungChon);
+    }
+
+    document.addEventListener('DOMContentLoaded', kichHoatChonVungTrenA4);
+    setTimeout(kichHoatChonVungTrenA4, 500);
+
+    // Khôi phục lại đúng đoạn bôi đen trước khi áp dụng Font / Cỡ chữ / Màu sắc
+    function khoiPhucVungBoiDenA4() {
+      const paper = document.getElementById('a4Paper');
+      if (paper && paper.getAttribute('contenteditable') !== 'true') {
+        paper.setAttribute('contenteditable', 'true');
       }
-      st.innerHTML = `#a4Paper, #a4Paper * { font-family: ${fontFamilyVal} !important; }`;
-      if (typeof hienToast === 'function') hienToast("🔤 Đã đổi Font chữ trên tờ A4!");
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0 && paper && paper.contains(sel.anchorNode) && sel.toString().trim().length > 0) {
+        return sel.getRangeAt(0);
+      }
+      if (window.savedA4SelectionRange && sel) {
+        sel.removeAllRanges();
+        sel.addRange(window.savedA4SelectionRange);
+        return window.savedA4SelectionRange;
+      }
+      return null;
+    }
+
+    // Hàm bọc style trực tiếp vào đúng đoạn chữ đang tô đen (không ảnh hưởng chỗ khác)
+    function apDungStyleChoDoanBoiDen(styleProp, styleVal) {
+      const range = khoiPhucVungBoiDenA4();
+      if (!range || range.collapsed) {
+        if (typeof hienToast === 'function') {
+          hienToast("⚠️ Hãy bôi đen (quét chọn) đoạn chữ trên tờ A4 trước khi đổi!");
+        }
+        return false;
+      }
+
+      const span = document.createElement('span');
+      span.style[styleProp] = styleVal;
+
+      try {
+        const fragment = range.extractContents();
+        // Xóa style trùng bên trong các thẻ con (nếu đoạn đó đã từng đổi trước đó)
+        fragment.querySelectorAll('span').forEach(s => {
+          if (s.style && s.style[styleProp]) s.style[styleProp] = '';
+        });
+        span.appendChild(fragment);
+        range.insertNode(span);
+
+        // Giữ nguyên vùng bôi đen trên đoạn vừa đổi để bạn có thể chỉnh tiếp cỡ chữ / màu sắc
+        const newRange = document.createRange();
+        newRange.selectNodeContents(span);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(newRange);
+        window.savedA4SelectionRange = newRange.cloneRange();
+        return true;
+      } catch (e) {
+        console.warn("Lỗi bọc vùng chọn:", e);
+        return false;
+      }
+    }
+
+    // 2. Đổi Font chữ: Chỉ đổi đúng chỗ đang tô đen
+    window.apDungFontWord2026 = function(fontFamilyVal) {
+      // Xóa thẻ style toàn trang cũ nếu từng bị tạo trước đó
+      const oldGlobalFont = document.getElementById('word2026CustomFontStyle');
+      if (oldGlobalFont) oldGlobalFont.remove();
+
+      if (apDungStyleChoDoanBoiDen('fontFamily', fontFamilyVal)) {
+        if (typeof hienToast === 'function') hienToast("🔤 Đã đổi Font cho đoạn chữ được chọn!");
+      }
     };
 
+    // 3. Đổi Cỡ chữ: Chỉ đổi đúng chỗ đang tô đen
     window.apDungCoChuWord2026 = function(sizePx) {
-      const num = Math.min(22, Math.max(9, parseFloat(sizePx) || 12));
+      const oldGlobalSize = document.getElementById('word2026CustomSizeStyle');
+      if (oldGlobalSize) oldGlobalSize.remove();
+
+      const num = Math.min(36, Math.max(8, parseFloat(sizePx) || 12));
       window.currentWordFontSize = num;
       const sel = document.getElementById('wordFontSizeSelect');
       if (sel) sel.value = String(num);
 
-      let st = document.getElementById('word2026CustomSizeStyle');
-      if (!st) {
-        st = document.createElement('style');
-        st.id = 'word2026CustomSizeStyle';
-        document.head.appendChild(st);
+      if (apDungStyleChoDoanBoiDen('fontSize', num + 'px')) {
+        if (typeof hienToast === 'function') hienToast(`📏 Đã đổi cỡ chữ đoạn bôi đen thành ${num}pt!`);
       }
-      st.innerHTML = `
-        #a4Paper .modern-table td,
-        #a4Paper .terms-content,
-        #a4Paper .info-client-contact,
-        #a4Paper .meta-table td,
-        #a4Paper .amount-in-words-box {
-          font-size: ${num}px !important;
-        }
-        #a4Paper .modern-table th,
-        #a4Paper .terms-title {
-          font-size: ${Math.max(10, num - 0.5)}px !important;
-        }
-      `;
     };
 
     window.tangGiamCoChuWord2026 = function(delta) {
       window.apDungCoChuWord2026((window.currentWordFontSize || 12) + delta);
     };
 
+    // 4. In đậm (B), In nghiêng (I), Gạch chân (U), Gạch ngang (ab): Chỉ áp dụng chỗ tô đen
     window.dinhDangChuWord2026 = function(cmd) {
-      const paper = document.getElementById('a4Paper');
-      if (paper && paper.getAttribute('contenteditable') !== 'true') {
-        paper.setAttribute('contenteditable', 'true');
+      const range = khoiPhucVungBoiDenA4();
+      if (!range || range.collapsed) {
+        if (typeof hienToast === 'function') hienToast("⚠️ Hãy bôi đen đoạn chữ trên tờ A4 trước!");
+        return;
       }
+      document.execCommand(cmd, false, null);
       const sel = window.getSelection();
-      if (sel && sel.toString().trim().length > 0) {
-        document.execCommand(cmd, false, null);
-      } else if (paper) {
-        if (cmd === 'bold') paper.style.fontWeight = (paper.style.fontWeight === '700') ? '' : '700';
-        if (cmd === 'italic') paper.style.fontStyle = (paper.style.fontStyle === 'italic') ? '' : 'italic';
-        if (cmd === 'underline') paper.style.textDecoration = (paper.style.textDecoration === 'underline') ? '' : 'underline';
+      if (sel && sel.rangeCount > 0) {
+        window.savedA4SelectionRange = sel.getRangeAt(0).cloneRange();
       }
     };
 
+    // 5. Tô dạ quang (Highlight): Chỉ tô chỗ đang bôi đen
     window.toDaQuangWord2026 = function(color) {
-      const paper = document.getElementById('a4Paper');
-      if (paper) paper.setAttribute('contenteditable', 'true');
+      const range = khoiPhucVungBoiDenA4();
+      if (!range || range.collapsed) {
+        if (typeof hienToast === 'function') hienToast("⚠️ Hãy bôi đen đoạn chữ cần tô dạ quang!");
+        return;
+      }
       document.execCommand('hiliteColor', false, color);
     };
 
+    // 6. Đổi màu chữ (Font Color): Chỉ đổi màu đoạn đang bôi đen
     window.doiMauChuWord2026 = function(color) {
-      const sel = window.getSelection();
-      if (sel && sel.toString().trim().length > 0) {
-        const paper = document.getElementById('a4Paper');
-        if (paper) paper.setAttribute('contenteditable', 'true');
-        document.execCommand('foreColor', false, color);
-      } else if (typeof dongBoMauTuPicker === 'function') {
-        dongBoMauTuPicker(color);
+      const range = khoiPhucVungBoiDenA4();
+      if (!range || range.collapsed) {
+        if (typeof hienToast === 'function') hienToast("⚠️ Hãy bôi đen đoạn chữ cần đổi màu!");
+        return;
       }
+      document.execCommand('foreColor', false, color);
     };
 
-    window.doiHoaThuongWord2026 = function(type) {
-      ['inDieuKhoan', 'inNotesRieng'].forEach(id => {
-        const el = document.getElementById(id);
-        if (!el || !el.value) return;
-        el.value = (type === 'UPPER') ? el.value.toUpperCase() : el.value.toLowerCase();
-      });
-      if (typeof updatePreview === 'function') updatePreview();
-    };
-
+    // 7. Xóa định dạng của đoạn đang bôi đen
     window.xoaDinhDangWord2026 = function() {
-      const paper = document.getElementById('a4Paper');
-      if (paper) {
-        paper.style.fontWeight = '';
-        paper.style.fontStyle = '';
-        paper.style.textDecoration = '';
+      const oldGlobalFont = document.getElementById('word2026CustomFontStyle');
+      if (oldGlobalFont) oldGlobalFont.remove();
+      const oldGlobalSize = document.getElementById('word2026CustomSizeStyle');
+      if (oldGlobalSize) oldGlobalSize.remove();
+
+      const range = khoiPhucVungBoiDenA4();
+      if (range && !range.collapsed) {
+        document.execCommand('removeFormat', false, null);
+        const sel = window.getSelection();
+        if (sel && sel.focusNode && sel.focusNode.parentElement) {
+          const parent = sel.focusNode.parentElement;
+          if (parent.tagName === 'SPAN') {
+            parent.style.fontFamily = '';
+            parent.style.fontSize = '';
+            parent.style.backgroundColor = '';
+            parent.style.color = '';
+          }
+        }
+        if (typeof hienToast === 'function') hienToast("🧹 Đã xóa định dạng đoạn chữ được chọn!");
       }
-      document.execCommand('removeFormat', false, null);
-      window.apDungFontWord2026("'Segoe UI', 'Inter', sans-serif");
-      window.apDungCoChuWord2026(12);
     };
 
-    // Ghi đè bổ sung hiển thị riêng 2 mục TERMS và NOTES khi gõ
-    const _gocUpdatePreview = window.updatePreview;
-    window.updatePreview = function() {
-      if (typeof _gocUpdatePreview === 'function') _gocUpdatePreview();
-
-      const mode = window.cheDoHienTai || 'BG_VN';
-      const isEN = (mode === 'BG_EN');
-      const isXK = (mode === 'XK');
-      const isPI = isEN && (document.getElementById('chkIsPI')?.checked ?? false);
-
-      let termsVal = document.getElementById('inDieuKhoan')?.value.trim() || '';
-      let notesVal = document.getElementById('inNotesRieng')?.value.trim() || '';
-
-      // Tự động tách nếu đơn cũ đang gộp chung "Terms: ... Notes: ..." trong ô inDieuKhoan
-      if (!notesVal && /(?:^|\n)\s*Notes?\s*:/i.test(termsVal)) {
-        const parts = termsVal.match(/([\s\S]*?)(?:^|\n)\s*Notes?\s*:\s*([\s\S]*)/i);
-        if (parts) {
-          termsVal = parts[1].replace(/^\s*Terms?\s*:\s*/i, '').trim();
-          notesVal = parts[2].trim();
-        }
+    window.batTatPopupFont = function(forceState) {
+      // Lưu lại vùng đang bôi đen ngay khoảnh khắc bấm nút "Font Chữ"
+      const paper = document.getElementById('a4Paper');
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0 && paper && paper.contains(sel.anchorNode) && sel.toString().trim().length > 0) {
+        window.savedA4SelectionRange = sel.getRangeAt(0).cloneRange();
       }
 
-      const payVal = (!isXK) ? (document.getElementById('inPaymentTerm')?.value.trim() || '') : '';
-      const bankVal = (isEN && isPI) ? (document.getElementById('inBankInfo')?.value.trim() || '') : '';
-
-      const lblTermsHeader = document.getElementById('lblNotesHeader');
-      const lblNotesHeaderRieng = document.getElementById('lblSeparateNotesHeader');
-      if (lblTermsHeader) lblTermsHeader.innerText = isEN ? 'TERMS:' : (isXK ? 'ĐIỀU KHOẢN XUẤT KHO:' : 'ĐIỀU KHOẢN GIAO HÀNG:');
-      if (lblNotesHeaderRieng) lblNotesHeaderRieng.innerText = isEN ? 'NOTES:' : 'GHI CHÚ:';
-
-      const termsSectionBox = document.getElementById('termsSectionBox');
-      const boxTerms = document.getElementById('boxNotesSection');
-      const boxNotes = document.getElementById('boxSeparateNotesSection');
-      const preTerms = document.getElementById('preDieuKhoan');
-      const preNotes = document.getElementById('preNotesRieng');
-
-      if (termsVal || notesVal || payVal || bankVal) {
-        if (termsSectionBox) termsSectionBox.style.display = 'block';
-        if (boxTerms) boxTerms.style.display = termsVal ? 'block' : 'none';
-        if (preTerms) preTerms.innerText = termsVal;
-        if (boxNotes) boxNotes.style.display = notesVal ? 'block' : 'none';
-        if (preNotes) preNotes.innerText = notesVal;
+      const modal = document.getElementById('sapFontModalOverlay');
+      if (!modal) return;
+      if (typeof forceState === 'boolean') {
+        modal.style.display = forceState ? 'flex' : 'none';
       } else {
-        if (termsSectionBox) termsSectionBox.style.display = 'none';
+        modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
       }
     };
   </script>
