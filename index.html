@@ -4656,5 +4656,101 @@ const actionButtons = document.querySelectorAll('.sap-pill-bar button');
       }
     };
   </script>
+  <script>
+  function dongBoTermsVaNotesTrenA4() {
+    const isEN = (window.cheDoHienTai === 'BG_EN') || 
+                 document.getElementById('preTitle')?.innerText.includes('QUOTATION') || 
+                 document.getElementById('preTitle')?.innerText.includes('INVOICE');
+    const isXK = (window.cheDoHienTai === 'XK');
+
+    let termsVal = document.getElementById('inDieuKhoan')?.value.trim() || '';
+    let notesVal = document.getElementById('inNotesRieng')?.value.trim() || '';
+    const payVal = (!isXK) ? (document.getElementById('inPaymentTerm')?.value.trim() || '') : '';
+    const isPI = isEN && (document.getElementById('chkIsPI')?.checked ?? false);
+    const bankVal = (isEN && isPI) ? (document.getElementById('inBankInfo')?.value.trim() || '') : '';
+
+    // 1. Ép tiêu đề tách biệt rõ ràng (Không bao giờ hiện "TERMS & NOTES:" chung nữa)
+    const lblTerms = document.getElementById('lblNotesHeader');
+    const lblNotes = document.getElementById('lblSeparateNotesHeader');
+    if (lblTerms) {
+      lblTerms.innerText = isEN ? 'TERMS:' : (isXK ? 'ĐIỀU KHOẢN XUẤT KHO:' : 'ĐIỀU KHOẢN THƯƠNG MẠI:');
+    }
+    if (lblNotes) {
+      lblNotes.innerText = isEN ? 'NOTES:' : 'GHI CHÚ:';
+    }
+
+    // 2. Lấy các khung hiển thị trên tờ A4
+    const termsSectionBox = document.getElementById('termsSectionBox');
+    let boxTerms = document.getElementById('boxNotesSection');
+    let boxNotes = document.getElementById('boxSeparateNotesSection');
+
+    // Tự động tạo khung NOTES trên A4 nếu trong HTML chưa có
+    if (boxTerms && !boxNotes) {
+      boxNotes = document.createElement('div');
+      boxNotes.className = 'terms-block';
+      boxNotes.id = 'boxSeparateNotesSection';
+      boxNotes.style.cssText = 'display:none; border-top:1px dashed #cbd5e1; padding-top:8px; margin-top:8px;';
+      boxNotes.innerHTML = `
+        <div class="terms-title" id="lblSeparateNotesHeader">${isEN ? 'NOTES:' : 'GHI CHÚ:'}</div>
+        <div class="terms-content" id="preNotesRieng" style="white-space:pre-line;"></div>
+      `;
+      boxTerms.insertAdjacentElement('afterend', boxNotes);
+    }
+
+    const preTerms = document.getElementById('preDieuKhoan');
+    const preNotes = document.getElementById('preNotesRieng');
+
+    // 3. Hiển thị nội dung từng mục độc lập lên tờ A4
+    if (termsVal || notesVal || payVal || bankVal) {
+      if (termsSectionBox) termsSectionBox.style.display = 'block';
+      
+      if (boxTerms) boxTerms.style.display = termsVal ? 'block' : 'none';
+      if (preTerms) preTerms.innerText = termsVal;
+
+      if (boxNotes) {
+        boxNotes.style.display = notesVal ? 'block' : 'none';
+        // Nếu không có Terms ở trên thì bỏ đường kẻ nét đứt phía trên Notes
+        boxNotes.style.borderTop = termsVal ? '1px dashed #cbd5e1' : 'none';
+        boxNotes.style.paddingTop = termsVal ? '8px' : '0';
+        boxNotes.style.marginTop = termsVal ? '8px' : '0';
+      }
+      if (preNotes) preNotes.innerText = notesVal;
+    } else {
+      if (termsSectionBox) termsSectionBox.style.display = 'none';
+    }
+  }
+
+  // Khóa chặt vào các hàm cập nhật giao diện và sự kiện gõ phím/click
+  window.addEventListener('load', function() {
+    if (typeof window.updatePreview === 'function') {
+      const gocUpdate = window.updatePreview;
+      window.updatePreview = function() {
+        gocUpdate.apply(this, arguments);
+        dongBoTermsVaNotesTrenA4();
+      };
+    }
+    if (typeof window.chuyenCheDo === 'function') {
+      const gocChuyen = window.chuyenCheDo;
+      window.chuyenCheDo = function() {
+        gocChuyen.apply(this, arguments);
+        setTimeout(dongBoTermsVaNotesTrenA4, 30);
+      };
+    }
+    if (typeof window.chenMauNhanh === 'function') {
+      const gocChen = window.chenMauNhanh;
+      window.chenMauNhanh = function() {
+        gocChen.apply(this, arguments);
+        dongBoTermsVaNotesTrenA4();
+      };
+    }
+
+    ['inDieuKhoan', 'inNotesRieng', 'inPaymentTerm', 'inBankInfo'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', dongBoTermsVaNotesTrenA4);
+    });
+
+    dongBoTermsVaNotesTrenA4();
+  });
+</script>
 </body>
 </html>
