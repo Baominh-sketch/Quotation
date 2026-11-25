@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>ERP — Hệ Thống Báo Giá & Xuất Kho</title>
 
   <!-- 1. THƯ VIỆN FIREBASE SDK (COMPAT) -->
@@ -983,6 +983,203 @@
       }
     }
   </style>
+  <!-- 5. NÂNG CẤP SAP FIORI MORNING HORIZON PRO (PC & MOBILE) -->
+  <style id="sapHorizonProUpgrade">
+    :root {
+      --sap-brand: #0070f2;
+      --sap-brand-hover: #0057d2;
+      --sap-brand-light: #ebf5ff;
+      --sap-bg: #f5f6f7;
+      --sap-surface: #ffffff;
+      --sap-border: #d9e0e6;
+      --sap-shadow-card: 0 0 2px rgba(34, 53, 72, 0.10), 0 4px 12px rgba(34, 53, 72, 0.05);
+      --sap-shadow-float: 0 8px 24px rgba(29, 45, 62, 0.12), 0 0 1px rgba(29, 45, 62, 0.14);
+      --sap-radius-card: 12px;
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    .sap-shell-bar {
+      height: 52px !important;
+      padding: 0 18px !important;
+      box-shadow: 0 1px 0 rgba(29, 45, 62, 0.08), 0 2px 8px rgba(29, 45, 62, 0.04) !important;
+    }
+    .sap-master-layout { height: calc(100vh - 52px) !important; }
+    .sap-sub-toolbar {
+      min-height: 50px !important;
+      padding: 8px 18px !important;
+      background: rgba(255, 255, 255, 0.94) !important;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .sap-side-nav {
+      width: 230px;
+      min-width: 230px;
+      background: #ffffff;
+      box-shadow: 1px 0 6px rgba(29, 45, 62, 0.03);
+    }
+    .sap-nav-item { padding: 11px 16px; font-size: 13px; }
+    .sap-sub-item { padding: 9px 16px 9px 34px; font-size: 12.5px; }
+
+    /* Tách thoáng Kho Đơn Hàng (Cloud) khỏi thanh Tab chế độ */
+    #viewStudio.app-workspace {
+      height: calc(100vh - 102px) !important;
+      display: flex !important;
+      gap: 0 !important;
+    }
+    #viewStudio .panel-left {
+      width: clamp(360px, 31vw, 440px) !important;
+      min-width: 350px !important;
+      background: #f5f6f7 !important;
+      border-right: 1px solid var(--sap-border) !important;
+      display: flex !important;
+      flex-direction: column !important;
+    }
+    .argon-hero-header {
+      padding: 14px 16px !important;
+      box-shadow: 0 2px 6px rgba(29, 45, 62, 0.04);
+      z-index: 5;
+      flex-shrink: 0;
+    }
+    .panel-scroll-body {
+      padding: 16px 14px 44px 14px !important;
+      flex: 1;
+      overflow-y: auto !important;
+    }
+    .panel-scroll-body > .argon-card:first-child { margin-top: 2px !important; }
+
+    .argon-card, .kp-card {
+      border-radius: var(--sap-radius-card) !important;
+      border: 1px solid rgba(217, 224, 230, 0.9) !important;
+      box-shadow: var(--sap-shadow-card) !important;
+      transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .argon-card:hover { border-color: #c2d1e0 !important; }
+    .form-group label {
+      font-size: 12.5px !important;
+      font-weight: 700 !important;
+      color: #354a5f !important;
+      margin-bottom: 5px !important;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group select,
+    .form-group textarea {
+      font-size: 13px !important;
+      padding: 8px 10px !important;
+      border: 1px solid #b0bcc8 !important;
+      border-radius: 8px !important;
+    }
+    .form-group input:hover, .form-group select:hover, .form-group textarea:hover {
+      border-color: var(--sap-brand) !important;
+    }
+
+    #panelRightScroll {
+      flex: 1 !important;
+      background: radial-gradient(circle at top, #eaeef3 0%, #dde3ea 100%) !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      padding: 16px 20px 60px 20px !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+    }
+    .preview-toolbar {
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 40 !important;
+      background: rgba(255, 255, 255, 0.92) !important;
+      backdrop-filter: blur(10px) !important;
+      -webkit-backdrop-filter: blur(10px) !important;
+      border: 1px solid rgba(203, 213, 225, 0.9) !important;
+      border-radius: 999px !important;
+      padding: 6px 14px !important;
+      margin-bottom: 16px !important;
+      box-shadow: var(--sap-shadow-float) !important;
+      display: flex !important;
+      flex-wrap: wrap !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 10px !important;
+    }
+    #a4Paper {
+      border-radius: 4px !important;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16), 0 0 1px rgba(15, 23, 42, 0.12) !important;
+    }
+
+    #sapMobileBackdrop {
+      display: none;
+      position: fixed;
+      inset: 52px 0 0 0;
+      background: rgba(15, 23, 42, 0.42);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+      z-index: 95;
+    }
+    #sapMobileBackdrop.show { display: block; }
+
+    @media screen and (max-width: 1024px) {
+      .sap-side-nav { top: 52px !important; z-index: 120 !important; }
+      #viewStudio .panel-left { width: 340px !important; min-width: 320px !important; }
+    }
+
+    @media screen and (max-width: 768px) {
+      .sap-shell-bar { padding: 0 10px !important; }
+      .sap-shell-right .sap-btn { padding: 5px 10px !important; font-size: 11.5px !important; }
+
+      .sap-sub-toolbar {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        padding: 6px 10px !important;
+        gap: 6px !important;
+      }
+      .sap-segmented-group { width: 100% !important; display: flex !important; }
+      .sap-seg-btn { flex: 1 !important; text-align: center !important; padding: 6px !important; font-size: 11.5px !important; }
+      .sap-pill-bar {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 2px;
+        scrollbar-width: none;
+      }
+      .sap-pill-bar::-webkit-scrollbar { display: none; }
+      .sap-pill-bar .sap-btn {
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+        padding: 6px 12px !important;
+        font-size: 11.5px !important;
+      }
+
+      #viewStudio.app-workspace { height: calc(100dvh - 188px) !important; }
+      #viewStudio .panel-left { width: 100% !important; min-width: 100% !important; border-right: none !important; }
+      #viewDashboard, #manHinhQuanLyMaster { height: calc(100dvh - 138px) !important; }
+      .preview-toolbar { border-radius: 12px !important; padding: 8px 10px !important; width: 100% !important; gap: 6px !important; }
+
+      .mobile-bottom-nav {
+        height: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
+        padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+        box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.08) !important;
+      }
+      .mob-nav-btn {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        font-size: 13px !important;
+      }
+
+      #sapFontModalOverlay { align-items: flex-end !important; padding: 0 !important; }
+      #sapFontModalOverlay > div {
+        max-width: 100% !important;
+        border-radius: 18px 18px 0 0 !important;
+        padding-bottom: env(safe-area-inset-bottom, 8px);
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -1018,6 +1215,7 @@
   <div class="sap-master-layout">
 
     <!-- CỘT TRÁI: CHỈ HIỂN THỊ PHÂN HỆ CHÍNH, CÁC MỤC CON ĐƯỢC TÍCH HỢP BÊN TRONG -->
+     <div id="sapMobileBackdrop" onclick="batTatMenuTraiSAP()"></div>
     <aside class="sap-side-nav" id="sapSideNav">
       <div class="sap-side-header">
         <span>ERP Modules</span>
@@ -1251,7 +1449,7 @@
                   <span class="preset-chip" onclick="chenMauNhanh('inDieuKhoan', 'The above rates are CNF SHANGHAI')">+ CNF SHANGHAI</span>
                   <span class="preset-chip" onclick="chenMauNhanh('inDieuKhoan', 'Giao hàng trong vòng 3 ngày kể từ khi nhận cọc.')">+ Giao nhanh 3 ngày</span>
                 </div>
-                <textarea id="inDieuKhoan" rows="2" placeholder="Nhập điều điện giao hàng (Terms)..." oninput="updatePreview()"></textarea>
+                <textarea id="inDieuKhoan" rows="2" placeholder="Nhập điều kiện giao hàng (Terms)..." oninput="updatePreview()"></textarea>
               </div>
 
               <!-- 2. MỤC GHI CHÚ (NOTES RIÊNG) -->
@@ -1437,7 +1635,7 @@
             <button class="sap-btn sap-btn-emphasized" onclick="xuatPDF()" style="padding:5px 12px !important;">🖨️ Tải PDF</button>
           </div>
           <div class="a4-wrapper" id="a4Wrapper">
-            <div class="a4-paper theme-executive" id="a4Paper">
+            <div class="a4-paper theme-executive" id="a4Paper" spellcheck="false">
               <div class="a4-top-accent"></div>
               <div class="watermark-overlay"><img id="watermarkImg" src="" alt="Watermark"></div>
 
@@ -1635,7 +1833,7 @@
     </main>
 
     <!-- CỘT PHẢI: TRỢ LÝ ẢO JOULE COPILOT THỰC CHIẾN CHO XUẤT NHẬP KHẨU -->
-    <aside class="sap-joule-drawer open" id="sapJouleDrawer" style="width:340px;min-width:340px;">
+    <aside class="sap-joule-drawer" id="sapJouleDrawer" style="width:340px;min-width:340px;">
       <div class="joule-hero" style="padding:12px 14px 14px 14px;">
         <div class="joule-top-bar" style="margin-bottom:8px;">
           <span style="display:flex;align-items:center;gap:6px;">
@@ -1923,7 +2121,16 @@
     // =====================================================
     window.batTatMenuTraiSAP = function() {
       const side = document.getElementById('sapSideNav');
-      if (side) side.classList.toggle('collapsed');
+      const backdrop = document.getElementById('sapMobileBackdrop');
+      if (!side) return;
+      side.classList.toggle('collapsed');
+      const isOpen = !side.classList.contains('collapsed');
+      if (backdrop && window.innerWidth <= 1024) {
+        backdrop.classList.toggle('show', isOpen);
+      } else if (backdrop) {
+        backdrop.classList.remove('show');
+      }
+      setTimeout(window.tuDongZoomA4TrenMobile, 240);
     };
 
     window.batTatJouleCopilot = function(forceState) {
@@ -1961,6 +2168,7 @@
         diaDiemXK: document.getElementById('inDiaDiemXK')?.value.trim() || '',
         bienSoXe: document.getElementById('inBienSoXe')?.value.trim() || '',
         dieuKhoan: document.getElementById('inDieuKhoan')?.value || '',
+        notesRieng: document.getElementById('inNotesRieng')?.value || '',
         enNote: document.getElementById('inEnNote')?.value || '',
         paymentTerm: document.getElementById('inPaymentTerm')?.value || '',
         bankInfo: document.getElementById('inBankInfo')?.value || '',
@@ -3144,6 +3352,8 @@ if (syswebsite) syswebsite.innerText = isEN ? 'www.golifresh.com' : 'www.golifre
 
       window.datLaiNoiDungMacDinh(false);
       window.tuDongLuuLenCloud();
+      const notesRaw = document.getElementById('inNotesRieng')?.value.trim() || '';
+      const coDuLieu = khachRaw || lienHeRaw || dkRaw || notesRaw || (window.gioHang && window.gioHang.length > 0);
     };
 
     window.chenIncotermThongMinh = function() {
