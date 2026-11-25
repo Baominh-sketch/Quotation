@@ -983,7 +983,9 @@
       }
     }
   </style>
-  <!-- 5. NÂNG CẤP SAP FIORI MORNING HORIZON PRO (PC & MOBILE) -->
+  <!-- ========================================================= -->
+  <!-- 5. NÂNG CẤP SAP FIORI MORNING HORIZON PRO (PC & MOBILE)   -->
+  <!-- ========================================================= -->
   <style id="sapHorizonProUpgrade">
     :root {
       --sap-brand: #0070f2;
@@ -997,17 +999,21 @@
       --sap-radius-card: 12px;
     }
 
+    /* Thanh cuộn mỏng tinh tế chuẩn Enterprise */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
+    /* Shell Bar & Sub-Toolbar chuẩn SAP Fiori Horizon */
     .sap-shell-bar {
       height: 52px !important;
       padding: 0 18px !important;
       box-shadow: 0 1px 0 rgba(29, 45, 62, 0.08), 0 2px 8px rgba(29, 45, 62, 0.04) !important;
     }
-    .sap-master-layout { height: calc(100vh - 52px) !important; }
+    .sap-master-layout {
+      height: calc(100vh - 52px) !important;
+    }
     .sap-sub-toolbar {
       min-height: 50px !important;
       padding: 8px 18px !important;
@@ -1016,16 +1022,23 @@
       -webkit-backdrop-filter: blur(8px);
     }
 
+    /* Sidebar chuẩn SAP Morning Horizon */
     .sap-side-nav {
       width: 230px;
       min-width: 230px;
       background: #ffffff;
       box-shadow: 1px 0 6px rgba(29, 45, 62, 0.03);
     }
-    .sap-nav-item { padding: 11px 16px; font-size: 13px; }
-    .sap-sub-item { padding: 9px 16px 9px 34px; font-size: 12.5px; }
+    .sap-nav-item {
+      padding: 11px 16px;
+      font-size: 13px;
+    }
+    .sap-sub-item {
+      padding: 9px 16px 9px 34px;
+      font-size: 12.5px;
+    }
 
-    /* Tách thoáng Kho Đơn Hàng (Cloud) khỏi thanh Tab chế độ */
+    /* Sửa triệt để lỗi dính thẻ Kho Đơn Hàng & tăng độ thoáng cột trái */
     #viewStudio.app-workspace {
       height: calc(100vh - 102px) !important;
       display: flex !important;
@@ -1050,15 +1063,20 @@
       flex: 1;
       overflow-y: auto !important;
     }
-    .panel-scroll-body > .argon-card:first-child { margin-top: 2px !important; }
+    .panel-scroll-body > .argon-card:first-child {
+      margin-top: 2px !important;
+    }
 
+    /* Card, Label & Input chuẩn SAP Horizon */
     .argon-card, .kp-card {
       border-radius: var(--sap-radius-card) !important;
       border: 1px solid rgba(217, 224, 230, 0.9) !important;
       box-shadow: var(--sap-shadow-card) !important;
       transition: box-shadow 0.2s ease, border-color 0.2s ease;
     }
-    .argon-card:hover { border-color: #c2d1e0 !important; }
+    .argon-card:hover {
+      border-color: #c2d1e0 !important;
+    }
     .form-group label {
       font-size: 12.5px !important;
       font-weight: 700 !important;
@@ -1078,6 +1096,7 @@
       border-color: var(--sap-brand) !important;
     }
 
+    /* Khung Xem trước A4 & Thanh công cụ nổi dạng kính mờ */
     #panelRightScroll {
       flex: 1 !important;
       background: radial-gradient(circle at top, #eaeef3 0%, #dde3ea 100%) !important;
@@ -1111,6 +1130,34 @@
       box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16), 0 0 1px rgba(15, 23, 42, 0.12) !important;
     }
 
+    /* Bố cục 2 cột cho Thư viện Logo & Watermark trong Master Data */
+    .master-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .studio-media-preview {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      margin-top: 7px;
+      padding: 6px 8px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+    }
+    .studio-media-preview img {
+      height: 36px;
+      width: 52px;
+      object-fit: contain;
+      border-radius: 4px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 2px;
+    }
+
+    /* Lớp nền mờ đóng Sidebar trên Tablet/Mobile */
     #sapMobileBackdrop {
       display: none;
       position: fixed;
@@ -1122,23 +1169,45 @@
     }
     #sapMobileBackdrop.show { display: block; }
 
+    /* ================= TỐI ƯU TABLET & LAPTOP NHỎ ================= */
     @media screen and (max-width: 1024px) {
-      .sap-side-nav { top: 52px !important; z-index: 120 !important; }
-      #viewStudio .panel-left { width: 340px !important; min-width: 320px !important; }
+      .sap-side-nav {
+        top: 52px !important;
+        z-index: 120 !important;
+      }
+      #viewStudio .panel-left {
+        width: 340px !important;
+        min-width: 320px !important;
+      }
     }
 
+    /* ================= TỐI ƯU MOBILE APP EXPERIENCE ================= */
     @media screen and (max-width: 768px) {
-      .sap-shell-bar { padding: 0 10px !important; }
-      .sap-shell-right .sap-btn { padding: 5px 10px !important; font-size: 11.5px !important; }
+      .sap-shell-bar {
+        padding: 0 10px !important;
+      }
+      .sap-shell-right .sap-btn {
+        padding: 5px 10px !important;
+        font-size: 11.5px !important;
+      }
 
+      /* Thanh công cụ phụ trượt ngang 1 hàng mượt mà, không rớt dòng */
       .sap-sub-toolbar {
         flex-direction: column !important;
         align-items: stretch !important;
         padding: 6px 10px !important;
         gap: 6px !important;
       }
-      .sap-segmented-group { width: 100% !important; display: flex !important; }
-      .sap-seg-btn { flex: 1 !important; text-align: center !important; padding: 6px !important; font-size: 11.5px !important; }
+      .sap-segmented-group {
+        width: 100% !important;
+        display: flex !important;
+      }
+      .sap-seg-btn {
+        flex: 1 !important;
+        text-align: center !important;
+        padding: 6px 6px !important;
+        font-size: 11.5px !important;
+      }
       .sap-pill-bar {
         flex-wrap: nowrap !important;
         overflow-x: auto !important;
@@ -1154,11 +1223,30 @@
         font-size: 11.5px !important;
       }
 
-      #viewStudio.app-workspace { height: calc(100dvh - 188px) !important; }
-      #viewStudio .panel-left { width: 100% !important; min-width: 100% !important; border-right: none !important; }
-      #viewDashboard, #manHinhQuanLyMaster { height: calc(100dvh - 138px) !important; }
-      .preview-toolbar { border-radius: 12px !important; padding: 8px 10px !important; width: 100% !important; gap: 6px !important; }
+      /* Workspace vừa khít chiều cao giữa Header và Bottom Nav */
+      #viewStudio.app-workspace {
+        height: calc(100dvh - 188px) !important;
+      }
+      #viewStudio .panel-left {
+        width: 100% !important;
+        min-width: 100% !important;
+        border-right: none !important;
+      }
+      #viewDashboard, #manHinhQuanLyMaster {
+        height: calc(100dvh - 138px) !important;
+      }
+      .master-grid-2 {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+      }
+      .preview-toolbar {
+        border-radius: 12px !important;
+        padding: 8px 10px !important;
+        width: 100% !important;
+        gap: 6px !important;
+      }
 
+      /* Bottom Nav chuẩn Mobile App (Hỗ trợ thanh vuốt iPhone / safe-area) */
       .mobile-bottom-nav {
         height: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
         padding-bottom: env(safe-area-inset-bottom, 0px) !important;
@@ -1172,7 +1260,11 @@
         font-size: 13px !important;
       }
 
-      #sapFontModalOverlay { align-items: flex-end !important; padding: 0 !important; }
+      /* Popup Font dạng Bottom Sheet trượt từ đáy trên Mobile */
+      #sapFontModalOverlay {
+        align-items: flex-end !important;
+        padding: 0 !important;
+      }
       #sapFontModalOverlay > div {
         max-width: 100% !important;
         border-radius: 18px 18px 0 0 !important;
@@ -1215,7 +1307,8 @@
   <div class="sap-master-layout">
 
     <!-- CỘT TRÁI: CHỈ HIỂN THỊ PHÂN HỆ CHÍNH, CÁC MỤC CON ĐƯỢC TÍCH HỢP BÊN TRONG -->
-     <div id="sapMobileBackdrop" onclick="batTatMenuTraiSAP()"></div>
+    <div id="sapMobileBackdrop" onclick="batTatMenuTraiSAP()"></div>
+
     <aside class="sap-side-nav" id="sapSideNav">
       <div class="sap-side-header">
         <span>ERP Modules</span>
@@ -1552,31 +1645,54 @@
               </div>
             </div>
 
-            <!-- 3. LOGO & WATERMARK (HIỂN THỊ ĐẦY ĐỦ 100%) -->
+            <!-- 3. LOGO & WATERMARK (CHỌN TỪ THƯ VIỆN MASTER DATA TÁCH BIỆT) -->
             <div class="argon-card">
               <div class="argon-card-header">
                 <div class="argon-card-title">🎨 3. Logo &amp; Watermark</div>
+                <button type="button" class="btn-mini-save" onclick="moQuanLyAnhMaster()" title="Thêm/Sửa Logo & Watermark trong Master Data">⚙️ Master Data</button>
               </div>
 
+              <!-- 3.1 LOGO CÔNG TY (RIÊNG BIỆT) -->
               <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:10px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:6px;">
                   <label style="margin:0;font-size:12px;font-weight:700;color:var(--sap-text);">🏢 Logo Công ty</label>
                   <button type="button" onclick="xoaLogo()" id="btnXoaLogo" class="sap-btn sap-btn-reject" style="display:none;padding:2px 8px !important;font-size:10px !important;">Xóa Logo</button>
                 </div>
-                <input type="file" id="inLogoFile" accept="image/png, image/jpeg, image/webp" onchange="loadLogo(this)" style="width:100%;max-width:100%;font-size:11.5px;">
+                <select id="logoMasterSelect" onchange="chonLogoTuMaster()" style="width:100%;padding:7px 8px;font-size:12.5px;font-weight:600;">
+                  <option value="">-- Chọn Logo từ Master Data --</option>
+                </select>
+                <div id="studioLogoPreviewWrap" class="studio-media-preview">
+                  <img id="studioLogoPreviewImg" src="" alt="Logo Preview">
+                  <span id="studioLogoPreviewName" style="font-size:11.5px;font-weight:700;color:var(--sap-brand);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+                </div>
+                <details style="margin-top:6px;">
+                  <summary style="font-size:11px;color:var(--sap-muted);cursor:pointer;font-weight:600;user-select:none;">+ Tải ảnh tạm từ máy (không lưu Master)</summary>
+                  <input type="file" id="inLogoFile" accept="image/png, image/jpeg, image/webp" onchange="loadLogo(this)" style="width:100%;max-width:100%;font-size:11px;margin-top:6px;">
+                </details>
               </div>
 
+              <!-- 3.2 WATERMARK (RIÊNG BIỆT) -->
               <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:6px;">
                   <label style="margin:0;font-size:12px;font-weight:700;color:var(--sap-text);">💧 Watermark</label>
                   <button type="button" onclick="xoaWatermark()" id="btnXoaWm" class="sap-btn sap-btn-reject" style="display:none;padding:2px 8px !important;font-size:10px !important;">Xóa Watermark</button>
                 </div>
-                <input type="file" id="inWmFile" accept="image/png, image/jpeg, image/webp" onchange="loadWatermark(this)" style="width:100%;max-width:100%;font-size:11.5px;">
+                <select id="wmMasterSelect" onchange="chonWatermarkTuMaster()" style="width:100%;padding:7px 8px;font-size:12.5px;font-weight:600;">
+                  <option value="">-- Chọn Watermark từ Master Data --</option>
+                </select>
+                <div id="studioWmPreviewWrap" class="studio-media-preview">
+                  <img id="studioWmPreviewImg" src="" alt="Watermark Preview">
+                  <span id="studioWmPreviewName" style="font-size:11.5px;font-weight:700;color:#0284c7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+                </div>
                 <div style="display:flex;align-items:center;gap:8px;margin-top:8px;width:100%;">
                   <span style="font-size:11px;color:#475569;font-weight:700;white-space:nowrap;">Độ đậm:</span>
                   <input type="range" id="wmOpacitySlider" min="8" max="45" value="20" oninput="doiDoDamWatermark(this.value)" style="flex:1;min-width:0;width:100%;cursor:pointer;margin:0;">
                   <span id="wmOpacityLabel" style="font-size:11px;font-weight:800;color:var(--sap-brand);min-width:32px;text-align:right;">20%</span>
                 </div>
+                <details style="margin-top:6px;">
+                  <summary style="font-size:11px;color:var(--sap-muted);cursor:pointer;font-weight:600;user-select:none;">+ Tải ảnh tạm từ máy (không lưu Master)</summary>
+                  <input type="file" id="inWmFile" accept="image/png, image/jpeg, image/webp" onchange="loadWatermark(this)" style="width:100%;max-width:100%;font-size:11px;margin-top:6px;">
+                </details>
               </div>
             </div>
 
@@ -1724,7 +1840,7 @@
       <!-- MÀN HÌNH 3: QUẢN LÝ MASTER DATA & CRM                      -->
       <!-- ========================================================= -->
       <div id="manHinhQuanLyMaster" class="main-content-tab" style="display:none; padding:25px; background:var(--sap-bg); height:calc(100vh - 94px); overflow-y:auto;">
-        <h2 style="color: var(--sap-text); margin-top:0; margin-bottom: 18px; font-size:18px;">⚙️ Master Data Management (Database, CRM, Banking)</h2>
+        <h2 style="color: var(--sap-text); margin-top:0; margin-bottom: 18px; font-size:18px;">⚙️ Master Data Management (Database, CRM, Banking, Logo &amp; Watermark)</h2>
         
         <div class="master-grid-3">
           
@@ -1776,7 +1892,7 @@
         </div>
 
         <!-- BẢNG LỊCH SỬ KÈM THANH CUỘN -->
-        <div class="master-grid-3" style="margin-top:20px; padding-bottom:60px;">
+        <div class="master-grid-3" style="margin-top:20px; margin-bottom:28px;">
           
           <!-- Lịch sử SP -->
           <div style="background:white; padding:15px; border-radius:10px; border:1px solid var(--sap-border);">
@@ -1827,6 +1943,101 @@
             </div>
           </div>
 
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- THƯ VIỆN HÌNH ẢNH THƯƠNG HIỆU: TÁCH RIÊNG LOGO & WATERMARK -->
+        <!-- ========================================================= -->
+        <div id="masterBrandImagesSection" style="border-top: 1px solid var(--sap-border); padding-top: 22px; margin-top: 6px;">
+          <h3 style="color: var(--sap-text); margin: 0 0 16px 0; font-size: 16px; font-weight: 800;">
+            🎨 Thư Viện Hình Ảnh Thương Hiệu (Logo &amp; Watermark Tách Biệt)
+          </h3>
+
+          <!-- FORM TẢI & ĐẶT TÊN RIÊNG CHO LOGO VÀ WATERMARK -->
+          <div class="master-grid-2">
+
+            <!-- 4. THÊM / SỬA LOGO CÔNG TY -->
+            <div class="kp-card" style="background: white; padding: 18px; border-radius: 12px; border: 1px solid var(--sap-border);">
+              <h3 style="color: var(--sap-brand); margin-top:0; margin-bottom: 14px; font-size: 15px;" id="titleFormLogo">🏢 Thêm Logo Công Ty</h3>
+              <div style="margin-bottom: 10px;">
+                <label style="font-size: 12px; font-weight: 700; display:block; margin-bottom:4px;">Tên ảnh Logo:</label>
+                <input type="text" id="qtTenLogo" placeholder="VD: Logo Goods Link Chính (Xanh), Logo Xuất Khẩu..." style="width: 100%; padding: 8px;">
+              </div>
+              <div style="margin-bottom: 12px;">
+                <label style="font-size: 12px; font-weight: 700; display:block; margin-bottom:4px;">Chọn tệp ảnh Logo (PNG nền trong suốt là đẹp nhất):</label>
+                <input type="file" id="qtFileLogo" accept="image/png, image/jpeg, image/webp" onchange="loadMasterLogoImage(this)" style="width: 100%; font-size: 12px;">
+                <div style="margin-top:8px;">
+                  <img id="qtPreviewLogo" style="height:68px; max-width:200px; object-fit:contain; display:none; padding:4px; border-radius:8px; border:1px solid #cbd5e1; background:#f8fafc;">
+                </div>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button id="btnSaveLogo" class="sap-btn sap-btn-emphasized" onclick="themLogoMasterNhanh()" style="flex:1; padding:10px !important;">💾 Lưu Logo vào Master Data</button>
+                <button id="btnCancelLogo" class="sap-btn sap-btn-reject" onclick="huySuaLogoMaster()" style="display:none; padding:10px 14px !important;">Hủy</button>
+              </div>
+            </div>
+
+            <!-- 5. THÊM / SỬA WATERMARK -->
+            <div class="kp-card" style="background: white; padding: 18px; border-radius: 12px; border: 1px solid var(--sap-border);">
+              <h3 style="color: #0284c7; margin-top:0; margin-bottom: 14px; font-size: 15px;" id="titleFormWm">💧 Thêm Watermark</h3>
+              <div style="margin-bottom: 10px;">
+                <label style="font-size: 12px; font-weight: 700; display:block; margin-bottom:4px;">Tên ảnh Watermark:</label>
+                <input type="text" id="qtTenWm" placeholder="VD: Watermark Tròn Goods Link, Watermark Bản Nháp..." style="width: 100%; padding: 8px;">
+              </div>
+              <div style="margin-bottom: 12px;">
+                <label style="font-size: 12px; font-weight: 700; display:block; margin-bottom:4px;">Chọn tệp ảnh Watermark (Tự động tách nền trắng khi chèn A4):</label>
+                <input type="file" id="qtFileWm" accept="image/png, image/jpeg, image/webp" onchange="loadMasterWmImage(this)" style="width: 100%; font-size: 12px;">
+                <div style="margin-top:8px;">
+                  <img id="qtPreviewWm" style="height:68px; max-width:200px; object-fit:contain; display:none; padding:4px; border-radius:8px; border:1px solid #cbd5e1; background:#f8fafc;">
+                </div>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button id="btnSaveWm" class="sap-btn sap-btn-accept" onclick="themWmMasterNhanh()" style="flex:1; padding:10px !important;">💾 Lưu Watermark vào Master Data</button>
+                <button id="btnCancelWm" class="sap-btn sap-btn-reject" onclick="huySuaWmMaster()" style="display:none; padding:10px 14px !important;">Hủy</button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- BẢNG DANH SÁCH LOGO & WATERMARK ĐÃ LƯU -->
+          <div class="master-grid-2" style="padding-bottom:60px;">
+
+            <!-- Danh sách Logo đã lưu -->
+            <div style="background:white; padding:15px; border-radius:10px; border:1px solid var(--sap-border);">
+              <h4 style="color:var(--sap-brand); margin-top:0; margin-bottom:10px; font-size:14px;">🏢 Danh sách Logo đã lưu</h4>
+              <div style="max-height: 320px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 6px;">
+                <table style="width:100%; font-size:12px; border-collapse:collapse;" id="tableHistoryLogo">
+                  <thead>
+                    <tr style="border-bottom:2px solid #e2e8f0; text-align:left; background:#f8fafc; position:sticky; top:0;">
+                      <th style="padding:8px;">Ảnh &amp; Tên Logo</th>
+                      <th style="padding:8px; text-align:right; width:145px;">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><td colspan="2" style="text-align:center;color:#94a3b8;padding:16px;">Chưa có Logo nào trong Master Data</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Danh sách Watermark đã lưu -->
+            <div style="background:white; padding:15px; border-radius:10px; border:1px solid var(--sap-border);">
+              <h4 style="color:#0284c7; margin-top:0; margin-bottom:10px; font-size:14px;">💧 Danh sách Watermark đã lưu</h4>
+              <div style="max-height: 320px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 6px;">
+                <table style="width:100%; font-size:12px; border-collapse:collapse;" id="tableHistoryWm">
+                  <thead>
+                    <tr style="border-bottom:2px solid #e2e8f0; text-align:left; background:#f8fafc; position:sticky; top:0;">
+                      <th style="padding:8px;">Ảnh &amp; Tên Watermark</th>
+                      <th style="padding:8px; text-align:right; width:145px;">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><td colspan="2" style="text-align:center;color:#94a3b8;padding:16px;">Chưa có Watermark nào trong Master Data</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
 
@@ -1935,11 +2146,15 @@
       }
     } catch (e) {}
 
-    window.masterCache = { sp: {}, kh: {}, bank: {}, orders: {} };
+    window.masterCache = { sp: {}, kh: {}, bank: {}, logo: {}, watermark: {}, orders: {} };
     window.gioHang = [];
     window.cheDoHienTai = 'BG_VN';
     window.currentSpImageBase64 = '';
     window.currentMasterSpImageBase64 = '';
+    window.currentMasterLogoBase64 = '';
+    window.currentMasterWmBase64 = '';
+    window.selectedLogoMasterId = localStorage.getItem('argon_selected_logo_id') || '';
+    window.selectedWmMasterId = localStorage.getItem('argon_selected_wm_id') || '';
     window.rawWatermarkBase64 = '';
     window.processedWatermarkBase64 = '';
     window.wmOpacityPercent = 20;
@@ -1953,6 +2168,8 @@
     let dangSuaSPId = null;
     let dangSuaKHId = null;
     let dangSuaBankId = null;
+    let dangSuaLogoId = null;
+    let dangSuaWmId = null;
     let dangSuaGioIndex = -1;
     let currentMainTab = 'STUDIO';
     let currentMobileSubTab = 'FORM';
@@ -2130,7 +2347,9 @@
       } else if (backdrop) {
         backdrop.classList.remove('show');
       }
-      setTimeout(window.tuDongZoomA4TrenMobile, 240);
+      setTimeout(() => {
+        if (typeof window.tuDongZoomA4TrenMobile === 'function') window.tuDongZoomA4TrenMobile();
+      }, 240);
     };
 
     window.batTatJouleCopilot = function(forceState) {
@@ -2141,6 +2360,9 @@
       } else {
         drawer.classList.toggle('open');
       }
+      setTimeout(() => {
+        if (typeof window.tuDongZoomA4TrenMobile === 'function') window.tuDongZoomA4TrenMobile();
+      }, 100);
     };
 
     // =====================================================
@@ -2176,6 +2398,9 @@
         volumeType: document.getElementById('inVolumeType')?.value || '(CTNS/40RF)',
         emailKhach: document.getElementById('inEmailKhach')?.value.trim() || '',
         thongTinLienHeMail: document.getElementById('inThongTinLienHeMail')?.value.trim() || '',
+        logoMasterId: window.selectedLogoMasterId || '',
+        wmMasterId: window.selectedWmMasterId || '',
+        wmOpacity: window.wmOpacityPercent || 20,
         gioHang: window.gioHang || [],
         lastEditorSession: window.currentClientSessionId,
         updatedAt: new Date().toISOString()
@@ -2201,7 +2426,8 @@
       const khachRaw = document.getElementById('inKhach')?.value.trim() || '';
       const lienHeRaw = document.getElementById('inLienHe')?.value.trim() || '';
       const dkRaw = document.getElementById('inDieuKhoan')?.value.trim() || '';
-      const coDuLieu = khachRaw || lienHeRaw || dkRaw || (window.gioHang && window.gioHang.length > 0);
+      const notesRaw = document.getElementById('inNotesRieng')?.value.trim() || '';
+      const coDuLieu = khachRaw || lienHeRaw || dkRaw || notesRaw || (window.gioHang && window.gioHang.length > 0);
       if (!coDuLieu) return;
 
       clearTimeout(autoSaveCloudTimer);
@@ -2578,53 +2804,177 @@
       img.src = srcDataUrl;
     }
 
+    // Nén ảnh thông minh dưới ngưỡng 750KB để lưu ổn định lên Firestore Master Data
+    function docFileAnhMasterAnToan(file, maxWidth, keepPng, callback) {
+      docFileAnhSangBase64(file, maxWidth, keepPng, function(dataUrl) {
+        if (dataUrl.length <= 750000) {
+          callback(dataUrl);
+          return;
+        }
+        // Tự động thu nhỏ thêm nếu ảnh PNG quá nặng so với giới hạn 1MB của Firestore
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const ratio = Math.min(0.68, 400 / (img.width || 400));
+          canvas.width = Math.max(120, Math.round(img.width * ratio));
+          canvas.height = Math.max(120, Math.round(img.height * ratio));
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          let out = canvas.toDataURL('image/png');
+          if (out.length > 780000) {
+            out = canvas.toDataURL('image/jpeg', 0.82);
+          }
+          callback(out);
+        };
+        img.src = dataUrl;
+      });
+    }
+
+    window.moQuanLyAnhMaster = function() {
+      window.chuyenManHinhKapella('MASTER');
+      setTimeout(() => {
+        document.getElementById('masterBrandImagesSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 120);
+    };
+
     window.loadLogo = function(input) {
       const file = input?.files?.[0];
       if (!file) return;
-      docFileAnhSangBase64(file, 550, true, function(dataUrl) {
-        apDungLogo(dataUrl);
-        try { localStorage.setItem('argon_saved_logo', dataUrl); } catch (e) {}
-        hienToast("✅ Đã cập nhật Logo công ty thành công!");
+      docFileAnhMasterAnToan(file, 550, true, function(dataUrl) {
+        window.selectedLogoMasterId = '';
+        const sel = document.getElementById('logoMasterSelect');
+        if (sel) sel.value = '';
+        apDungLogo(dataUrl, file.name + ' (Ảnh tạm)');
+        try {
+          localStorage.removeItem('argon_selected_logo_id');
+          localStorage.setItem('argon_saved_logo', dataUrl);
+          localStorage.setItem('argon_saved_logo_name', file.name + ' (Ảnh tạm)');
+        } catch (e) {}
+        hienToast("✅ Đã áp dụng Logo tạm từ máy!");
       });
     };
 
-    function apDungLogo(dataUrl) {
+    function apDungLogo(dataUrl, labelName = '') {
       const logoEl = document.getElementById('sysLogo');
       const btnXoa = document.getElementById('btnXoaLogo');
+      const wrap = document.getElementById('studioLogoPreviewWrap');
+      const prevImg = document.getElementById('studioLogoPreviewImg');
+      const prevName = document.getElementById('studioLogoPreviewName');
       if (!logoEl) return;
+
       if (dataUrl) {
         logoEl.src = dataUrl;
         logoEl.style.setProperty('display', 'block', 'important');
         if (btnXoa) btnXoa.style.display = 'inline-block';
+        if (wrap && prevImg) {
+          prevImg.src = dataUrl;
+          if (prevName) prevName.innerText = labelName || 'Logo đang áp dụng';
+          wrap.style.display = 'flex';
+        }
       } else {
         logoEl.src = '';
         logoEl.style.setProperty('display', 'none', 'important');
         if (btnXoa) btnXoa.style.display = 'none';
+        if (wrap) wrap.style.display = 'none';
       }
     }
 
-    window.xoaLogo = function() {
+    window.chonLogoTuMaster = function(silent = false) {
+      const sel = document.getElementById('logoMasterSelect');
+      const docId = sel ? sel.value : '';
+      if (!docId) {
+        window.xoaLogo(silent);
+        return;
+      }
+      const item = window.masterCache.logo?.[docId];
+      if (!item || !item.anhBase64) return;
+
+      duLieuDaThayDoiBoiNguoiDung = true;
+      window.selectedLogoMasterId = docId;
+      apDungLogo(item.anhBase64, item.tenAnh);
+      try {
+        localStorage.setItem('argon_selected_logo_id', docId);
+        localStorage.setItem('argon_saved_logo', item.anhBase64);
+        localStorage.setItem('argon_saved_logo_name', item.tenAnh || '');
+      } catch (e) {}
+      if (!silent) {
+        hienToast(`🏢 Đã chọn Logo: ${item.tenAnh}`);
+        window.tuDongLuuLenCloud();
+      }
+    };
+
+    window.xoaLogo = function(silent = false) {
+      window.selectedLogoMasterId = '';
       apDungLogo('');
+      if (document.getElementById('logoMasterSelect')) document.getElementById('logoMasterSelect').value = '';
       if (document.getElementById('inLogoFile')) document.getElementById('inLogoFile').value = '';
-      try { localStorage.removeItem('argon_saved_logo'); } catch (e) {}
-      hienToast("🗑️ Đã xóa Logo công ty!");
+      try {
+        localStorage.removeItem('argon_selected_logo_id');
+        localStorage.removeItem('argon_saved_logo');
+        localStorage.removeItem('argon_saved_logo_name');
+      } catch (e) {}
+      if (!silent) {
+        duLieuDaThayDoiBoiNguoiDung = true;
+        window.tuDongLuuLenCloud();
+        hienToast("🗑️ Đã gỡ Logo khỏi tờ báo giá!");
+      }
     };
 
     window.loadWatermark = function(input) {
       const file = input?.files?.[0];
       if (!file) return;
-      docFileAnhSangBase64(file, 650, true, function(rawDataUrl) {
+      docFileAnhMasterAnToan(file, 650, true, function(rawDataUrl) {
+        window.selectedWmMasterId = '';
+        const sel = document.getElementById('wmMasterSelect');
+        if (sel) sel.value = '';
         window.rawWatermarkBase64 = rawDataUrl;
-        try { localStorage.setItem('argon_raw_wm', rawDataUrl); } catch (e) {}
-
         const pct = parseInt(document.getElementById('wmOpacitySlider')?.value || '20', 10);
         window.wmOpacityPercent = pct;
+        try {
+          localStorage.removeItem('argon_selected_wm_id');
+          localStorage.setItem('argon_raw_wm', rawDataUrl);
+          localStorage.setItem('argon_saved_wm_name', file.name + ' (Ảnh tạm)');
+        } catch (e) {}
+
         taoWatermarkTachNenTrang(rawDataUrl, pct, function(processedPng) {
-          apDungWatermark(processedPng);
+          apDungWatermark(processedPng, file.name + ' (Ảnh tạm)', rawDataUrl);
           try { localStorage.setItem('argon_saved_wm', processedPng); } catch (e) {}
-          hienToast("✅ Đã chèn Watermark chìm vào trang A4 & PDF!");
+          hienToast("✅ Đã chèn Watermark tạm từ máy!");
         });
       });
+    };
+
+    window.chonWatermarkTuMaster = function(silent = false) {
+      const sel = document.getElementById('wmMasterSelect');
+      const docId = sel ? sel.value : '';
+      if (!docId) {
+        window.xoaWatermark(silent);
+        return;
+      }
+      const item = window.masterCache.watermark?.[docId];
+      if (!item || !item.anhBase64) return;
+
+      duLieuDaThayDoiBoiNguoiDung = true;
+      window.selectedWmMasterId = docId;
+      window.rawWatermarkBase64 = item.anhBase64;
+      const pct = parseInt(document.getElementById('wmOpacitySlider')?.value || window.wmOpacityPercent || '20', 10);
+      window.wmOpacityPercent = pct;
+
+      try {
+        localStorage.setItem('argon_selected_wm_id', docId);
+        localStorage.setItem('argon_raw_wm', item.anhBase64);
+        localStorage.setItem('argon_saved_wm_name', item.tenAnh || '');
+      } catch (e) {}
+
+      taoWatermarkTachNenTrang(item.anhBase64, pct, function(processedPng) {
+        apDungWatermark(processedPng, item.tenAnh, item.anhBase64);
+        try { localStorage.setItem('argon_saved_wm', processedPng); } catch (e) {}
+      });
+
+      if (!silent) {
+        hienToast(`💧 Đã chọn Watermark: ${item.tenAnh}`);
+        window.tuDongLuuLenCloud();
+      }
     };
 
     window.doiDoDamWatermark = function(val) {
@@ -2634,42 +2984,63 @@
       if (lbl) lbl.innerText = pct + '%';
       try { localStorage.setItem('argon_wm_opacity', String(pct)); } catch (e) {}
 
-      const rawSrc = window.rawWatermarkBase64 || localStorage.getItem('argon_raw_wm') || localStorage.getItem('argon_saved_logo');
+      // Chỉ xử lý từ ảnh Watermark riêng biệt (tuyệt đối không lấy nhầm Logo)
+      const rawSrc = window.rawWatermarkBase64 || localStorage.getItem('argon_raw_wm');
       if (rawSrc) {
+        const curName = (window.selectedWmMasterId && window.masterCache.watermark?.[window.selectedWmMasterId]?.tenAnh)
+          || localStorage.getItem('argon_saved_wm_name') || 'Watermark đang áp dụng';
         taoWatermarkTachNenTrang(rawSrc, pct, function(processedPng) {
-          apDungWatermark(processedPng);
+          apDungWatermark(processedPng, curName, rawSrc);
           try { localStorage.setItem('argon_saved_wm', processedPng); } catch (e) {}
         });
       }
     };
 
-    function apDungWatermark(dataUrl) {
+    function apDungWatermark(dataUrl, labelName = '', thumbSrc = '') {
       const wmEl = document.getElementById('watermarkImg');
       const btnXoa = document.getElementById('btnXoaWm');
+      const wrap = document.getElementById('studioWmPreviewWrap');
+      const prevImg = document.getElementById('studioWmPreviewImg');
+      const prevName = document.getElementById('studioWmPreviewName');
       if (!wmEl) return;
+
       if (dataUrl) {
         window.processedWatermarkBase64 = dataUrl;
         wmEl.src = dataUrl;
         wmEl.style.setProperty('display', 'block', 'important');
         wmEl.style.setProperty('opacity', '1', 'important');
         if (btnXoa) btnXoa.style.display = 'inline-block';
+        if (wrap && prevImg) {
+          prevImg.src = thumbSrc || dataUrl;
+          if (prevName) prevName.innerText = labelName || 'Watermark đang áp dụng';
+          wrap.style.display = 'flex';
+        }
       } else {
         window.processedWatermarkBase64 = '';
         wmEl.src = '';
         wmEl.style.setProperty('display', 'none', 'important');
         if (btnXoa) btnXoa.style.display = 'none';
+        if (wrap) wrap.style.display = 'none';
       }
     }
 
-    window.xoaWatermark = function() {
+    window.xoaWatermark = function(silent = false) {
+      window.selectedWmMasterId = '';
       window.rawWatermarkBase64 = '';
       apDungWatermark('');
+      if (document.getElementById('wmMasterSelect')) document.getElementById('wmMasterSelect').value = '';
       if (document.getElementById('inWmFile')) document.getElementById('inWmFile').value = '';
       try {
+        localStorage.removeItem('argon_selected_wm_id');
         localStorage.removeItem('argon_raw_wm');
         localStorage.removeItem('argon_saved_wm');
+        localStorage.removeItem('argon_saved_wm_name');
       } catch (e) {}
-      hienToast("🗑️ Đã xóa Watermark!");
+      if (!silent) {
+        duLieuDaThayDoiBoiNguoiDung = true;
+        window.tuDongLuuLenCloud();
+        hienToast("🗑️ Đã gỡ Watermark khỏi tờ báo giá!");
+      }
     };
 
     window.loadSpImage = function(input) {
@@ -2727,25 +3098,31 @@
     window.tuDongZoomA4TrenMobile = function() {
       const wrapper = document.getElementById('a4Wrapper');
       const paper = document.getElementById('a4Paper');
+      const rightPanel = document.getElementById('panelRightScroll');
       if (!wrapper || !paper) return;
 
       if (window.innerWidth <= 768) {
         wrapper.style.transform = 'none';
-        const availWidth = Math.max(280, window.innerWidth - 14);
+        const availWidth = Math.max(280, window.innerWidth - 16);
         const scale = availWidth / 794;
         paper.style.transform = `scale(${scale.toFixed(4)})`;
         paper.style.transformOrigin = 'top left';
 
         const actualHeight = Math.max(1123, paper.scrollHeight);
         wrapper.style.width = `${availWidth}px`;
-        wrapper.style.height = `${Math.ceil(actualHeight * scale) + 16}px`;
+        wrapper.style.height = `${Math.ceil(actualHeight * scale) + 20}px`;
       } else {
         paper.style.transform = 'none';
         wrapper.style.width = '';
         wrapper.style.height = '';
+
         const zoomSelect = document.getElementById('zoomSelectBox');
-        const val = zoomSelect ? zoomSelect.value : '1';
-        wrapper.style.transform = `scale(${val})`;
+        const userZoom = parseFloat(zoomSelect ? zoomSelect.value : '1') || 1;
+        const availDesktopWidth = rightPanel ? (rightPanel.clientWidth - 44) : 820;
+        const autoFitScale = availDesktopWidth < 794 ? Math.max(0.62, availDesktopWidth / 794) : 1;
+        const finalScale = Math.min(userZoom, autoFitScale);
+
+        wrapper.style.transform = `scale(${finalScale.toFixed(4)})`;
         wrapper.style.transformOrigin = 'top center';
       }
     };
@@ -2828,6 +3205,7 @@
 
       if (window.innerWidth <= 1024) {
         document.getElementById('sapSideNav')?.classList.add('collapsed');
+        document.getElementById('sapMobileBackdrop')?.classList.remove('show');
       }
     };
 
@@ -2883,8 +3261,7 @@
           ? '157/59/2T2 Duong Ba Trac Street, Chanh Hung Ward, Ho Chi Minh City, Viet Nam'
           : 'Số 157/59/2T2 Dương Bá Trạc, Phường Chánh Hưng, TP. Hồ Chí Minh, Việt Nam';
       }
-     const syswebsite = document.getElementById('syswebsite');
-if (syswebsite) syswebsite.innerText = isEN ? 'www.golifresh.com' : 'www.golifresh.com';
+      damBaoHienThiWebsiteCongTy();
 
       const signTitle = document.getElementById('signTitleName');
       const signSub = document.getElementById('signSubText');
@@ -3336,11 +3713,25 @@ if (syswebsite) syswebsite.innerText = isEN ? 'www.golifresh.com' : 'www.golifre
     if (preNotesRieng) preNotesRieng.innerText = notesVal;
 
     // 3. Hiển thị mục PAYMENT TERMS
-    document.getElementById('boxPaymentTermPre').style.display = payVal ? 'block' : 'none';
+    const boxPayEl = document.getElementById('boxPaymentTermPre');
+    if (boxPayEl) {
+      const hasAbovePay = Boolean(dieuKhoanVal || notesVal);
+      boxPayEl.style.display = payVal ? 'block' : 'none';
+      boxPayEl.style.borderTop = hasAbovePay ? '1px dashed #cbd5e1' : 'none';
+      boxPayEl.style.paddingTop = hasAbovePay ? '8px' : '0';
+      boxPayEl.style.marginTop = hasAbovePay ? '8px' : '0';
+    }
     document.getElementById('prePaymentTerm').innerText = payVal;
 
     // 4. Hiển thị mục BANKING INFO
-    document.getElementById('boxBankInfoPre').style.display = bankVal ? 'block' : 'none';
+    const boxBankEl = document.getElementById('boxBankInfoPre');
+    if (boxBankEl) {
+      const hasAboveBank = Boolean(dieuKhoanVal || notesVal || payVal);
+      boxBankEl.style.display = bankVal ? 'block' : 'none';
+      boxBankEl.style.borderTop = hasAboveBank ? '1px dashed #cbd5e1' : 'none';
+      boxBankEl.style.paddingTop = hasAboveBank ? '8px' : '0';
+      boxBankEl.style.marginTop = hasAboveBank ? '8px' : '0';
+    }
     document.getElementById('preBankInfo').innerText = bankVal;
   } else {
     termsBox.style.display = 'none';
@@ -3352,8 +3743,6 @@ if (syswebsite) syswebsite.innerText = isEN ? 'www.golifresh.com' : 'www.golifre
 
       window.datLaiNoiDungMacDinh(false);
       window.tuDongLuuLenCloud();
-      const notesRaw = document.getElementById('inNotesRieng')?.value.trim() || '';
-      const coDuLieu = khachRaw || lienHeRaw || dkRaw || notesRaw || (window.gioHang && window.gioHang.length > 0);
     };
 
     window.chenIncotermThongMinh = function() {
@@ -3382,6 +3771,8 @@ if (syswebsite) syswebsite.innerText = isEN ? 'www.golifresh.com' : 'www.golifre
       document.getElementById('inLienHe').value = '';
       document.getElementById('inMa').value = maMoi;
       document.getElementById('inNgay').value = new Date().toLocaleDateString('vi-VN');
+      if (document.getElementById('inDieuKhoan')) document.getElementById('inDieuKhoan').value = '';
+      if (document.getElementById('inNotesRieng')) document.getElementById('inNotesRieng').value = '';
       xoaAnhSpTam();
       renderTable();
       updatePreview();
@@ -3564,6 +3955,7 @@ if (syswebsite) syswebsite.innerText = isEN ? 'www.golifresh.com' : 'www.golifre
       if (document.getElementById('inDiaDiemXK')) document.getElementById('inDiaDiemXK').value = d.diaDiemXK || '';
       if (document.getElementById('inBienSoXe')) document.getElementById('inBienSoXe').value = d.bienSoXe || '';
       if (document.getElementById('inDieuKhoan')) document.getElementById('inDieuKhoan').value = d.dieuKhoan || '';
+      if (document.getElementById('inNotesRieng')) document.getElementById('inNotesRieng').value = d.notesRieng || '';
       if (document.getElementById('inEnNote')) document.getElementById('inEnNote').value = d.enNote || '';
       if (document.getElementById('inPaymentTerm')) document.getElementById('inPaymentTerm').value = d.paymentTerm || '';
       if (document.getElementById('inBankInfo')) document.getElementById('inBankInfo').value = d.bankInfo || '';
@@ -3573,6 +3965,23 @@ if (syswebsite) syswebsite.innerText = isEN ? 'www.golifresh.com' : 'www.golifre
       if (document.getElementById('inThongTinLienHeMail')) document.getElementById('inThongTinLienHeMail').value = d.thongTinLienHeMail || '';
 
       window.gioHang = Array.isArray(d.gioHang) ? JSON.parse(JSON.stringify(d.gioHang)) : [];
+
+      // Khôi phục Logo & Watermark từ Master Data gắn với đơn hàng (nếu có)
+      if (typeof d.wmOpacity === 'number') {
+        window.wmOpacityPercent = d.wmOpacity;
+        if (document.getElementById('wmOpacitySlider')) document.getElementById('wmOpacitySlider').value = d.wmOpacity;
+        if (document.getElementById('wmOpacityLabel')) document.getElementById('wmOpacityLabel').innerText = d.wmOpacity + '%';
+      }
+      if (d.logoMasterId && window.masterCache.logo?.[d.logoMasterId]) {
+        const logoSel = document.getElementById('logoMasterSelect');
+        if (logoSel) logoSel.value = d.logoMasterId;
+        window.chonLogoTuMaster(true);
+      }
+      if (d.wmMasterId && window.masterCache.watermark?.[d.wmMasterId]) {
+        const wmSel = document.getElementById('wmMasterSelect');
+        if (wmSel) wmSel.value = d.wmMasterId;
+        window.chonWatermarkTuMaster(true);
+      }
 
       window.chuyenManHinhKapella('STUDIO');
       window.doiCheDo(d.cheDo || 'BG_VN');
@@ -3625,6 +4034,7 @@ if (syswebsite) syswebsite.innerText = isEN ? 'www.golifresh.com' : 'www.golifre
       tempStage.style.cssText = 'position:fixed; top:0; left:0; width:794px; background:#ffffff; z-index:99990; margin:0; padding:0; overflow:visible; pointer-events:none;';
 
       const clonePaper = paper.cloneNode(true);
+      clonePaper.removeAttribute('contenteditable');
       clonePaper.style.cssText = 'width:794px !important; min-width:794px !important; max-width:794px !important; min-height:1122px !important; margin:0 !important; transform:none !important; box-shadow:none !important; position:relative !important; left:0 !important; top:0 !important; background:#ffffff !important;';
 
       const cloneWm = clonePaper.querySelector('#watermarkImg');
@@ -4071,6 +4481,288 @@ if (syswebsite) syswebsite.innerText = isEN ? 'www.golifresh.com' : 'www.golifre
       if (tableBank) tableBank.innerHTML = rows.join('');
     }
 
+    // =====================================================
+    // 7B. MASTER DATA HÌNH ẢNH: LOGO CÔNG TY & WATERMARK RIÊNG BIỆT
+    // =====================================================
+    window.loadMasterLogoImage = function(input) {
+      const file = input?.files?.[0];
+      if (!file) return;
+      docFileAnhMasterAnToan(file, 550, true, function(dataUrl) {
+        window.currentMasterLogoBase64 = dataUrl;
+        const img = document.getElementById('qtPreviewLogo');
+        if (img) { img.src = dataUrl; img.style.display = 'block'; }
+        // Tự động gợi ý tên ảnh nếu người dùng chưa gõ
+        const nameInp = document.getElementById('qtTenLogo');
+        if (nameInp && !nameInp.value.trim()) {
+          nameInp.value = file.name.replace(/\.[^/.]+$/, '');
+        }
+      });
+    };
+
+    window.themLogoMasterNhanh = async function() {
+      const tenAnh = document.getElementById('qtTenLogo')?.value.trim();
+      const anhBase64 = window.currentMasterLogoBase64 || (dangSuaLogoId && window.masterCache.logo?.[dangSuaLogoId]?.anhBase64) || '';
+
+      if (!tenAnh) {
+        hienToast("⚠️ Vui lòng đặt tên cho ảnh Logo!");
+        document.getElementById('qtTenLogo')?.focus();
+        return;
+      }
+      if (!anhBase64) {
+        hienToast("⚠️ Vui lòng chọn tệp ảnh Logo!");
+        return;
+      }
+
+      try {
+        const isEdit = !!dangSuaLogoId;
+        const payload = { tenAnh, anhBase64, loai: 'LOGO', updatedAt: new Date().toISOString() };
+        if (dangSuaLogoId) {
+          await db.collection("DM_Logo").doc(dangSuaLogoId).set(payload, { merge: true });
+        } else {
+          payload.createdAt = new Date().toISOString();
+          await db.collection("DM_Logo").add(payload);
+        }
+        huySuaLogoMaster();
+        hienToast(isEdit ? `✅ Đã cập nhật Logo [${tenAnh}]!` : `✅ Đã lưu Logo [${tenAnh}] vào Master Data!`);
+      } catch (e) {
+        hienToast("❌ Lỗi lưu Logo (ảnh có thể quá lớn): " + e.message);
+      }
+    };
+
+    window.suaLogoMaster = function(docId) {
+      const d = window.masterCache.logo?.[docId];
+      if (!d) return;
+      dangSuaLogoId = docId;
+      document.getElementById('qtTenLogo').value = d.tenAnh || '';
+      window.currentMasterLogoBase64 = d.anhBase64 || '';
+      const img = document.getElementById('qtPreviewLogo');
+      if (img) {
+        if (d.anhBase64) { img.src = d.anhBase64; img.style.display = 'block'; }
+        else { img.src = ''; img.style.display = 'none'; }
+      }
+      document.getElementById('titleFormLogo').innerText = "✏️ Đang Sửa Logo: " + (d.tenAnh || '');
+      document.getElementById('btnSaveLogo').innerText = "💾 Cập Nhật Logo";
+      document.getElementById('btnCancelLogo').style.display = 'inline-block';
+      document.getElementById('qtTenLogo').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    window.huySuaLogoMaster = function() {
+      dangSuaLogoId = null;
+      window.currentMasterLogoBase64 = '';
+      if (document.getElementById('qtTenLogo')) document.getElementById('qtTenLogo').value = '';
+      if (document.getElementById('qtFileLogo')) document.getElementById('qtFileLogo').value = '';
+      if (document.getElementById('qtPreviewLogo')) {
+        document.getElementById('qtPreviewLogo').src = '';
+        document.getElementById('qtPreviewLogo').style.display = 'none';
+      }
+      document.getElementById('titleFormLogo').innerText = "🏢 Thêm Logo Công Ty";
+      document.getElementById('btnSaveLogo').innerText = "💾 Lưu Logo vào Master Data";
+      document.getElementById('btnCancelLogo').style.display = 'none';
+    };
+
+    window.apDungLogoTuMasterBangId = function(docId) {
+      const sel = document.getElementById('logoMasterSelect');
+      if (sel) sel.value = docId;
+      window.chonLogoTuMaster(false);
+      window.chuyenManHinhKapella('STUDIO');
+    };
+
+    window.loadMasterWmImage = function(input) {
+      const file = input?.files?.[0];
+      if (!file) return;
+      docFileAnhMasterAnToan(file, 650, true, function(dataUrl) {
+        window.currentMasterWmBase64 = dataUrl;
+        const img = document.getElementById('qtPreviewWm');
+        if (img) { img.src = dataUrl; img.style.display = 'block'; }
+        const nameInp = document.getElementById('qtTenWm');
+        if (nameInp && !nameInp.value.trim()) {
+          nameInp.value = file.name.replace(/\.[^/.]+$/, '');
+        }
+      });
+    };
+
+    window.themWmMasterNhanh = async function() {
+      const tenAnh = document.getElementById('qtTenWm')?.value.trim();
+      const anhBase64 = window.currentMasterWmBase64 || (dangSuaWmId && window.masterCache.watermark?.[dangSuaWmId]?.anhBase64) || '';
+
+      if (!tenAnh) {
+        hienToast("⚠️ Vui lòng đặt tên cho ảnh Watermark!");
+        document.getElementById('qtTenWm')?.focus();
+        return;
+      }
+      if (!anhBase64) {
+        hienToast("⚠️ Vui lòng chọn tệp ảnh Watermark!");
+        return;
+      }
+
+      try {
+        const isEdit = !!dangSuaWmId;
+        const payload = { tenAnh, anhBase64, loai: 'WATERMARK', updatedAt: new Date().toISOString() };
+        if (dangSuaWmId) {
+          await db.collection("DM_Watermark").doc(dangSuaWmId).set(payload, { merge: true });
+        } else {
+          payload.createdAt = new Date().toISOString();
+          await db.collection("DM_Watermark").add(payload);
+        }
+        huySuaWmMaster();
+        hienToast(isEdit ? `✅ Đã cập nhật Watermark [${tenAnh}]!` : `✅ Đã lưu Watermark [${tenAnh}] vào Master Data!`);
+      } catch (e) {
+        hienToast("❌ Lỗi lưu Watermark (ảnh có thể quá lớn): " + e.message);
+      }
+    };
+
+    window.suaWmMaster = function(docId) {
+      const d = window.masterCache.watermark?.[docId];
+      if (!d) return;
+      dangSuaWmId = docId;
+      document.getElementById('qtTenWm').value = d.tenAnh || '';
+      window.currentMasterWmBase64 = d.anhBase64 || '';
+      const img = document.getElementById('qtPreviewWm');
+      if (img) {
+        if (d.anhBase64) { img.src = d.anhBase64; img.style.display = 'block'; }
+        else { img.src = ''; img.style.display = 'none'; }
+      }
+      document.getElementById('titleFormWm').innerText = "✏️ Đang Sửa Watermark: " + (d.tenAnh || '');
+      document.getElementById('btnSaveWm').innerText = "💾 Cập Nhật Watermark";
+      document.getElementById('btnCancelWm').style.display = 'inline-block';
+      document.getElementById('qtTenWm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    window.huySuaWmMaster = function() {
+      dangSuaWmId = null;
+      window.currentMasterWmBase64 = '';
+      if (document.getElementById('qtTenWm')) document.getElementById('qtTenWm').value = '';
+      if (document.getElementById('qtFileWm')) document.getElementById('qtFileWm').value = '';
+      if (document.getElementById('qtPreviewWm')) {
+        document.getElementById('qtPreviewWm').src = '';
+        document.getElementById('qtPreviewWm').style.display = 'none';
+      }
+      document.getElementById('titleFormWm').innerText = "💧 Thêm Watermark";
+      document.getElementById('btnSaveWm').innerText = "💾 Lưu Watermark vào Master Data";
+      document.getElementById('btnCancelWm').style.display = 'none';
+    };
+
+    window.apDungWmTuMasterBangId = function(docId) {
+      const sel = document.getElementById('wmMasterSelect');
+      if (sel) sel.value = docId;
+      window.chonWatermarkTuMaster(false);
+      window.chuyenManHinhKapella('STUDIO');
+    };
+
+    function renderBangLogoMaster(logoSnap) {
+      window.masterCache.logo = {};
+      const sel = document.getElementById('logoMasterSelect');
+      const tbody = document.querySelector('#tableHistoryLogo tbody');
+      const curId = window.selectedLogoMasterId || sel?.value || '';
+
+      const items = [];
+      logoSnap.forEach(doc => {
+        const d = doc.data();
+        const docId = doc.id;
+        const tenAnh = d.tenAnh || d.name || docId;
+        const anhBase64 = d.anhBase64 || d.url || '';
+        const item = { docId, tenAnh, anhBase64, updatedAt: d.updatedAt || d.createdAt || '' };
+        window.masterCache.logo[docId] = item;
+        items.push(item);
+      });
+      items.sort((a, b) => a.tenAnh.localeCompare(b.tenAnh, 'vi'));
+
+      const opts = ['<option value="">-- Chọn Logo từ Master Data --</option>'];
+      const rows = [];
+
+      if (items.length === 0) {
+        rows.push('<tr><td colspan="2" style="text-align:center;color:#94a3b8;padding:16px;">Chưa có Logo nào trong Master Data</td></tr>');
+      } else {
+        items.forEach(item => {
+          opts.push(`<option value="${escapeHtml(item.docId)}" ${item.docId === curId ? 'selected' : ''}>🏢 ${escapeHtml(item.tenAnh)}</option>`);
+          rows.push(`
+            <tr style="border-bottom:1px solid #f1f5f9;">
+              <td style="padding:8px; vertical-align:middle;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  ${item.anhBase64 ? `<img src="${item.anhBase64}" loading="lazy" style="width:54px;height:40px;object-fit:contain;border-radius:6px;border:1px solid #cbd5e1;background:#f8fafc;padding:2px;">` : ''}
+                  <div style="font-weight:700;color:#0f172a;">${escapeHtml(item.tenAnh)}</div>
+                </div>
+              </td>
+              <td style="padding:8px; text-align:right; vertical-align:middle; white-space:nowrap;">
+                <button onclick="apDungLogoTuMasterBangId('${escapeHtml(item.docId)}')" style="background:#ebf5ff; color:#0070f2; border:1px solid #93c5fd; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; margin-right:3px;">Dùng</button>
+                <button onclick="suaLogoMaster('${escapeHtml(item.docId)}')" style="background:#fff8f1; color:#e76500; border:1px solid #e76500; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; margin-right:3px;">Sửa</button>
+                <button onclick="xoaFirestore('DM_Logo', '${escapeHtml(item.docId)}', 'Logo')" style="background:#fff1f1; color:#aa0808; border:1px solid #aa0808; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer;">Xóa</button>
+              </td>
+            </tr>`);
+        });
+      }
+
+      if (sel) sel.innerHTML = opts.join('');
+      if (tbody) tbody.innerHTML = rows.join('');
+
+      // Tự động áp dụng lại Logo đang chọn nếu tồn tại trong Master Data
+      if (curId && window.masterCache.logo[curId]) {
+        if (sel) sel.value = curId;
+        const activeLogo = window.masterCache.logo[curId];
+        apDungLogo(activeLogo.anhBase64, activeLogo.tenAnh);
+      }
+      capNhatChiSoMasterCount();
+    }
+
+    function renderBangWmMaster(wmSnap) {
+      window.masterCache.watermark = {};
+      const sel = document.getElementById('wmMasterSelect');
+      const tbody = document.querySelector('#tableHistoryWm tbody');
+      const curId = window.selectedWmMasterId || sel?.value || '';
+
+      const items = [];
+      wmSnap.forEach(doc => {
+        const d = doc.data();
+        const docId = doc.id;
+        const tenAnh = d.tenAnh || d.name || docId;
+        const anhBase64 = d.anhBase64 || d.url || '';
+        const item = { docId, tenAnh, anhBase64, updatedAt: d.updatedAt || d.createdAt || '' };
+        window.masterCache.watermark[docId] = item;
+        items.push(item);
+      });
+      items.sort((a, b) => a.tenAnh.localeCompare(b.tenAnh, 'vi'));
+
+      const opts = ['<option value="">-- Chọn Watermark từ Master Data --</option>'];
+      const rows = [];
+
+      if (items.length === 0) {
+        rows.push('<tr><td colspan="2" style="text-align:center;color:#94a3b8;padding:16px;">Chưa có Watermark nào trong Master Data</td></tr>');
+      } else {
+        items.forEach(item => {
+          opts.push(`<option value="${escapeHtml(item.docId)}" ${item.docId === curId ? 'selected' : ''}>💧 ${escapeHtml(item.tenAnh)}</option>`);
+          rows.push(`
+            <tr style="border-bottom:1px solid #f1f5f9;">
+              <td style="padding:8px; vertical-align:middle;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  ${item.anhBase64 ? `<img src="${item.anhBase64}" loading="lazy" style="width:54px;height:40px;object-fit:contain;border-radius:6px;border:1px solid #cbd5e1;background:#f8fafc;padding:2px;">` : ''}
+                  <div style="font-weight:700;color:#0f172a;">${escapeHtml(item.tenAnh)}</div>
+                </div>
+              </td>
+              <td style="padding:8px; text-align:right; vertical-align:middle; white-space:nowrap;">
+                <button onclick="apDungWmTuMasterBangId('${escapeHtml(item.docId)}')" style="background:#f1fdf6; color:#256f3a; border:1px solid #86efac; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; margin-right:3px;">Dùng</button>
+                <button onclick="suaWmMaster('${escapeHtml(item.docId)}')" style="background:#fff8f1; color:#e76500; border:1px solid #e76500; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; margin-right:3px;">Sửa</button>
+                <button onclick="xoaFirestore('DM_Watermark', '${escapeHtml(item.docId)}', 'Watermark')" style="background:#fff1f1; color:#aa0808; border:1px solid #aa0808; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer;">Xóa</button>
+              </td>
+            </tr>`);
+        });
+      }
+
+      if (sel) sel.innerHTML = opts.join('');
+      if (tbody) tbody.innerHTML = rows.join('');
+
+      // Tự động áp dụng lại Watermark đang chọn nếu tồn tại trong Master Data
+      if (curId && window.masterCache.watermark[curId]) {
+        if (sel) sel.value = curId;
+        const activeWm = window.masterCache.watermark[curId];
+        window.rawWatermarkBase64 = activeWm.anhBase64;
+        const pct = parseInt(document.getElementById('wmOpacitySlider')?.value || window.wmOpacityPercent || '20', 10);
+        taoWatermarkTachNenTrang(activeWm.anhBase64, pct, function(processedPng) {
+          apDungWatermark(processedPng, activeWm.tenAnh, activeWm.anhBase64);
+        });
+      }
+      capNhatChiSoMasterCount();
+    }
+
     function capNhatChiSoMasterCount() {
       const countSP = Object.keys(window.masterCache.sp || {}).length;
       const countKH = Object.keys(window.masterCache.kh || {}).length;
@@ -4095,6 +4787,14 @@ if (syswebsite) syswebsite.innerText = isEN ? 'www.golifresh.com' : 'www.golifre
         requestAnimationFrame(() => renderBangBankMaster(snap));
       }, err => console.warn("Realtime Bank:", err));
 
+      db.collection("DM_Logo").onSnapshot(snap => {
+        requestAnimationFrame(() => renderBangLogoMaster(snap));
+      }, err => console.warn("Realtime Logo:", err));
+
+      db.collection("DM_Watermark").onSnapshot(snap => {
+        requestAnimationFrame(() => renderBangWmMaster(snap));
+      }, err => console.warn("Realtime Watermark:", err));
+
       db.collection("DonHang").onSnapshot(snap => {
         requestAnimationFrame(() => {
           window.masterCache.orders = {};
@@ -4114,14 +4814,18 @@ if (syswebsite) syswebsite.innerText = isEN ? 'www.golifresh.com' : 'www.golifre
     // Tải song song toàn bộ Master Data trong 1 nhịp duy nhất
     window.taiDuLieuMasterTuFirestore = async function() {
       try {
-        const [spSnap, khSnap, bankSnap] = await Promise.all([
+        const [spSnap, khSnap, bankSnap, logoSnap, wmSnap] = await Promise.all([
           db.collection("Database").get(),
           db.collection("KhachHang").get(),
-          db.collection("DM_Bank").get()
+          db.collection("DM_Bank").get(),
+          db.collection("DM_Logo").get(),
+          db.collection("DM_Watermark").get()
         ]);
         renderBangSanPhamMaster(spSnap);
         renderBangKhachHangMaster(khSnap);
         renderBangBankMaster(bankSnap);
+        renderBangLogoMaster(logoSnap);
+        renderBangWmMaster(wmSnap);
       } catch (err) {
         console.error("Lỗi tải Master:", err);
       }
@@ -4232,18 +4936,21 @@ if (syswebsite) syswebsite.innerText = isEN ? 'www.golifresh.com' : 'www.golifre
     function khoiPhucLogoVaWatermarkTuBoNho() {
       try {
         const savedLogo = localStorage.getItem('argon_saved_logo');
-        if (savedLogo) apDungLogo(savedLogo);
+        const savedLogoName = localStorage.getItem('argon_saved_logo_name') || 'Logo đã chọn';
+        if (savedLogo) apDungLogo(savedLogo, savedLogoName);
 
         const savedPct = parseInt(localStorage.getItem('argon_wm_opacity') || '20', 10);
         window.wmOpacityPercent = savedPct;
         if (document.getElementById('wmOpacitySlider')) document.getElementById('wmOpacitySlider').value = savedPct;
         if (document.getElementById('wmOpacityLabel')) document.getElementById('wmOpacityLabel').innerText = savedPct + '%';
 
-        const rawWm = localStorage.getItem('argon_raw_wm') || localStorage.getItem('argon_saved_wm') || savedLogo;
+        // Tách riêng hoàn toàn Watermark khỏi Logo (không lấy nhầm Logo làm Watermark)
+        const rawWm = localStorage.getItem('argon_raw_wm') || localStorage.getItem('argon_saved_wm');
+        const savedWmName = localStorage.getItem('argon_saved_wm_name') || 'Watermark đã chọn';
         if (rawWm) {
           window.rawWatermarkBase64 = rawWm;
           taoWatermarkTachNenTrang(rawWm, savedPct, function(processedPng) {
-            apDungWatermark(processedPng);
+            apDungWatermark(processedPng, savedWmName, rawWm);
             try { localStorage.setItem('argon_saved_wm', processedPng); } catch (e) {}
           });
         }
@@ -4624,6 +5331,7 @@ const actionButtons = document.querySelectorAll('.sap-pill-bar button');
       const paper = document.getElementById('a4Paper');
       if (!paper) return;
       paper.setAttribute('contenteditable', 'true');
+      paper.setAttribute('spellcheck', 'false');
       paper.style.outline = 'none';
 
       const luuVungChon = () => {
@@ -4638,6 +5346,7 @@ const actionButtons = document.querySelectorAll('.sap-pill-bar button');
 
       paper.addEventListener('mouseup', luuVungChon);
       paper.addEventListener('keyup', luuVungChon);
+      paper.addEventListener('touchend', luuVungChon);
     }
 
     document.addEventListener('DOMContentLoaded', kichHoatChonVungTrenA4);
@@ -4802,19 +5511,8 @@ const actionButtons = document.querySelectorAll('.sap-pill-bar button');
       }
     };
   </script>
-  <script>
-    window.batTatThanhFontLeft = function() {
-      const ribbon = document.getElementById('word2026FontRibbon');
-      const btn = document.getElementById('btnToggleFontPanel');
-      if (!ribbon) return;
-      
-      ribbon.classList.toggle('collapsed');
-      const isCollapsed = ribbon.classList.contains('collapsed');
-      if (btn) btn.innerText = isCollapsed ? '[+] Mở rộng' : '[-] Thu gọn';
-    };
-  </script>
 <!-- NÚT BẤM VÀ KHUNG POPUP CHỈNH FONT CHỮ ĐỘC LẬP BÊN NGOÀI -->
-  <div id="sapFontModalOverlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.45); backdrop-filter:blur(1.5px); z-index:999990; align-items:center; justify-content:center; padding:16px;">
+  <div id="sapFontModalOverlay" onclick="if(event.target===this) batTatPopupFont(false)" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.45); backdrop-filter:blur(1.5px); z-index:999990; align-items:center; justify-content:center; padding:16px;">
     <div style="background:#ffffff; width:100%; max-width:400px; border-radius:14px; border:1px solid #cbd5e1; box-shadow:0 20px 35px rgba(15,23,42,0.25); overflow:hidden;">
       <div style="padding:14px 18px; background:#e8f3ff; border-bottom:1px solid #b8daff; display:flex; align-items:center; justify-content:space-between; font-weight:800; font-size:14px; color:#0064d9;">
         <span>🔤 Tùy Chỉnh Phông Chữ &amp; Định Dạng A4</span>
@@ -4875,112 +5573,5 @@ const actionButtons = document.querySelectorAll('.sap-pill-bar button');
     </div>
   </div>
 
-  <script>
-    window.batTatPopupFont = function(forceState) {
-      const modal = document.getElementById('sapFontModalOverlay');
-      if (!modal) return;
-      if (typeof forceState === 'boolean') {
-        modal.style.display = forceState ? 'flex' : 'none';
-      } else {
-        modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
-      }
-    };
-  </script>
-  <script>
-  function dongBoTermsVaNotesTrenA4() {
-    const isEN = (window.cheDoHienTai === 'BG_EN') || 
-                 document.getElementById('preTitle')?.innerText.includes('QUOTATION') || 
-                 document.getElementById('preTitle')?.innerText.includes('INVOICE');
-    const isXK = (window.cheDoHienTai === 'XK');
-
-    let termsVal = document.getElementById('inDieuKhoan')?.value.trim() || '';
-    let notesVal = document.getElementById('inNotesRieng')?.value.trim() || '';
-    const payVal = (!isXK) ? (document.getElementById('inPaymentTerm')?.value.trim() || '') : '';
-    const isPI = isEN && (document.getElementById('chkIsPI')?.checked ?? false);
-    const bankVal = (isEN && isPI) ? (document.getElementById('inBankInfo')?.value.trim() || '') : '';
-
-    // 1. Ép tiêu đề tách biệt rõ ràng (Không bao giờ hiện "TERMS & NOTES:" chung nữa)
-    const lblTerms = document.getElementById('lblNotesHeader');
-    const lblNotes = document.getElementById('lblSeparateNotesHeader');
-    if (lblTerms) {
-      lblTerms.innerText = isEN ? 'TERMS:' : (isXK ? 'ĐIỀU KHOẢN XUẤT KHO:' : 'ĐIỀU KHOẢN THƯƠNG MẠI:');
-    }
-    if (lblNotes) {
-      lblNotes.innerText = isEN ? 'NOTES:' : 'GHI CHÚ:';
-    }
-
-    // 2. Lấy các khung hiển thị trên tờ A4
-    const termsSectionBox = document.getElementById('termsSectionBox');
-    let boxTerms = document.getElementById('boxNotesSection');
-    let boxNotes = document.getElementById('boxSeparateNotesSection');
-
-    // Tự động tạo khung NOTES trên A4 nếu trong HTML chưa có
-    if (boxTerms && !boxNotes) {
-      boxNotes = document.createElement('div');
-      boxNotes.className = 'terms-block';
-      boxNotes.id = 'boxSeparateNotesSection';
-      boxNotes.style.cssText = 'display:none; border-top:1px dashed #cbd5e1; padding-top:8px; margin-top:8px;';
-      boxNotes.innerHTML = `
-        <div class="terms-title" id="lblSeparateNotesHeader">${isEN ? 'NOTES:' : 'GHI CHÚ:'}</div>
-        <div class="terms-content" id="preNotesRieng" style="white-space:pre-line;"></div>
-      `;
-      boxTerms.insertAdjacentElement('afterend', boxNotes);
-    }
-
-    const preTerms = document.getElementById('preDieuKhoan');
-    const preNotes = document.getElementById('preNotesRieng');
-
-    // 3. Hiển thị nội dung từng mục độc lập lên tờ A4
-    if (termsVal || notesVal || payVal || bankVal) {
-      if (termsSectionBox) termsSectionBox.style.display = 'block';
-      
-      if (boxTerms) boxTerms.style.display = termsVal ? 'block' : 'none';
-      if (preTerms) preTerms.innerText = termsVal;
-
-      if (boxNotes) {
-        boxNotes.style.display = notesVal ? 'block' : 'none';
-        // Nếu không có Terms ở trên thì bỏ đường kẻ nét đứt phía trên Notes
-        boxNotes.style.borderTop = termsVal ? '1px dashed #cbd5e1' : 'none';
-        boxNotes.style.paddingTop = termsVal ? '8px' : '0';
-        boxNotes.style.marginTop = termsVal ? '8px' : '0';
-      }
-      if (preNotes) preNotes.innerText = notesVal;
-    } else {
-      if (termsSectionBox) termsSectionBox.style.display = 'none';
-    }
-  }
-
-  // Khóa chặt vào các hàm cập nhật giao diện và sự kiện gõ phím/click
-  window.addEventListener('load', function() {
-    if (typeof window.updatePreview === 'function') {
-      const gocUpdate = window.updatePreview;
-      window.updatePreview = function() {
-        gocUpdate.apply(this, arguments);
-        dongBoTermsVaNotesTrenA4();
-      };
-    }
-    if (typeof window.chuyenCheDo === 'function') {
-      const gocChuyen = window.chuyenCheDo;
-      window.chuyenCheDo = function() {
-        gocChuyen.apply(this, arguments);
-        setTimeout(dongBoTermsVaNotesTrenA4, 30);
-      };
-    }
-    if (typeof window.chenMauNhanh === 'function') {
-      const gocChen = window.chenMauNhanh;
-      window.chenMauNhanh = function() {
-        gocChen.apply(this, arguments);
-        dongBoTermsVaNotesTrenA4();
-      };
-    }
-
-    ['inDieuKhoan', 'inNotesRieng', 'inPaymentTerm', 'inBankInfo'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.addEventListener('input', dongBoTermsVaNotesTrenA4);
-    });
-
-    dongBoTermsVaNotesTrenA4();
-  });
-</script>
 </body>
 </html>
