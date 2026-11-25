@@ -1038,10 +1038,13 @@
       font-size: 12.5px;
     }
 
-    /* Sửa triệt để lỗi dính thẻ Kho Đơn Hàng & tăng độ thoáng cột trái */
+    /* Sửa triệt để lỗi dính thẻ Kho Đơn Hàng & tăng độ thoáng cột trái (KHÔNG dùng display:flex !important để chuyển tab không bị chồng màn hình) */
+    #viewDashboard, #manHinhQuanLyMaster {
+      height: calc(100vh - 102px) !important;
+    }
     #viewStudio.app-workspace {
       height: calc(100vh - 102px) !important;
-      display: flex !important;
+      display: flex;
       gap: 0 !important;
     }
     #viewStudio .panel-left {
@@ -1049,7 +1052,7 @@
       min-width: 350px !important;
       background: #f5f6f7 !important;
       border-right: 1px solid var(--sap-border) !important;
-      display: flex !important;
+      display: flex;
       flex-direction: column !important;
     }
     .argon-hero-header {
@@ -1100,7 +1103,7 @@
     #panelRightScroll {
       flex: 1 !important;
       background: radial-gradient(circle at top, #eaeef3 0%, #dde3ea 100%) !important;
-      display: flex !important;
+      display: flex;
       flex-direction: column !important;
       align-items: center !important;
       padding: 16px 20px 60px 20px !important;
@@ -3149,7 +3152,7 @@
         btnPreview?.classList.add('active');
         setTimeout(window.tuDongZoomA4TrenMobile, 50);
       } else {
-        panelLeft.style.display = 'block';
+        panelLeft.style.display = 'flex';
         panelRight.style.display = 'none';
         btnForm?.classList.add('active');
         btnPreview?.classList.remove('active');
@@ -3169,7 +3172,7 @@
       const subMenuStudio = document.getElementById('subMenuStudio');
       const iconChevronStudio = document.getElementById('iconChevronStudio');
 
-      [dashScreen, studioScreen, masterScreen].forEach(s => { if (s) s.style.display = 'none'; });
+      [dashScreen, studioScreen, masterScreen].forEach(s => { if (s) s.style.setProperty('display', 'none', 'important'); });
       ['tabBtnDash', 'tabBtnStudio', 'tabBtnMaster', 'segBtnDash', 'segBtnStudio', 'segBtnMaster'].forEach(id => {
         document.getElementById(id)?.classList.remove('active');
       });
@@ -3185,19 +3188,19 @@
       }
 
       if (tab === 'DASH' && dashScreen) {
-        dashScreen.style.display = 'block';
+        dashScreen.style.setProperty('display', 'block', 'important');
         document.getElementById('tabBtnDash')?.classList.add('active');
         document.getElementById('segBtnDash')?.classList.add('active');
         if (mobNav) mobNav.style.setProperty('display', 'none', 'important');
         renderKapellaDashboard();
       } else if (tab === 'STUDIO' && studioScreen) {
-        studioScreen.style.display = 'flex';
+        studioScreen.style.setProperty('display', 'flex', 'important');
         document.getElementById('tabBtnStudio')?.classList.add('active');
         document.getElementById('segBtnStudio')?.classList.add('active');
         if (mobNav) mobNav.style.display = '';
         window.chuyenTabMobile(currentMobileSubTab);
       } else if (tab === 'MASTER' && masterScreen) {
-        masterScreen.style.display = 'block';
+        masterScreen.style.setProperty('display', 'block', 'important');
         document.getElementById('tabBtnMaster')?.classList.add('active');
         document.getElementById('segBtnMaster')?.classList.add('active');
         if (mobNav) mobNav.style.setProperty('display', 'none', 'important');
