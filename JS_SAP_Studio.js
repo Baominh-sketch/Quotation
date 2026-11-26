@@ -1,0 +1,3638 @@
+// ==========================================================================
+// JS_SAP_Studio.js — Hệ Thống ERP Goods Link JSC (SAP Fiori Morning Horizon)
+// Tách riêng từ index.html: Realtime Cloud, Auto-Save, Conflict Lock,
+// Master Data Logo/Watermark, Selection-Range Persistence & Crisp PDF Export
+// ==========================================================================
+// Bật bộ nhớ đệm IndexedDB đa tab cho Firebase giúp 4-5 người truy cập cực nhanh, không tốn băng thông tải lại ảnh Base64
+    try {
+      if (typeof db !== 'undefined' && db.enablePersistence) {
+        db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+      }
+    } catch (e) {}
+
+    window.masterCache = { sp: {}, kh: {}, bank: {}, logo: {}, watermark: {}, orders: {} };
+    window.gioHang = [];
+    window.cheDoHienTai = 'BG_VN';
+    window.currentSpImageBase64 = '';
+    window.currentMasterSpImageBase64 = '';
+    window.currentMasterLogoBase64 = '';
+    window.currentMasterWmBase64 = '';
+    window.selectedLogoMasterId = localStorage.getItem('argon_selected_logo_id') || '';
+    window.selectedWmMasterId = localStorage.getItem('argon_selected_wm_id') || '';
+    window.rawWatermarkBase64 = '';
+    window.processedWatermarkBase64 = '';
+    window.wmOpacityPercent = 20;
+    window.kpChartInstance = null;
+    window.autoSaveCloudEnabled = true;
+    window.savedA4CustomHtml = {};
+    window.conflictBannerDismissedFor = '';
+
+    const A4_FORMATTABLE_IDS = [
+      'sysTen', 'sysDiaChi', 'sysLienHeCty', 'docTitleMain',
+      'preKhach', 'preLienHe', 'preDieuKhoan', 'preNotesRieng',
+      'prePaymentTerm', 'preBankInfo', 'preEnNote', 'preAmountInWords'
+    ];
+
+    function coDinhDangHtmlTuyChinh(htmlStr) {
+      if (!htmlStr) return false;
+      return /<(span|b|strong|i|em|u|strike|s|font|mark)|style\s*=/i.test(htmlStr);
+    }
+
+    window.thuThapDinhDangA4TuyChinh = function() {
+      const result = { fields: {}, tableCells: {} };
+      A4_FORMATTABLE_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const h = el.innerHTML || '';
+        if (coDinhDangHtmlTuyChinh(h)) {
+          result.fields[id] = { html: h, text: (el.innerText || '').trim() };
+        }
+      });
+
+      const preTable = document.getElementById('preTable');
+      if (preTable) {
+        const rows = preTable.querySelectorAll('tr');
+        rows.forEach((tr, rIdx) => {
+          const cells = tr.querySelectorAll('td');
+          cells.forEach((td, cIdx) => {
+            if (td.querySelector('img')) return; // Không lưu lại ảnh base64 vào map định dạng chữ
+            const h = td.innerHTML || '';
+            if (coDinhDangHtmlTuyChinh(h)) {
+              result.tableCells[`${rIdx}_${cIdx}`] = { html: h, text: (td.innerText || '').trim() };
+            }
+          });
+        });
+      }
+
+      const hasAny = Object.keys(result.fields).length > 0 || Object.keys(result.tableCells).length > 0;
+      window.savedA4CustomHtml = hasAny ? result : {};
+      return window.savedA4CustomHtml;
+    };
+
+    window.apDungDinhDangA4TuyChinh = function(savedMap) {
+      if (!savedMap || typeof savedMap !== 'object') return;
+      const fields = savedMap.fields || {};
+      Object.keys(fields).forEach(id => {
+        const el = document.getElementById(id);
+        const entry = fields[id];
+        if (el && entry && entry.html) {
+          const curTxt = (el.innerText || '').trim();
+          if (!entry.text || curTxt === entry.text) {
+            el.innerHTML = entry.html;
+          }
+        }
+      });
+
+      const tableCells = savedMap.tableCells || {};
+      const preTable = document.getElementById('preTable');
+      if (preTable && Object.keys(tableCells).length > 0) {
+        const rows = preTable.querySelectorAll('tr');
+        Object.keys(tableCells).forEach(key => {
+          const [rStr, cStr] = key.split('_');
+          const tr = rows[parseInt(rStr, 10)];
+          if (!tr) return;
+          const td = tr.querySelectorAll('td')[parseInt(cStr, 10)];
+          const entry = tableCells[key];
+          if (td && !td.querySelector('img') && entry && entry.html) {
+            const curTxt = (td.innerText || '').trim();
+            if (!entry.text || curTxt === entry.text) {
+              td.innerHTML = entry.html;
+            }
+          }
+        });
+      }
+    };
+
+    function capNhatTextGiuDinhDang(elOrId, newText) {
+      const el = typeof elOrId === 'string' ? document.getElementById(elOrId) : elOrId;
+      if (!el) return;
+      const nextStr = String(newText ?? '');
+      const curStr = (el.innerText || '');
+      if (curStr.trim() === nextStr.trim() && coDinhDangHtmlTuyChinh(el.innerHTML)) {
+        return; // Giữ nguyên định dạng màu/font/in đậm đã bôi đen khi nội dung chữ không đổi
+      }
+      el.innerText = nextStr;
+    }
+
+    window.hienCanhBaoXungDotDon = function(maDon, editorSession, updatedIso) {
+      const banner = document.getElementById('sapConflictBanner');
+      const msgEl = document.getElementById('sapConflictMessage');
+      const btnReload = document.getElementById('btnConflictReload');
+      if (!banner || !msgEl) return;
+
+      const timeStr = updatedIso
+        ? new Date(updatedIso).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        : 'vừa xong';
+
+      msgEl.innerHTML = `⚠️ Phiên <b>${escapeHtml(editorSession)}</b> vừa chỉnh sửa chứng từ <b>[${escapeHtml(maDon)}]</b> lúc <b>${timeStr}</b>. Tải bản mới nhất để tránh ghi đè dữ liệu!`;
+      if (btnReload) {
+        btnReload.onclick = function() {
+          window.anCanhBaoXungDotDon();
+          window.taiDonTuApp(maDon, false);
+        };
+      }
+      banner.style.display = 'flex';
+    };
+
+    window.anCanhBaoXungDotDon = function(dismissKey = '') {
+      const banner = document.getElementById('sapConflictBanner');
+      if (banner) banner.style.display = 'none';
+      if (dismissKey) window.conflictBannerDismissedFor = dismissKey;
+    };
+
+    // Định danh phiên làm việc riêng cho từng nhân viên / trình duyệt (tránh 4-5 người đè đơn của nhau)
+    window.currentClientSessionId = sessionStorage.getItem('argon_client_sid') || ('USER_' + Math.random().toString(36).substring(2, 7).toUpperCase());
+    sessionStorage.setItem('argon_client_sid', window.currentClientSessionId);
+
+    let dangSuaSPId = null;
+    let dangSuaKHId = null;
+    let dangSuaBankId = null;
+    let dangSuaLogoId = null;
+    let dangSuaWmId = null;
+    let dangSuaGioIndex = -1;
+    let currentMainTab = 'STUDIO';
+    let currentMobileSubTab = 'FORM';
+    let autoSaveCloudTimer = null;
+    let dangNapDuLieuDon = false;
+    let duLieuDaThayDoiBoiNguoiDung = false;
+    let realtimeListenersInitialized = false;
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Tự động chèn dòng www.golifresh.com ngay dưới địa chỉ công ty trên tờ A4
+    function damBaoHienThiWebsiteCongTy() {
+      const diaChiEl = document.getElementById('sysDiaChi');
+      if (!diaChiEl) return;
+      
+      let webSpan = document.getElementById('sysWebsite');
+      if (!webSpan) {
+        webSpan = document.createElement('span');
+        webSpan.id = 'sysWebsite';
+        // Thêm thẻ <br> ở trước để chắc chắn xuống dòng đẹp mắt
+        webSpan.innerHTML = `<br><span style="font-weight:700; color:var(--doc-primary, #007a3d);">Website: www.golifresh.com</span>`;
+        diaChiEl.insertAdjacentElement('afterend', webSpan);
+      }
+    }
+
+    // =====================================================
+    // KHỞI TẠO GIAO DIỆN TOAST & HỘP THOẠI XÁC NHẬN TRONG APP
+    // =====================================================
+    function khoiTaoGiaoDienThongBaoSAP() {
+      if (!document.getElementById('sapCustomNotificationStyle')) {
+        const st = document.createElement('style');
+        st.id = 'sapCustomNotificationStyle';
+        st.innerHTML = `
+          #custom-toast {
+            position: fixed !important;
+            top: 58px !important;
+            right: 20px !important;
+            bottom: auto !important;
+            left: auto !important;
+            z-index: 999999 !important;
+            background: #ffffff !important;
+            color: #1d2d3e !important;
+            border-left: 5px solid #256f3a !important;
+            border-top: 1px solid #cbd5e1 !important;
+            border-right: 1px solid #cbd5e1 !important;
+            border-bottom: 1px solid #cbd5e1 !important;
+            padding: 12px 18px !important;
+            border-radius: 10px !important;
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18) !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            transform: translateY(-12px) !important;
+            transition: all 0.22s ease !important;
+            pointer-events: none !important;
+            max-width: 92vw !important;
+          }
+          #custom-toast.show {
+            opacity: 1 !important;
+            visibility: visible !important;
+            transform: translateY(0) !important;
+          }
+          #sapConfirmModalOverlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(2px);
+            z-index: 999998;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+          }
+          .sap-confirm-box {
+            background: #ffffff;
+            width: 100%;
+            max-width: 380px;
+            border-radius: 14px;
+            border: 1px solid #d9d9d9;
+            box-shadow: 0 20px 35px rgba(15, 23, 42, 0.25);
+            overflow: hidden;
+            animation: sapPopIn 0.16s ease-out;
+          }
+          @keyframes sapPopIn {
+            from { transform: scale(0.94); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+          }
+        `;
+        document.head.appendChild(st);
+      }
+
+      if (!document.getElementById('sapConfirmModalOverlay')) {
+        const modal = document.createElement('div');
+        modal.id = 'sapConfirmModalOverlay';
+        modal.innerHTML = `
+          <div class="sap-confirm-box">
+            <div style="padding:14px 18px; background:#fff8f1; border-bottom:1px solid #fed7aa; display:flex; align-items:center; gap:8px; font-weight:800; font-size:14px; color:#c2410c;">
+              <span>⚠️ Xác nhận thao tác</span>
+            </div>
+            <div id="sapConfirmMessage" style="padding:18px; font-size:13.5px; color:#1d2d3e; line-height:1.5; font-weight:600;"></div>
+            <div style="padding:10px 16px 14px 16px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:8px;">
+              <button type="button" id="btnSapConfirmCancel" class="sap-btn" style="background:#ffffff !important; color:#475569 !important; border:1px solid #cbd5e1 !important; padding:6px 16px !important;">Hủy</button>
+              <button type="button" id="btnSapConfirmOk" class="sap-btn sap-btn-reject" style="background:#aa0808 !important; color:#ffffff !important; border:1px solid #aa0808 !important; padding:6px 18px !important;">Đồng ý xóa</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+      }
+    }
+
+    window.hienToast = function(msg) {
+      khoiTaoGiaoDienThongBaoSAP();
+      let toast = document.getElementById('custom-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'custom-toast';
+        document.body.appendChild(toast);
+      }
+      const isWarn = String(msg).includes('⚠️') || String(msg).includes('❌') || String(msg).includes('🗑️');
+      toast.style.setProperty('border-left-color', isWarn ? '#e76500' : '#256f3a', 'important');
+      toast.innerHTML = `<span>${escapeHtml(msg)}</span>`;
+      toast.classList.add('show');
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2800);
+    };
+
+    window.alert = function(msg) {
+      window.hienToast(msg);
+    };
+
+    window.hienHopThoaiXacNhan = function(message, onConfirm) {
+      khoiTaoGiaoDienThongBaoSAP();
+      const overlay = document.getElementById('sapConfirmModalOverlay');
+      const msgEl = document.getElementById('sapConfirmMessage');
+      const btnOk = document.getElementById('btnSapConfirmOk');
+      const btnCancel = document.getElementById('btnSapConfirmCancel');
+      if (!overlay || !msgEl || !btnOk || !btnCancel) return;
+
+      msgEl.innerText = message;
+      overlay.style.display = 'flex';
+
+      btnCancel.onclick = function() {
+        overlay.style.display = 'none';
+      };
+      btnOk.onclick = function() {
+        overlay.style.display = 'none';
+        if (typeof onConfirm === 'function') onConfirm();
+      };
+    };
+
+    // =====================================================
+    // 0. ĐIỀU KHIỂN MENU SIDEBAR & TRỢ LÝ JOULE AI
+    // =====================================================
+    window.batTatMenuTraiSAP = function() {
+      const side = document.getElementById('sapSideNav');
+      const backdrop = document.getElementById('sapMobileBackdrop');
+      if (!side) return;
+      side.classList.toggle('collapsed');
+      const isOpen = !side.classList.contains('collapsed');
+      if (backdrop && window.innerWidth <= 1024) {
+        backdrop.classList.toggle('show', isOpen);
+      } else if (backdrop) {
+        backdrop.classList.remove('show');
+      }
+      setTimeout(() => {
+        if (typeof window.tuDongZoomA4TrenMobile === 'function') window.tuDongZoomA4TrenMobile();
+      }, 240);
+    };
+
+    window.batTatJouleCopilot = function(forceState) {
+      const drawer = document.getElementById('sapJouleDrawer');
+      if (!drawer) return;
+      if (typeof forceState === 'boolean') {
+        drawer.classList.toggle('open', forceState);
+      } else {
+        drawer.classList.toggle('open');
+      }
+      setTimeout(() => {
+        if (typeof window.tuDongZoomA4TrenMobile === 'function') window.tuDongZoomA4TrenMobile();
+      }, 100);
+    };
+
+    // =====================================================
+    // TỰ ĐỘNG LƯU BẢNG BÁO GIÁ LÊN CLOUD (CHỐNG XUNG ĐỘT ĐA NGƯỜI DÙNG)
+    // =====================================================
+    function taoMaDonNgauNhienKhongTrung() {
+      const nam = new Date().getFullYear();
+      const phutGiay = String(new Date().getMinutes()).padStart(2, '0') + String(new Date().getSeconds()).padStart(2, '0');
+      const rand = Math.floor(10 + Math.random() * 89);
+      return `QUO-${nam}-${phutGiay}${rand}`;
+    }
+
+    function thuThapDuLieuDonHangHienTai() {
+      const maDon = document.getElementById('inMa')?.value.trim() || 'QUO-2026-001';
+      return {
+        maDon: maDon,
+        cheDo: window.cheDoHienTai || 'BG_VN',
+        isPI: document.getElementById('chkIsPI')?.checked ?? false,
+        titleEN: document.getElementById('inTitleEN')?.value || 'COCONUT QUOTATION',
+        tenKhach: document.getElementById('inKhach')?.value.trim() || 'Khách hàng lẻ',
+        lienHe: document.getElementById('inLienHe')?.value.trim() || '',
+        ngayLap: document.getElementById('inNgay')?.value.trim() || new Date().toLocaleDateString('vi-VN'),
+        preparedBy: document.getElementById('inPreparedBy')?.value.trim() || '',
+        validUntil: document.getElementById('inValidUntil')?.value.trim() || '',
+        diaDiemXK: document.getElementById('inDiaDiemXK')?.value.trim() || '',
+        bienSoXe: document.getElementById('inBienSoXe')?.value.trim() || '',
+        dieuKhoan: document.getElementById('inDieuKhoan')?.value || '',
+        notesRieng: document.getElementById('inNotesRieng')?.value || '',
+        enNote: document.getElementById('inEnNote')?.value || '',
+        paymentTerm: document.getElementById('inPaymentTerm')?.value || '',
+        bankInfo: document.getElementById('inBankInfo')?.value || '',
+        currency: document.getElementById('inCurrency')?.value || 'USD',
+        volumeType: document.getElementById('inVolumeType')?.value || '(CTNS/40RF)',
+        emailKhach: document.getElementById('inEmailKhach')?.value.trim() || '',
+        thongTinLienHeMail: document.getElementById('inThongTinLienHeMail')?.value.trim() || '',
+        logoMasterId: window.selectedLogoMasterId || '',
+        wmMasterId: window.selectedWmMasterId || '',
+        wmOpacity: window.wmOpacityPercent || 20,
+        a4CustomHtml: window.thuThapDinhDangA4TuyChinh(),
+        gioHang: window.gioHang || [],
+        lastEditorSession: window.currentClientSessionId,
+        updatedAt: new Date().toISOString()
+      };
+    }
+
+    function capNhatTrangThaiNutAutoCloud(text, isSaving = false) {
+      // Sửa lại: Chỉ cập nhật đúng nút Tự động lưu Cloud, tuyệt đối không đè lên nút Font Chữ
+      const btnAuto = document.querySelector('.sap-pill-bar button[onclick*="luuDon"]') || document.querySelectorAll('.sap-pill-bar button')[1];
+      if (btnAuto) {
+        btnAuto.innerHTML = isSaving ? `⏳ ${text}` : `☁️ ${text}`;
+      }
+      const bc = document.getElementById('sapShellBreadcrumb');
+      const maVal = document.getElementById('inMa')?.value || 'QUO-2026-001';
+      if (bc) {
+        bc.innerText = `🟢 Đa người dùng (Realtime) — Chứng từ: ${maVal} (${text})`;
+      }
+    }
+
+    window.tuDongLuuLenCloud = function() {
+      if (dangNapDuLieuDon || !window.autoSaveCloudEnabled || !duLieuDaThayDoiBoiNguoiDung) return;
+
+      const khachRaw = document.getElementById('inKhach')?.value.trim() || '';
+      const lienHeRaw = document.getElementById('inLienHe')?.value.trim() || '';
+      const dkRaw = document.getElementById('inDieuKhoan')?.value.trim() || '';
+      const notesRaw = document.getElementById('inNotesRieng')?.value.trim() || '';
+      const coDuLieu = khachRaw || lienHeRaw || dkRaw || notesRaw || (window.gioHang && window.gioHang.length > 0);
+      if (!coDuLieu) return;
+
+      clearTimeout(autoSaveCloudTimer);
+      capNhatTrangThaiNutAutoCloud('Đang tự lưu Cloud...', true);
+
+      autoSaveCloudTimer = setTimeout(async () => {
+        try {
+          const orderData = thuThapDuLieuDonHangHienTai();
+          sessionStorage.setItem('argon_active_ma_don', orderData.maDon);
+          await db.collection("DonHang").doc(orderData.maDon).set(orderData, { merge: true });
+          window.masterCache.orders[orderData.maDon] = orderData;
+
+          const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+          capNhatTrangThaiNutAutoCloud(`Đã tự lưu Cloud (${timeStr})`, false);
+        } catch (err) {
+          console.warn("Lỗi tự động lưu Cloud:", err);
+          capNhatTrangThaiNutAutoCloud('Chờ đồng bộ Cloud', false);
+        }
+      }, 1100);
+    };
+
+    window.luuDonNháp = async function() {
+      duLieuDaThayDoiBoiNguoiDung = true;
+      await window.luuVaoAppSheet();
+    };
+
+    // Lắng nghe sự kiện người dùng thực sự gõ phím/thay đổi trên Form để kích hoạt cờ Dirty-Check
+    document.addEventListener('input', (e) => {
+      if (e.target && e.target.closest('#panelLeftForm')) {
+        duLieuDaThayDoiBoiNguoiDung = true;
+      }
+    });
+
+    // =====================================================
+    // BỘ NÃO TRỢ LÝ JOULE AI PRO — TỰ ĐỘNG HÓA BÁO GIÁ & XNK
+    // =====================================================
+    function jouleAppendMsg(html, isUser = false) {
+      const chat = document.getElementById('jouleChatBody');
+      if (!chat) return;
+      const d = document.createElement('div');
+      d.className = 'joule-msg';
+      if (isUser) {
+        d.style.background = '#ece3ff';
+        d.style.borderColor = '#cbb6ff';
+        d.style.fontWeight = '700';
+      }
+      d.innerHTML = html;
+      chat.appendChild(d);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    window.xoaLichSuChatJoule = function() {
+      const chat = document.getElementById('jouleChatBody');
+      if (!chat) return;
+      const msgs = chat.querySelectorAll('.joule-msg');
+      msgs.forEach((m, idx) => { if (idx > 0) m.remove(); });
+    };
+
+    window.jouleQuyDoiTienTeGioHang = function(direction) {
+      if (!window.gioHang || window.gioHang.length === 0) {
+        jouleAppendMsg("⚠️ Giỏ hàng đang trống! Hãy thêm sản phẩm trước khi quy đổi tiền tệ.");
+        return;
+      }
+      duLieuDaThayDoiBoiNguoiDung = true;
+      const rates = window.currentExchangeRates || { USD: 25809, CNY: 3889, EUR: 28531, GBP: 34481 };
+      const usdRate = Number(rates.USD) || 25809;
+      const cnyRate = Number(rates.CNY) || 3889;
+
+      if (direction === 'VND_TO_USD') {
+        window.gioHang.forEach(item => {
+          if (item.gia > 500) item.gia = Number((item.gia / usdRate).toFixed(2));
+        });
+        if (document.getElementById('inCurrency')) document.getElementById('inCurrency').value = 'USD';
+        window.doiCheDo('BG_EN');
+        jouleAppendMsg(`✅ Đã quy đổi toàn bộ đơn giá từ <b>VNĐ ➔ USD</b> theo tỷ giá <b>1 USD = ${usdRate.toLocaleString('vi-VN')} đ</b>!`);
+      } else if (direction === 'USD_TO_VND') {
+        window.gioHang.forEach(item => {
+          if (item.gia < 5000) item.gia = Math.round(item.gia * usdRate);
+        });
+        if (document.getElementById('inCurrency')) document.getElementById('inCurrency').value = 'VND';
+        window.doiCheDo('BG_VN');
+        jouleAppendMsg(`✅ Đã quy đổi toàn bộ đơn giá từ <b>USD ➔ VNĐ</b> theo tỷ giá <b>1 USD = ${usdRate.toLocaleString('vi-VN')} đ</b>!`);
+      } else if (direction === 'VND_TO_CNY') {
+        window.gioHang.forEach(item => {
+          if (item.gia > 500) item.gia = Number((item.gia / cnyRate).toFixed(2));
+        });
+        if (document.getElementById('inCurrency')) document.getElementById('inCurrency').value = 'CNY';
+        window.doiCheDo('BG_EN');
+        jouleAppendMsg(`✅ Đã quy đổi toàn bộ đơn giá sang <b>Nhân dân tệ (CNY)</b> theo tỷ giá <b>1 CNY = ${cnyRate.toLocaleString('vi-VN')} đ</b>!`);
+      }
+      renderTable();
+      updatePreview();
+    };
+
+    window.jouleCongCuocVaoDonGia = function() {
+      const freight = parseFloat(document.getElementById('jouleFreightCost')?.value) || 0;
+      const ctnPerCont = parseFloat(document.getElementById('jouleCtnPerCont')?.value) || 1000;
+      if (freight <= 0 || ctnPerCont <= 0) {
+        jouleAppendMsg("⚠️ Vui lòng nhập số tiền Cước tàu ($) và Số thùng/Cont hợp lệ!");
+        return;
+      }
+      duLieuDaThayDoiBoiNguoiDung = true;
+      const addPerCtn = Number((freight / ctnPerCont).toFixed(2));
+      if (window.gioHang.length > 0) {
+        window.gioHang.forEach(item => {
+          item.gia = Number((Number(item.gia) + addPerCtn).toFixed(2));
+        });
+        renderTable();
+        updatePreview();
+        jouleAppendMsg(`🚢 <b>Đã cộng phân bổ cước biển:</b><br>• Cước tàu: <b>$${freight.toLocaleString()}/cont</b> (${ctnPerCont} CTN)<br>• Tăng thêm: <b>+$${addPerCtn}/CTN</b> vào tất cả sản phẩm trong bảng A4.`);
+      } else {
+        const curGia = parseFloat(document.getElementById('inGia')?.value) || 0;
+        if (document.getElementById('inGia')) document.getElementById('inGia').value = (curGia + addPerCtn).toFixed(2);
+        jouleAppendMsg(`🚢 Cước phân bổ mỗi thùng là <b>+$${addPerCtn}/CTN</b> (Đã cộng sẵn vào ô Đơn giá).`);
+      }
+    };
+
+    window.jouleThucThiLenh = function(cmd) {
+      duLieuDaThayDoiBoiNguoiDung = true;
+      const dkEl = document.getElementById('inDieuKhoan');
+      const bodyEl = document.getElementById('inEmailBody');
+      const subEl = document.getElementById('inEmailSubject');
+      const khach = document.getElementById('inKhach')?.value.trim() || 'Valued Partner';
+      const ma = document.getElementById('inMa')?.value.trim() || 'QUO-2026-001';
+
+      if (cmd === 'INSERT_RATE_NOTE') {
+        const r = window.currentExchangeRates || {};
+        const bankName = DANH_SACH_NGAN_HANG_VN?.[window.currentBankCode]?.name || 'Vietcombank';
+        const noteLine = `Tỷ giá tham chiếu (${bankName} - ${new Date().toLocaleDateString('vi-VN')}): 1 USD = ${Math.round(r.USD || 25800).toLocaleString('vi-VN')} VNĐ | 1 CNY = ${Math.round(r.CNY || 3889).toLocaleString('vi-VN')} VNĐ.`;
+        if (dkEl) {
+          dkEl.value = dkEl.value ? (dkEl.value + '\n' + noteLine) : noteLine;
+          updatePreview();
+        }
+        jouleAppendMsg(`📌 Đã chèn dòng tỷ giá tham chiếu của <b>${bankName}</b> vào mục Điều khoản & Ghi chú trên tờ A4!`);
+      } else if (cmd === 'CLAUSE_50_50') {
+        const isEN = (window.cheDoHienTai === 'BG_EN');
+        const clause = isEN
+          ? `Quality & Loss Allocation: In the event of damaged goods upon arrival verified by joint inspection, Party A and Party B agree to share the loss equally on a 50/50 basis in a spirit of mutual cooperation.`
+          : `Điều khoản rủi ro & Hư hỏng hàng hóa: Trường hợp phát sinh hàng hư hỏng thực tế khi giao nhận, Bên A và Bên B cùng chia nhau 50/50 trên tinh thần chia sẻ hợp tác.`;
+        if (dkEl) {
+          dkEl.value = dkEl.value ? (dkEl.value + '\n' + clause) : clause;
+          updatePreview();
+        }
+        jouleAppendMsg("🤝 Đã chèn điều khoản <b>Chia sẻ tổn thất hư hỏng 50/50</b> vào chứng từ A4!");
+      } else if (cmd === 'CLAUSE_PHYTO') {
+        const clause = `Export Documents Provided: Commercial Invoice, Packing List, Bill of Lading (B/L), Certificate of Origin (C/O), and Phytosanitary Certificate issued by Vietnamese competent authorities.`;
+        if (dkEl) {
+          dkEl.value = dkEl.value ? (dkEl.value + '\n' + clause) : clause;
+          updatePreview();
+        }
+        jouleAppendMsg("🌿 Đã bổ sung bộ chứng từ xuất khẩu chuẩn (<b>Invoice, Packing List, B/L, C/O, Phytosanitary</b>) vào tờ A4!");
+      } else if (cmd === 'MAIL_FOLLOW_UP') {
+        if (subEl) subEl.value = `[GOODS LINK JSC] Follow-up on Official Quotation — Ref: ${ma}`;
+        if (bodyEl) {
+          bodyEl.value = `Dear ${khach},\n\nI hope this email finds you well.\n\nWe are following up on our Official Quotation (Ref No: ${ma}) sent earlier regarding our agricultural export products.\n\nSince fresh raw material prices and reefers space fluctuate weekly, please let us know your feedback or target volume so we can lock in the best rate and priority shipment schedule for your esteemed company.\n\nLooking forward to hearing from you soon.\n\nBest regards,\nGOODS LINK JOINT STOCK COMPANY\nWebsite: www.golifresh.com`;
+        }
+        jouleAppendMsg("📧 Đã soạn xong mẫu <b>Email Follow-up chốt đơn</b> bằng tiếng Anh thương mại vào mục số 4!");
+      } else if (cmd === 'MAIL_REMIND_DEPOSIT') {
+        if (subEl) subEl.value = `[GOODS LINK JSC] Kind Reminder: T/T Deposit for Order ${ma}`;
+        if (bodyEl) {
+          bodyEl.value = `Dear ${khach},\n\nThank you very much for confirming Order Ref: ${ma}.\n\nTo enable us to secure raw materials from our farms and book the reefer container on schedule, please kindly arrange the T/T deposit as agreed in the Proforma Invoice and send us the bank swift copy.\n\nAs soon as we receive the remittance slip, we will immediately proceed with packing and phytosanitary inspection.\n\nBest regards,\nGOODS LINK JOINT STOCK COMPANY\nWebsite: www.golifresh.com`;
+        }
+        jouleAppendMsg("💰 Đã soạn xong mẫu <b>Email nhắc khách chuyển khoản cọc T/T & xin điện Swift</b> vào mục số 4!");
+      } else if (cmd === 'AUDIT_ORDER') {
+        const issues = [];
+        if (!document.getElementById('inKhach')?.value.trim()) issues.push("Chưa nhập <b>Tên khách hàng / Đối tác</b>.");
+        if (window.gioHang.length === 0) issues.push("Giỏ hàng đang <b>trống (0 sản phẩm)</b>.");
+        window.gioHang.forEach((it, idx) => {
+          if (!it.gia || it.gia <= 0) issues.push(`Dòng #${idx + 1} (<b>${escapeHtml(it.tenSP.split('\n')[0])}</b>) đang có <b>Đơn giá = 0</b>.`);
+          if (!it.anh && document.getElementById('chkShowImage')?.checked) issues.push(`Dòng #${idx + 1} đang bật cột Ảnh nhưng <b>chưa tải ảnh SP</b>.`);
+        });
+        if (window.cheDoHienTai === 'BG_EN' && document.getElementById('chkIsPI')?.checked && !document.getElementById('inBankInfo')?.value.trim()) {
+          issues.push("Đang bật chế độ <b>Proforma Invoice (PI)</b> nhưng chưa chọn <b>Thông tin Ngân hàng T/T</b>.");
+        }
+        if (!document.getElementById('inEmailKhach')?.value.trim()) issues.push("Chưa điền <b>Email khách hàng</b> ở Mục 4.");
+
+        if (issues.length === 0) {
+          jouleAppendMsg("✅ <b>Kiểm toán hoàn tất:</b> Chứng từ đã đầy đủ 100% thông tin khách hàng, đơn giá, điều khoản và sẵn sàng xuất PDF / Gửi Mail!");
+        } else {
+          jouleAppendMsg(`⚠️ <b>Phát hiện ${issues.length} điểm cần lưu ý trước khi xuất PDF:</b><br>• ` + issues.join('<br>• '));
+        }
+      }
+    };
+
+    window.guiTinNhanJoule = async function() {
+      const inp = document.getElementById('jouleInputText');
+      const txt = inp?.value.trim();
+      if (!txt) return;
+      inp.value = '';
+      jouleAppendMsg('🧑‍💼 ' + escapeHtml(txt), true);
+
+      const lower = txt.toLowerCase();
+
+      const addMatch = txt.match(/(?:thêm|add|báo giá)\s+(\d+(?:[.,]\d+)?)\s*(ctn|thùng|kg|tấn|cont)?\s+(.+?)\s+(?:giá|price|@)\s*(\d+(?:[.,]\d+)?)/i);
+      if (addMatch) {
+        duLieuDaThayDoiBoiNguoiDung = true;
+        const sl = parseFloat(addMatch[1].replace(',', '.')) || 1;
+        const dvt = (addMatch[2] || 'CTN').toUpperCase();
+        const tenSP = addMatch[3].trim().toUpperCase();
+        const gia = parseFloat(addMatch[4].replace(',', '.')) || 0;
+
+        window.gioHang.push({
+          id: Date.now(),
+          maSP: 'SP0' + (window.gioHang.length + 1),
+          tenSP: tenSP,
+          dvt: dvt,
+          sl: sl,
+          gia: gia,
+          vat: '8',
+          anh: ''
+        });
+        renderTable();
+        updatePreview();
+        jouleAppendMsg(`✅ Đã tự động bóc tách & thêm vào bảng A4:<br>• Sản phẩm: <b>${escapeHtml(tenSP)}</b><br>• Số lượng: <b>${sl} ${dvt}</b> — Đơn giá: <b>${gia.toLocaleString()}</b>`);
+        return;
+      }
+
+      if (lower.startsWith('khách ') || lower.includes('cnf ') || lower.includes('fob ') || lower.includes('cif ')) {
+        duLieuDaThayDoiBoiNguoiDung = true;
+        const khMatch = txt.match(/khách\s+([^,]+)/i);
+        if (khMatch && document.getElementById('inKhach')) {
+          document.getElementById('inKhach').value = khMatch[1].trim();
+        }
+        const incoMatch = txt.match(/\b(EXW|FOB|CNF|CFR|CIF|DDP)\s+([A-Za-z\s]+)/i);
+        if (incoMatch && document.getElementById('inDieuKhoan')) {
+          const termStr = `The above rates are ${incoMatch[1].toUpperCase()} ${incoMatch[2].trim().toUpperCase()}.`;
+          document.getElementById('inDieuKhoan').value = termStr;
+          window.doiCheDo('BG_EN');
+        }
+        updatePreview();
+        jouleAppendMsg("✅ Đã tự động điền thông tin <b>Khách hàng & Điều khoản cảng giao hàng</b> lên tờ A4!");
+        return;
+      }
+
+      const foundSP = Object.values(window.masterCache.sp || {}).filter(s =>
+        s.tenSP.toLowerCase().includes(lower) || s.maSP.toLowerCase().includes(lower)
+      );
+      if (foundSP.length > 0 && lower.length >= 2) {
+        let html = `🔎 Tìm thấy <b>${foundSP.length} sản phẩm</b> trong Database khớp với "${escapeHtml(txt)}":<br>`;
+        foundSP.slice(0, 3).forEach(s => {
+          html += `<button class="joule-chip" style="margin-top:4px;" onclick="document.getElementById('spSelect').value='${escapeHtml(s.docId)}';chonSPDatabase();themVaoGio();">+ Đưa [${escapeHtml(s.maSP)}] ${escapeHtml(s.tenSP)} (${s.gia.toLocaleString()}) vào đơn</button><br>`;
+        });
+        jouleAppendMsg(html);
+        return;
+      }
+
+      const apiKey = localStorage.getItem('argon_gemini_api_key');
+      if (apiKey) {
+        try {
+          jouleAppendMsg("⏳ <i>Joule đang phân tích...</i>");
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{
+                  text: `Bạn là trợ lý xuất nhập khẩu nông sản của Công ty Cổ phần Goods Link (Việt Nam - www.golifresh.com). Trả lời ngắn gọn, súc tích, thực tế cho câu hỏi: ${txt}`
+                }]
+              }]
+            })
+          });
+          const data = await res.json();
+          const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (reply) {
+            jouleAppendMsg(reply.replace(/\n/g, '<br>'));
+            return;
+          }
+        } catch (e) {}
+      }
+
+      window.jouleThucThiLenh('AUDIT_ORDER');
+    };
+
+    window.caiDatGeminiKeyJoule = function() {
+      const cur = localStorage.getItem('argon_gemini_api_key') || '';
+      const key = prompt("Nhập Google Gemini API Key (tùy chọn) để Joule trả lời mọi câu hỏi Xuất nhập khẩu, HS Code & Dịch thuật tự do:", cur);
+      if (key !== null) {
+        localStorage.setItem('argon_gemini_api_key', key.trim());
+        hienToast("✅ Đã lưu khóa Gemini AI cho trợ lý Joule!");
+      }
+    };
+
+    window.copyTextToClipboard = async function(text) {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch (e) {}
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try {
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        return true;
+      } catch (err) {
+        document.body.removeChild(ta);
+        return false;
+      }
+    };
+
+    // =====================================================
+    // 1. XỬ LÝ ẢNH NÉN TỐI ƯU BĂNG THÔNG CHO ĐA NGƯỜI DÙNG
+    // =====================================================
+    function docFileAnhSangBase64(file, maxWidth, keepPng, callback) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          let w = img.width;
+          let h = img.height;
+          if (w > maxWidth) {
+            h = Math.round((h * maxWidth) / w);
+            w = maxWidth;
+          }
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          const mime = (keepPng || file.type === 'image/png') ? 'image/png' : 'image/jpeg';
+          callback(canvas.toDataURL(mime, 0.86));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function taoWatermarkTachNenTrang(srcDataUrl, opacityPercent, callback) {
+      if (!srcDataUrl) return;
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        let w = img.width || 500;
+        let h = img.height || 500;
+        const maxW = 650;
+        if (w > maxW) {
+          h = Math.round((h * maxW) / w);
+          w = maxW;
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const data = imgData.data;
+        const targetAlpha = Math.round(255 * (opacityPercent / 100));
+
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          const a = data[i + 3];
+
+          if (a < 10 || (r > 238 && g > 238 && b > 238)) {
+            data[i + 3] = 0;
+          } else {
+            data[i + 3] = targetAlpha;
+          }
+        }
+
+        ctx.putImageData(imgData, 0, 0);
+        callback(canvas.toDataURL('image/png'));
+      };
+      img.src = srcDataUrl;
+    }
+
+    // Nén ảnh thông minh dưới ngưỡng 750KB để lưu ổn định lên Firestore Master Data
+    function docFileAnhMasterAnToan(file, maxWidth, keepPng, callback) {
+      docFileAnhSangBase64(file, maxWidth, keepPng, function(dataUrl) {
+        if (dataUrl.length <= 750000) {
+          callback(dataUrl);
+          return;
+        }
+        // Tự động thu nhỏ thêm nếu ảnh PNG quá nặng so với giới hạn 1MB của Firestore
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const ratio = Math.min(0.68, 400 / (img.width || 400));
+          canvas.width = Math.max(120, Math.round(img.width * ratio));
+          canvas.height = Math.max(120, Math.round(img.height * ratio));
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          let out = canvas.toDataURL('image/png');
+          if (out.length > 780000) {
+            out = canvas.toDataURL('image/jpeg', 0.82);
+          }
+          callback(out);
+        };
+        img.src = dataUrl;
+      });
+    }
+
+    window.moQuanLyAnhMaster = function() {
+      window.chuyenManHinhKapella('MASTER');
+      setTimeout(() => {
+        document.getElementById('masterBrandImagesSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 120);
+    };
+
+    window.loadLogo = function(input) {
+      const file = input?.files?.[0];
+      if (!file) return;
+      docFileAnhMasterAnToan(file, 550, true, function(dataUrl) {
+        window.selectedLogoMasterId = '';
+        const sel = document.getElementById('logoMasterSelect');
+        if (sel) sel.value = '';
+        apDungLogo(dataUrl, file.name + ' (Ảnh tạm)');
+        try {
+          localStorage.removeItem('argon_selected_logo_id');
+          localStorage.setItem('argon_saved_logo', dataUrl);
+          localStorage.setItem('argon_saved_logo_name', file.name + ' (Ảnh tạm)');
+        } catch (e) {}
+        hienToast("✅ Đã áp dụng Logo tạm từ máy!");
+      });
+    };
+
+    function apDungLogo(dataUrl, labelName = '') {
+      const logoEl = document.getElementById('sysLogo');
+      const btnXoa = document.getElementById('btnXoaLogo');
+      const wrap = document.getElementById('studioLogoPreviewWrap');
+      const prevImg = document.getElementById('studioLogoPreviewImg');
+      const prevName = document.getElementById('studioLogoPreviewName');
+      if (!logoEl) return;
+
+      if (dataUrl) {
+        logoEl.src = dataUrl;
+        logoEl.style.setProperty('display', 'block', 'important');
+        if (btnXoa) btnXoa.style.display = 'inline-block';
+        if (wrap && prevImg) {
+          prevImg.src = dataUrl;
+          if (prevName) prevName.innerText = labelName || 'Logo đang áp dụng';
+          wrap.style.display = 'flex';
+        }
+      } else {
+        logoEl.src = '';
+        logoEl.style.setProperty('display', 'none', 'important');
+        if (btnXoa) btnXoa.style.display = 'none';
+        if (wrap) wrap.style.display = 'none';
+      }
+    }
+
+    window.chonLogoTuMaster = function(silent = false) {
+      const sel = document.getElementById('logoMasterSelect');
+      const docId = sel ? sel.value : '';
+      if (!docId) {
+        window.xoaLogo(silent);
+        return;
+      }
+      const item = window.masterCache.logo?.[docId];
+      if (!item || !item.anhBase64) return;
+
+      duLieuDaThayDoiBoiNguoiDung = true;
+      window.selectedLogoMasterId = docId;
+      apDungLogo(item.anhBase64, item.tenAnh);
+      try {
+        localStorage.setItem('argon_selected_logo_id', docId);
+        localStorage.setItem('argon_saved_logo', item.anhBase64);
+        localStorage.setItem('argon_saved_logo_name', item.tenAnh || '');
+      } catch (e) {}
+      if (!silent) {
+        hienToast(`🏢 Đã chọn Logo: ${item.tenAnh}`);
+        window.tuDongLuuLenCloud();
+      }
+    };
+
+    window.xoaLogo = function(silent = false) {
+      window.selectedLogoMasterId = '';
+      apDungLogo('');
+      if (document.getElementById('logoMasterSelect')) document.getElementById('logoMasterSelect').value = '';
+      if (document.getElementById('inLogoFile')) document.getElementById('inLogoFile').value = '';
+      try {
+        localStorage.removeItem('argon_selected_logo_id');
+        localStorage.removeItem('argon_saved_logo');
+        localStorage.removeItem('argon_saved_logo_name');
+      } catch (e) {}
+      if (!silent) {
+        duLieuDaThayDoiBoiNguoiDung = true;
+        window.tuDongLuuLenCloud();
+        hienToast("🗑️ Đã gỡ Logo khỏi tờ báo giá!");
+      }
+    };
+
+    window.loadWatermark = function(input) {
+      const file = input?.files?.[0];
+      if (!file) return;
+      docFileAnhMasterAnToan(file, 650, true, function(rawDataUrl) {
+        window.selectedWmMasterId = '';
+        const sel = document.getElementById('wmMasterSelect');
+        if (sel) sel.value = '';
+        window.rawWatermarkBase64 = rawDataUrl;
+        const pct = parseInt(document.getElementById('wmOpacitySlider')?.value || '20', 10);
+        window.wmOpacityPercent = pct;
+        try {
+          localStorage.removeItem('argon_selected_wm_id');
+          localStorage.setItem('argon_raw_wm', rawDataUrl);
+          localStorage.setItem('argon_saved_wm_name', file.name + ' (Ảnh tạm)');
+        } catch (e) {}
+
+        taoWatermarkTachNenTrang(rawDataUrl, pct, function(processedPng) {
+          apDungWatermark(processedPng, file.name + ' (Ảnh tạm)', rawDataUrl);
+          try { localStorage.setItem('argon_saved_wm', processedPng); } catch (e) {}
+          hienToast("✅ Đã chèn Watermark tạm từ máy!");
+        });
+      });
+    };
+
+    window.chonWatermarkTuMaster = function(silent = false) {
+      const sel = document.getElementById('wmMasterSelect');
+      const docId = sel ? sel.value : '';
+      if (!docId) {
+        window.xoaWatermark(silent);
+        return;
+      }
+      const item = window.masterCache.watermark?.[docId];
+      if (!item || !item.anhBase64) return;
+
+      duLieuDaThayDoiBoiNguoiDung = true;
+      window.selectedWmMasterId = docId;
+      window.rawWatermarkBase64 = item.anhBase64;
+      const pct = parseInt(document.getElementById('wmOpacitySlider')?.value || window.wmOpacityPercent || '20', 10);
+      window.wmOpacityPercent = pct;
+
+      try {
+        localStorage.setItem('argon_selected_wm_id', docId);
+        localStorage.setItem('argon_raw_wm', item.anhBase64);
+        localStorage.setItem('argon_saved_wm_name', item.tenAnh || '');
+      } catch (e) {}
+
+      taoWatermarkTachNenTrang(item.anhBase64, pct, function(processedPng) {
+        apDungWatermark(processedPng, item.tenAnh, item.anhBase64);
+        try { localStorage.setItem('argon_saved_wm', processedPng); } catch (e) {}
+      });
+
+      if (!silent) {
+        hienToast(`💧 Đã chọn Watermark: ${item.tenAnh}`);
+        window.tuDongLuuLenCloud();
+      }
+    };
+
+    window.doiDoDamWatermark = function(val) {
+      const pct = parseInt(val || '20', 10);
+      window.wmOpacityPercent = pct;
+      const lbl = document.getElementById('wmOpacityLabel');
+      if (lbl) lbl.innerText = pct + '%';
+      try { localStorage.setItem('argon_wm_opacity', String(pct)); } catch (e) {}
+
+      // Chỉ xử lý từ ảnh Watermark riêng biệt (tuyệt đối không lấy nhầm Logo)
+      const rawSrc = window.rawWatermarkBase64 || localStorage.getItem('argon_raw_wm');
+      if (rawSrc) {
+        const curName = (window.selectedWmMasterId && window.masterCache.watermark?.[window.selectedWmMasterId]?.tenAnh)
+          || localStorage.getItem('argon_saved_wm_name') || 'Watermark đang áp dụng';
+        taoWatermarkTachNenTrang(rawSrc, pct, function(processedPng) {
+          apDungWatermark(processedPng, curName, rawSrc);
+          try { localStorage.setItem('argon_saved_wm', processedPng); } catch (e) {}
+        });
+      }
+    };
+
+    function apDungWatermark(dataUrl, labelName = '', thumbSrc = '') {
+      const wmEl = document.getElementById('watermarkImg');
+      const btnXoa = document.getElementById('btnXoaWm');
+      const wrap = document.getElementById('studioWmPreviewWrap');
+      const prevImg = document.getElementById('studioWmPreviewImg');
+      const prevName = document.getElementById('studioWmPreviewName');
+      if (!wmEl) return;
+
+      if (dataUrl) {
+        window.processedWatermarkBase64 = dataUrl;
+        wmEl.src = dataUrl;
+        wmEl.style.setProperty('display', 'block', 'important');
+        wmEl.style.setProperty('opacity', '1', 'important');
+        if (btnXoa) btnXoa.style.display = 'inline-block';
+        if (wrap && prevImg) {
+          prevImg.src = thumbSrc || dataUrl;
+          if (prevName) prevName.innerText = labelName || 'Watermark đang áp dụng';
+          wrap.style.display = 'flex';
+        }
+      } else {
+        window.processedWatermarkBase64 = '';
+        wmEl.src = '';
+        wmEl.style.setProperty('display', 'none', 'important');
+        if (btnXoa) btnXoa.style.display = 'none';
+        if (wrap) wrap.style.display = 'none';
+      }
+    }
+
+    window.xoaWatermark = function(silent = false) {
+      window.selectedWmMasterId = '';
+      window.rawWatermarkBase64 = '';
+      apDungWatermark('');
+      if (document.getElementById('wmMasterSelect')) document.getElementById('wmMasterSelect').value = '';
+      if (document.getElementById('inWmFile')) document.getElementById('inWmFile').value = '';
+      try {
+        localStorage.removeItem('argon_selected_wm_id');
+        localStorage.removeItem('argon_raw_wm');
+        localStorage.removeItem('argon_saved_wm');
+        localStorage.removeItem('argon_saved_wm_name');
+      } catch (e) {}
+      if (!silent) {
+        duLieuDaThayDoiBoiNguoiDung = true;
+        window.tuDongLuuLenCloud();
+        hienToast("🗑️ Đã gỡ Watermark khỏi tờ báo giá!");
+      }
+    };
+
+    window.loadSpImage = function(input) {
+      const file = input?.files?.[0];
+      if (!file) return;
+      docFileAnhSangBase64(file, 550, false, function(dataUrl) {
+        window.currentSpImageBase64 = dataUrl;
+        const preview = document.getElementById('spPreviewLeft');
+        const btnClear = document.getElementById('btnClearSpImg');
+        if (preview) {
+          preview.src = dataUrl;
+          preview.style.display = 'inline-block';
+        }
+        if (btnClear) btnClear.style.display = 'inline-block';
+
+        if (dangSuaGioIndex >= 0 && window.gioHang[dangSuaGioIndex]) {
+          duLieuDaThayDoiBoiNguoiDung = true;
+          window.gioHang[dangSuaGioIndex].anh = dataUrl;
+          renderTable();
+          hienToast("📸 Đã cập nhật ảnh vào dòng #" + (dangSuaGioIndex + 1));
+        } else if (window.gioHang.length > 0 && !document.getElementById('inTenSP')?.value.trim()) {
+          duLieuDaThayDoiBoiNguoiDung = true;
+          const lastIdx = window.gioHang.length - 1;
+          window.gioHang[lastIdx].anh = dataUrl;
+          renderTable();
+          hienToast("📸 Đã gắn ảnh vào sản phẩm vừa thêm!");
+        } else {
+          hienToast("📸 Đã nạp ảnh SP! Bấm '+ Thêm Sản Phẩm Vào Đơn'.");
+        }
+      });
+    };
+
+    window.xoaAnhSpTam = function() {
+      window.currentSpImageBase64 = '';
+      const preview = document.getElementById('spPreviewLeft');
+      const btnClear = document.getElementById('btnClearSpImg');
+      if (preview) { preview.src = ''; preview.style.display = 'none'; }
+      if (btnClear) btnClear.style.display = 'none';
+      if (document.getElementById('inSpFile')) document.getElementById('inSpFile').value = '';
+    };
+
+    window.loadMasterSpImage = function(input) {
+      const file = input?.files?.[0];
+      if (!file) return;
+      docFileAnhSangBase64(file, 550, false, function(dataUrl) {
+        window.currentMasterSpImageBase64 = dataUrl;
+        const img = document.getElementById('qtPreviewSP');
+        if (img) { img.src = dataUrl; img.style.display = 'block'; }
+      });
+    };
+
+    // =====================================================
+    // 2. ĐIỀU HƯỚNG MÀN HÌNH
+    // =====================================================
+    window.tuDongZoomA4TrenMobile = function() {
+      const wrapper = document.getElementById('a4Wrapper');
+      const paper = document.getElementById('a4Paper');
+      const rightPanel = document.getElementById('panelRightScroll');
+      if (!wrapper || !paper) return;
+
+      if (window.innerWidth <= 768) {
+        wrapper.style.transform = 'none';
+        const availWidth = Math.max(280, window.innerWidth - 16);
+        const scale = availWidth / 794;
+        paper.style.transform = `scale(${scale.toFixed(4)})`;
+        paper.style.transformOrigin = 'top left';
+
+        const actualHeight = Math.max(1123, paper.scrollHeight);
+        wrapper.style.width = `${availWidth}px`;
+        wrapper.style.height = `${Math.ceil(actualHeight * scale) + 20}px`;
+      } else {
+        paper.style.transform = 'none';
+        wrapper.style.width = '';
+        wrapper.style.height = '';
+
+        const zoomSelect = document.getElementById('zoomSelectBox');
+        const userZoom = parseFloat(zoomSelect ? zoomSelect.value : '1') || 1;
+        const availDesktopWidth = rightPanel ? (rightPanel.clientWidth - 44) : 820;
+        const autoFitScale = availDesktopWidth < 794 ? Math.max(0.62, availDesktopWidth / 794) : 1;
+        const finalScale = Math.min(userZoom, autoFitScale);
+
+        wrapper.style.transform = `scale(${finalScale.toFixed(4)})`;
+        wrapper.style.transformOrigin = 'top center';
+      }
+    };
+
+    window.chuyenTabMobile = function(subTab) {
+      currentMobileSubTab = subTab;
+      const panelLeft = document.querySelector('#viewStudio .panel-left');
+      const panelRight = document.querySelector('#viewStudio .panel-right');
+      const btnForm = document.getElementById('mobBtnForm');
+      const btnPreview = document.getElementById('mobBtnPreview');
+
+      if (!panelLeft || !panelRight) return;
+      if (window.innerWidth > 768) {
+        panelLeft.style.display = '';
+        panelRight.style.display = '';
+        window.tuDongZoomA4TrenMobile();
+        return;
+      }
+
+      if (subTab === 'PREVIEW') {
+        panelLeft.style.display = 'none';
+        panelRight.style.display = 'flex';
+        btnForm?.classList.remove('active');
+        btnPreview?.classList.add('active');
+        setTimeout(window.tuDongZoomA4TrenMobile, 50);
+      } else {
+        panelLeft.style.display = 'flex';
+        panelRight.style.display = 'none';
+        btnForm?.classList.add('active');
+        btnPreview?.classList.remove('active');
+      }
+    };
+
+    window.addEventListener('resize', () => {
+      if (currentMainTab === 'STUDIO') window.chuyenTabMobile(currentMobileSubTab);
+    });
+
+    window.chuyenManHinhKapella = function(tab) {
+      currentMainTab = tab;
+      const dashScreen = document.getElementById('viewDashboard');
+      const studioScreen = document.getElementById('viewStudio');
+      const masterScreen = document.getElementById('manHinhQuanLyMaster');
+      const mobNav = document.getElementById('mobileBottomNav');
+      const subMenuStudio = document.getElementById('subMenuStudio');
+      const iconChevronStudio = document.getElementById('iconChevronStudio');
+
+      [dashScreen, studioScreen, masterScreen].forEach(s => { if (s) s.style.setProperty('display', 'none', 'important'); });
+      ['tabBtnDash', 'tabBtnStudio', 'tabBtnMaster', 'segBtnDash', 'segBtnStudio', 'segBtnMaster'].forEach(id => {
+        document.getElementById(id)?.classList.remove('active');
+      });
+
+      if (subMenuStudio) {
+        if (tab === 'STUDIO') {
+          subMenuStudio.classList.add('open');
+          if (iconChevronStudio) iconChevronStudio.className = 'mdi mdi-chevron-down';
+        } else {
+          subMenuStudio.classList.remove('open');
+          if (iconChevronStudio) iconChevronStudio.className = 'mdi mdi-chevron-right';
+        }
+      }
+
+      if (tab === 'DASH' && dashScreen) {
+        dashScreen.style.setProperty('display', 'block', 'important');
+        document.getElementById('tabBtnDash')?.classList.add('active');
+        document.getElementById('segBtnDash')?.classList.add('active');
+        if (mobNav) mobNav.style.setProperty('display', 'none', 'important');
+        renderKapellaDashboard();
+      } else if (tab === 'STUDIO' && studioScreen) {
+        studioScreen.style.setProperty('display', 'flex', 'important');
+        document.getElementById('tabBtnStudio')?.classList.add('active');
+        document.getElementById('segBtnStudio')?.classList.add('active');
+        if (mobNav) mobNav.style.display = '';
+        window.chuyenTabMobile(currentMobileSubTab);
+      } else if (tab === 'MASTER' && masterScreen) {
+        masterScreen.style.setProperty('display', 'block', 'important');
+        document.getElementById('tabBtnMaster')?.classList.add('active');
+        document.getElementById('segBtnMaster')?.classList.add('active');
+        if (mobNav) mobNav.style.setProperty('display', 'none', 'important');
+      }
+
+      if (window.innerWidth <= 1024) {
+        document.getElementById('sapSideNav')?.classList.add('collapsed');
+        document.getElementById('sapMobileBackdrop')?.classList.remove('show');
+      }
+    };
+
+    // =====================================================
+    // 3. CHUYỂN ĐỔI 3 CHẾ ĐỘ & HIỂN THỊ WWW.GOLIFRESH.COM DƯỚI ĐỊA CHỈ
+    // =====================================================
+    window.doiCheDo = function(mode) {
+      window.cheDoHienTai = mode;
+      ['btnBG_VN', 'btnBG_EN', 'btnXK', 'sideModeVN', 'sideModeEN', 'sideModeXK'].forEach(id => {
+        document.getElementById(id)?.classList.remove('active');
+      });
+      if (mode === 'BG_VN') {
+        document.getElementById('btnBG_VN')?.classList.add('active');
+        document.getElementById('sideModeVN')?.classList.add('active');
+      }
+      if (mode === 'BG_EN') {
+        document.getElementById('btnBG_EN')?.classList.add('active');
+        document.getElementById('sideModeEN')?.classList.add('active');
+      }
+      if (mode === 'XK') {
+        document.getElementById('btnXK')?.classList.add('active');
+        document.getElementById('sideModeXK')?.classList.add('active');
+      }
+
+      const isEN = (mode === 'BG_EN');
+      const isXK = (mode === 'XK');
+      const isPI = isEN && (document.getElementById('chkIsPI')?.checked ?? false);
+
+      document.getElementById('divTitleENSelect').style.display = isEN ? 'block' : 'none';
+      document.getElementById('rowEnExtra').style.display = isEN ? 'flex' : 'none';
+      document.getElementById('divIncotermBuilder').style.display = isEN ? 'block' : 'none';
+      document.getElementById('divEnNoteGroup').style.display = isEN ? 'block' : 'none';
+      document.getElementById('rowEnOptions').style.display = isEN ? 'flex' : 'none';
+      document.getElementById('divBankInfoInput').style.display = (isEN && isPI) ? 'block' : 'none';
+      document.getElementById('divQuoteTitleDropdown').style.display = (isEN && !isPI) ? 'block' : 'none';
+
+      document.getElementById('rowXkExtraFields').style.display = isXK ? 'block' : 'none';
+      document.getElementById('divPaymentTermInput').style.display = isXK ? 'none' : 'block';
+      document.getElementById('rowPriceAndVat').style.display = isXK ? 'none' : 'flex';
+      document.getElementById('divVATGroup').style.display = (mode === 'BG_VN') ? 'block' : 'none';
+
+      document.getElementById('lblToggleTotal').style.display = (!isXK && (!isEN || isPI)) ? 'flex' : 'none';
+      document.getElementById('lblToggleWords').style.display = (!isXK && (!isEN || isPI)) ? 'flex' : 'none';
+
+      document.getElementById('sigXKContainer').style.display = isXK ? 'flex' : 'none';
+      document.getElementById('sigSingleContainer').style.display = isXK ? 'none' : 'flex';
+
+      const sysTen = document.getElementById('sysTen');
+      if (sysTen) sysTen.innerText = isEN ? 'GOODS LINK JOINT STOCK COMPANY' : 'CÔNG TY CỔ PHẦN GOODS LINK';
+      const sysDiaChi = document.getElementById('sysDiaChi');
+      if (sysDiaChi) {
+        sysDiaChi.innerText = isEN
+          ? '157/59/2T2 Duong Ba Trac Street, Chanh Hung Ward, Ho Chi Minh City, Viet Nam'
+          : 'Số 157/59/2T2 Dương Bá Trạc, Phường Chánh Hưng, TP. Hồ Chí Minh, Việt Nam';
+      }
+      damBaoHienThiWebsiteCongTy();
+
+      const signTitle = document.getElementById('signTitleName');
+      const signSub = document.getElementById('signSubText');
+      if (signTitle) signTitle.innerText = isEN ? 'AUTHORIZED SIGNATURE' : 'ĐẠI DIỆN CÔNG TY';
+      if (signSub) signSub.innerText = isEN ? '(Signed & Stamped)' : '(Ký, đóng dấu & ghi rõ họ tên)';
+
+      renderTable();
+      updatePreview();
+    };
+
+    window.batTatCheDoPI = function() {
+      duLieuDaThayDoiBoiNguoiDung = true;
+      window.doiCheDo('BG_EN');
+    };
+
+    window.datLaiNoiDungMacDinh = function(showAlert) {
+      const mode = window.cheDoHienTai || 'BG_VN';
+      const isEN = (mode === 'BG_EN');
+      const isXK = (mode === 'XK');
+      const isPI = isEN && (document.getElementById('chkIsPI')?.checked ?? false);
+
+      const khach = document.getElementById('inKhach')?.value.trim() || (isEN ? 'Valued Customer / Partner' : 'Quý Khách hàng / Đối tác');
+      const ma = document.getElementById('inMa')?.value.trim() || 'QUO-2026-001';
+      const ngay = document.getElementById('inNgay')?.value.trim() || new Date().toLocaleDateString('vi-VN');
+      const lienHe = document.getElementById('inThongTinLienHeMail')?.value.trim() || '';
+
+      const subEl = document.getElementById('inEmailSubject');
+      const bodyEl = document.getElementById('inEmailBody');
+      if (!subEl || !bodyEl) return;
+
+      if (isEN) {
+        const docTypeEN = isPI ? 'Proforma Invoice' : 'Official Quotation';
+        subEl.value = `[GOODS LINK JSC] ${docTypeEN} — Ref No: ${ma}`;
+        bodyEl.value = `Dear ${khach},\n\nWarm greetings from Goods Link Joint Stock Company! Thank you very much for your interest in our products.\n\nWe are pleased to send you our ${docTypeEN} (Ref No: ${ma}, Date: ${ngay}) in the attached PDF file for your review.\n\nShould you have any questions or require any further discussion regarding specifications, packing, or shipment terms, please feel free to contact us${lienHe ? ' via: ' + lienHe : ''}.\n\nWe look forward to hearing from you and establishing a long-term business relationship with your esteemed company.\n\nBest regards,\nGOODS LINK JOINT STOCK COMPANY\nWebsite: www.golifresh.com`;
+      } else if (isXK) {
+        subEl.value = `[GOODS LINK JSC] Phiếu Xuất Kho Kiêm Vận Chuyển — Số phiếu: ${ma}`;
+        bodyEl.value = `Kính gửi: ${khach},\n\nCông ty Cổ phần Goods Link xin gửi kèm theo email này Phiếu Xuất Kho chi tiết (Số phiếu: ${ma}, ngày xuất: ${ngay}).\n\nQuý đối tác vui lòng kiểm tra thông tin hàng hóa và số lượng trong tệp PDF đính kèm${lienHe ? '.\nMọi thông tin xin liên hệ: ' + lienHe : ''}.\n\nTrân trọng cảm ơn!\nCÔNG TY CỔ PHẦN GOODS LINK\nWebsite: www.golifresh.com`;
+      } else {
+        subEl.value = `[GOODS LINK JSC] Bảng Báo Giá Sản Phẩm — Mã số: ${ma}`;
+        bodyEl.value = `Kính gửi: ${khach},\n\nCông ty Cổ phần Goods Link xin gửi lời chào trân trọng và cảm ơn sự quan tâm của Quý khách hàng / Đối tác.\n\nChúng tôi xin gửi kèm theo email này Bảng Báo Giá chi tiết (Mã chứng từ: ${ma}, ngày lập: ${ngay}) trong tệp PDF đính kèm.\n\nNếu cần trao đổi thêm về quy cách, số lượng hoặc điều khoản giao hàng, Quý khách vui lòng phản hồi lại email này${lienHe ? ' hoặc liên hệ trực tiếp: ' + lienHe : ''}.\n\nTrân trọng cảm ơn và rất mong được hợp tác!\nCÔNG TY CỔ PHẦN GOODS LINK\nWebsite: www.golifresh.com`;
+      }
+
+      if (showAlert) hienToast(isEN ? "🇬🇧 Đã cập nhật mẫu Email Tiếng Anh!" : "🇻🇳 Đã cập nhật mẫu Email Tiếng Việt!");
+    };
+
+    window.capNhatLienHeVaoA4 = function() {
+      duLieuDaThayDoiBoiNguoiDung = true;
+      const info = document.getElementById('inThongTinLienHeMail')?.value.trim() || '';
+      const sysLienHe = document.getElementById('sysLienHeCty');
+      if (sysLienHe) sysLienHe.innerText = info;
+
+      const enNote = document.getElementById('inEnNote');
+      if (enNote) {
+        enNote.value = info
+          ? `Please contact us via information: ${info} for further discussion and information.`
+          : '';
+      }
+      updatePreview();
+    };
+
+    // =====================================================
+    // 4. GIỎ HÀNG & BẢNG A4 (BATCH RENDER SIÊU MƯỢT)
+    // =====================================================
+    window.themVaoGio = function() {
+      const maSP = document.getElementById('inMaSPMoi')?.value.trim() || ('SP' + (window.gioHang.length + 1));
+      const tenSP = document.getElementById('inTenSP')?.value.trim();
+      const dvt = document.getElementById('inDVT')?.value.trim() || 'CTN';
+      const sl = parseFloat(document.getElementById('inSL')?.value) || 1;
+      const gia = parseFloat(document.getElementById('inGia')?.value) || 0;
+      const vat = document.getElementById('inVAT')?.value || '8';
+      const anh = window.currentSpImageBase64 || '';
+
+      if (!tenSP) {
+        hienToast("⚠️ Vui lòng chọn sản phẩm hoặc nhập Tên / Mô tả quy cách!");
+        return;
+      }
+
+      duLieuDaThayDoiBoiNguoiDung = true;
+      const itemObj = { id: Date.now(), maSP, tenSP, dvt, sl, gia, vat, anh };
+
+      if (dangSuaGioIndex >= 0 && dangSuaGioIndex < window.gioHang.length) {
+        if (!itemObj.anh && window.gioHang[dangSuaGioIndex].anh) {
+          itemObj.anh = window.gioHang[dangSuaGioIndex].anh;
+        }
+        window.gioHang[dangSuaGioIndex] = itemObj;
+        dangSuaGioIndex = -1;
+        const btnAdd = document.getElementById('btnAddCartMain');
+        if (btnAdd) btnAdd.innerText = '+ Thêm Sản Phẩm Vào Đơn';
+        hienToast("✅ Đã cập nhật sản phẩm trong đơn thành công!");
+      } else {
+        window.gioHang.push(itemObj);
+        hienToast("✅ Đã thêm sản phẩm vào đơn thành công!");
+      }
+
+      document.getElementById('inTenSP').value = '';
+      document.getElementById('inSL').value = '1';
+      xoaAnhSpTam();
+
+      renderTable();
+      updatePreview();
+    };
+
+    window.suaSanPhamTrongGio = function(idx) {
+      const item = window.gioHang[idx];
+      if (!item) return;
+      dangSuaGioIndex = idx;
+      document.getElementById('inMaSPMoi').value = item.maSP || '';
+      document.getElementById('inTenSP').value = item.tenSP || '';
+      document.getElementById('inDVT').value = item.dvt || 'CTN';
+      document.getElementById('inSL').value = item.sl || 1;
+      document.getElementById('inGia').value = item.gia || 0;
+      if (document.getElementById('inVAT')) document.getElementById('inVAT').value = item.vat || '8';
+
+      if (item.anh) {
+        window.currentSpImageBase64 = item.anh;
+        const preview = document.getElementById('spPreviewLeft');
+        const btnClear = document.getElementById('btnClearSpImg');
+        if (preview) { preview.src = item.anh; preview.style.display = 'inline-block'; }
+        if (btnClear) btnClear.style.display = 'inline-block';
+      } else {
+        xoaAnhSpTam();
+      }
+
+      const btnAdd = document.getElementById('btnAddCartMain');
+      if (btnAdd) btnAdd.innerText = '💾 Lưu Cập Nhật Dòng #' + (idx + 1);
+      document.getElementById('inTenSP').focus();
+    };
+
+    window.diChuyenGio = function(idx, dir) {
+      const target = idx + dir;
+      if (target < 0 || target >= window.gioHang.length) return;
+      duLieuDaThayDoiBoiNguoiDung = true;
+      const temp = window.gioHang[idx];
+      window.gioHang[idx] = window.gioHang[target];
+      window.gioHang[target] = temp;
+      renderTable();
+      updatePreview();
+    };
+
+    window.xoaKhoiGio = function(idx) {
+      duLieuDaThayDoiBoiNguoiDung = true;
+      window.gioHang.splice(idx, 1);
+      if (dangSuaGioIndex === idx) {
+        dangSuaGioIndex = -1;
+        const btnAdd = document.getElementById('btnAddCartMain');
+        if (btnAdd) btnAdd.innerText = '+ Thêm Sản Phẩm Vào Đơn';
+      }
+      renderTable();
+      updatePreview();
+      hienToast("🗑️ Đã xóa dòng sản phẩm khỏi bảng báo giá!");
+    };
+
+    window.renderTable = function() {
+      const miniBody = document.getElementById('cartMiniBody');
+      const preTable = document.getElementById('preTable');
+      const headerRow = document.getElementById('tableHeaderRow');
+      const boxWords = document.getElementById('boxAmountInWords');
+      const preWords = document.getElementById('preAmountInWords');
+      const lblWordsPrefix = document.getElementById('lblAmountInWordsPrefix');
+
+      if (!miniBody || !preTable || !headerRow) return;
+
+      const mode = window.cheDoHienTai || 'BG_VN';
+      const isEN = (mode === 'BG_EN');
+      const isXK = (mode === 'XK');
+      const isPI = isEN && (document.getElementById('chkIsPI')?.checked ?? false);
+
+      if (window.gioHang.length === 0) {
+        miniBody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--sap-muted);">Chưa có sản phẩm</td></tr>';
+      } else {
+        const miniRows = [];
+        window.gioHang.forEach((item, idx) => {
+          const tenNgan = (item.tenSP || '').split('\n')[0];
+          miniRows.push(`
+            <tr>
+              <td><b>${escapeHtml(item.maSP)}</b><br><span style="font-size:11px; color:#475569;">${escapeHtml(tenNgan)}</span></td>
+              <td>${item.sl} ${escapeHtml(item.dvt)}</td>
+              <td>${item.anh ? `<img src="${item.anh}" style="height:40px;width:44px;object-fit:cover;border-radius:4px;border:1px solid #cbd5e1;background:#fff;">` : '<span style="color:#cbd5e1;font-size:10px;">Trống</span>'}</td>
+              <td style="text-align:right; white-space:nowrap;">
+                <button type="button" onclick="diChuyenGio(${idx}, -1)" style="background:#e8f3ff; color:#0064d9; border:1px solid #b8daff; padding:2px 6px; border-radius:10px; font-size:10px; cursor:pointer;">↑</button>
+                <button type="button" onclick="diChuyenGio(${idx}, 1)" style="background:#e8f3ff; color:#0064d9; border:1px solid #b8daff; padding:2px 6px; border-radius:10px; font-size:10px; cursor:pointer;">↓</button>
+                <button type="button" onclick="suaSanPhamTrongGio(${idx})" style="background:#fff8f1; color:#e76500; border:1px solid #e76500; padding:2px 7px; border-radius:10px; font-size:10px; font-weight:700; cursor:pointer;">Sửa</button>
+                <button type="button" onclick="xoaKhoiGio(${idx})" style="background:#fff1f1; color:#aa0808; border:1px solid #aa0808; padding:2px 7px; border-radius:10px; font-size:10px; font-weight:700; cursor:pointer;">Xóa</button>
+              </td>
+            </tr>`);
+        });
+        miniBody.innerHTML = miniRows.join('');
+      }
+
+      const showImage = document.getElementById('chkShowImage')?.checked ?? true;
+      const showTotal = document.getElementById('chkShowTotal')?.checked ?? true;
+      const showWords = document.getElementById('chkShowWords')?.checked ?? true;
+      const currency = document.getElementById('inCurrency')?.value || 'USD';
+      const volType = document.getElementById('inVolumeType')?.value || '(CTNS/40RF)';
+
+      const tableRows = [];
+      let tongTien = 0;
+
+      if (mode === 'BG_VN') {
+        headerRow.innerHTML = `
+          <th width="34">STT</th>
+          <th>TÊN SẢN PHẨM / QUY CÁCH</th>
+          <th width="46">ĐVT</th>
+          <th width="46">SL</th>
+          <th width="80">ĐƠN GIÁ</th>
+          <th width="48">VAT</th>
+          <th width="90">THÀNH TIỀN</th>
+          ${showImage ? '<th width="175">HÌNH ẢNH</th>' : ''}
+        `;
+
+        const colSpanEmpty = showImage ? 8 : 7;
+        if (window.gioHang.length === 0) {
+          tableRows.push(`<tr><td colspan="${colSpanEmpty}" style="text-align:center;color:#94a3b8;padding:20px;font-style:italic;">Chưa có sản phẩm trong bảng báo giá</td></tr>`);
+        } else {
+          window.gioHang.forEach((item, idx) => {
+            const tienTruocThue = item.sl * item.gia;
+            const vatNum = (item.vat === 'KKKNT') ? 0 : (parseFloat(item.vat) || 0);
+            const thanhTien = tienTruocThue + (tienTruocThue * vatNum / 100);
+            tongTien += thanhTien;
+
+            tableRows.push(`
+              <tr>
+                <td style="text-align:center;font-weight:700;vertical-align:middle;">${idx + 1}</td>
+                <td style="white-space:pre-line;font-weight:600;color:#0f172a;text-align:left;vertical-align:middle;">${escapeHtml(item.tenSP)}</td>
+                <td style="text-align:center;vertical-align:middle;">${escapeHtml(item.dvt)}</td>
+                <td style="text-align:center;font-weight:700;vertical-align:middle;">${item.sl.toLocaleString('vi-VN')}</td>
+                <td style="text-align:right;vertical-align:middle;">${item.gia.toLocaleString('vi-VN')}</td>
+                <td style="text-align:center;vertical-align:middle;">${item.vat === 'KKKNT' ? 'KKKNT' : item.vat + '%'}</td>
+                <td style="text-align:right;font-weight:700;vertical-align:middle;">${Math.round(thanhTien).toLocaleString('vi-VN')}</td>
+                ${showImage ? `<td style="text-align:center;vertical-align:middle;padding:8px;">${item.anh ? `<img src="${item.anh}" class="pdf-product-img">` : ''}</td>` : ''}
+              </tr>`);
+          });
+
+          if (showTotal) {
+            tableRows.push(`
+              <tr style="background:#f8fafc; font-weight:800;">
+                <td colspan="6" style="text-align:right; padding-right:12px;">TỔNG CỘNG THANH TOÁN (ĐÃ GỒM VAT):</td>
+                <td colspan="${showImage ? 2 : 1}" style="text-align:right; color:var(--doc-primary); font-size:13.5px;">${Math.round(tongTien).toLocaleString('vi-VN')} VNĐ</td>
+              </tr>`);
+          }
+        }
+
+        if (boxWords) {
+          if (showWords && tongTien > 0) {
+            boxWords.style.display = 'block';
+            if (lblWordsPrefix) lblWordsPrefix.innerText = 'Số tiền bằng chữ: ';
+            if (preWords) {
+              preWords.innerText = (typeof docSoThanhChu === 'function')
+                ? (docSoThanhChu(Math.round(tongTien)) + ' đồng chẵn.')
+                : (Math.round(tongTien).toLocaleString('vi-VN') + ' đồng.');
+            }
+          } else {
+            boxWords.style.display = 'none';
+          }
+        }
+      } else if (mode === 'BG_EN') {
+        if (isPI) {
+          headerRow.innerHTML = `
+            <th width="36">NO.</th>
+            <th>DESCRIPTION OF GOODS</th>
+            <th width="75">QTY (CTN)</th>
+            <th width="90">UNIT PRICE<br>(${currency}/CTN)</th>
+            <th width="95">AMOUNT (${currency})</th>
+            ${showImage ? '<th width="175">PHOTO</th>' : ''}
+          `;
+        } else {
+          headerRow.innerHTML = `
+            <th width="38">NO.</th>
+            <th>DESCRIPTION</th>
+            <th width="105">VOLUME<br>${escapeHtml(volType)}</th>
+            <th width="105">PRICE<br>(${currency}/CTN)</th>
+            ${showImage ? '<th width="175">PHOTO</th>' : ''}
+          `;
+        }
+
+        const colSpanEmpty = isPI ? (showImage ? 6 : 5) : (showImage ? 5 : 4);
+        if (window.gioHang.length === 0) {
+          tableRows.push(`<tr><td colspan="${colSpanEmpty}" style="text-align:center;color:#94a3b8;padding:20px;font-style:italic;">No items added yet</td></tr>`);
+        } else {
+          window.gioHang.forEach((item, idx) => {
+            const amount = item.sl * item.gia;
+            tongTien += amount;
+
+            if (isPI) {
+              tableRows.push(`
+                <tr>
+                  <td style="text-align:center;font-weight:700;vertical-align:middle;">${idx + 1}</td>
+                  <td style="white-space:pre-line;font-weight:600;color:#0f172a;text-align:left;vertical-align:middle;">${escapeHtml(item.tenSP)}</td>
+                  <td style="text-align:center;font-weight:700;vertical-align:middle;">${item.sl.toLocaleString('en-US')}</td>
+                  <td style="text-align:center;font-weight:700;vertical-align:middle;">${item.gia.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  <td style="text-align:right;font-weight:700;vertical-align:middle;">${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  ${showImage ? `<td style="text-align:center;vertical-align:middle;padding:8px;">${item.anh ? `<img src="${item.anh}" class="pdf-product-img">` : ''}</td>` : ''}
+                </tr>`);
+            } else {
+              tableRows.push(`
+                <tr>
+                  <td style="text-align:center;font-weight:700;vertical-align:middle;">${idx + 1}</td>
+                  <td style="white-space:pre-line;font-weight:600;color:#0f172a;text-align:left;vertical-align:middle;">${escapeHtml(item.tenSP)}</td>
+                  <td style="text-align:center;font-weight:700;vertical-align:middle;">${item.sl.toLocaleString('en-US')}</td>
+                  <td style="text-align:center;font-weight:700;font-size:13.5px;vertical-align:middle;">${item.gia.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  ${showImage ? `<td style="text-align:center;vertical-align:middle;padding:8px;">${item.anh ? `<img src="${item.anh}" class="pdf-product-img">` : ''}</td>` : ''}
+                </tr>`);
+            }
+          });
+
+          if (isPI && showTotal) {
+            tableRows.push(`
+              <tr style="background:#f8fafc; font-weight:800;">
+                <td colspan="4" style="text-align:right; padding-right:12px;">TOTAL AMOUNT (${currency}):</td>
+                <td colspan="${showImage ? 2 : 1}" style="text-align:right; color:var(--doc-primary); font-size:14px;">${tongTien.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}</td>
+              </tr>`);
+          }
+        }
+
+        if (boxWords) {
+          if (isPI && showWords && tongTien > 0) {
+            boxWords.style.display = 'block';
+            if (lblWordsPrefix) lblWordsPrefix.innerText = 'Say total: ';
+            if (preWords) {
+              preWords.innerText = (typeof docSoTiengAnh === 'function')
+                ? docSoTiengAnh(tongTien, currency)
+                : `${currency} ${tongTien.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Only.`;
+            }
+          } else {
+            boxWords.style.display = 'none';
+          }
+        }
+      } else if (mode === 'XK') {
+        headerRow.innerHTML = `
+          <th width="40">STT</th>
+          <th>TÊN HÀNG HÓA / QUY CÁCH BAO BÌ</th>
+          <th width="65">ĐVT</th>
+          <th width="85">SỐ LƯỢNG</th>
+          ${showImage ? '<th width="175">HÌNH ẢNH</th>' : ''}
+        `;
+
+        const colSpanEmpty = showImage ? 5 : 4;
+        if (window.gioHang.length === 0) {
+          tableRows.push(`<tr><td colspan="${colSpanEmpty}" style="text-align:center;color:#94a3b8;padding:20px;font-style:italic;">Chưa có hàng hóa xuất kho</td></tr>`);
+        } else {
+          let tongSL = 0;
+          window.gioHang.forEach((item, idx) => {
+            tongSL += Number(item.sl) || 0;
+            tableRows.push(`
+              <tr>
+                <td style="text-align:center;font-weight:700;vertical-align:middle;">${idx + 1}</td>
+                <td style="white-space:pre-line;font-weight:600;color:#0f172a;text-align:left;vertical-align:middle;">${escapeHtml(item.tenSP)}</td>
+                <td style="text-align:center;vertical-align:middle;">${escapeHtml(item.dvt)}</td>
+                <td style="text-align:center;font-weight:700;vertical-align:middle;">${item.sl.toLocaleString('vi-VN')}</td>
+                ${showImage ? `<td style="text-align:center;vertical-align:middle;padding:8px;">${item.anh ? `<img src="${item.anh}" class="pdf-product-img">` : ''}</td>` : ''}
+              </tr>`);
+          });
+          tableRows.push(`
+            <tr style="background:#f8fafc; font-weight:800;">
+              <td colspan="3" style="text-align:right; padding-right:12px;">TỔNG SỐ LƯỢNG XUẤT:</td>
+              <td colspan="${showImage ? 2 : 1}" style="text-align:center; color:var(--doc-primary); font-size:14px;">${tongSL.toLocaleString('vi-VN')}</td>
+            </tr>`);
+        }
+        if (boxWords) boxWords.style.display = 'none';
+      }
+
+      preTable.innerHTML = tableRows.join('');
+
+      if (window.innerWidth <= 768) {
+        setTimeout(window.tuDongZoomA4TrenMobile, 60);
+      }
+      window.tuDongLuuLenCloud();
+    };
+
+    window.updatePreview = function() {
+      const mode = window.cheDoHienTai || 'BG_VN';
+      const isEN = (mode === 'BG_EN');
+      const isXK = (mode === 'XK');
+      const isPI = isEN && (document.getElementById('chkIsPI')?.checked ?? false);
+
+      damBaoHienThiWebsiteCongTy();
+
+      const docTitle = document.getElementById('docTitleMain');
+      if (docTitle) {
+        if (isXK) docTitle.innerText = 'PHIẾU XUẤT KHO';
+        else if (isEN) docTitle.innerText = isPI ? 'PROFORMA INVOICE' : (document.getElementById('inTitleEN')?.value || 'COCONUT QUOTATION');
+        else docTitle.innerText = 'BẢNG BÁO GIÁ';
+      }
+
+      document.getElementById('lblKhachTitle').innerText = isEN ? 'TO:' : (isXK ? 'ĐƠN VỊ / NGƯỜI NHẬN HÀNG:' : 'KÍNH GỬI KHÁCH HÀNG:');
+      document.getElementById('lblTelPrefix').innerText = isEN ? 'ATTN / TEL: ' : 'LIÊN HỆ: ';
+      document.getElementById('lblMaType').innerText = isEN ? (isPI ? 'PI No:' : 'Quote No:') : (isXK ? 'Số phiếu:' : 'Mã số:');
+      document.getElementById('lblNgayType').innerText = isEN ? 'Date:' : (isXK ? 'Ngày xuất:' : 'Ngày lập:');
+      document.getElementById('preGreeting').style.display = isEN ? 'block' : 'none';
+
+      capNhatTextGiuDinhDang('preKhach', document.getElementById('inKhach')?.value || '...');
+      const lienHeVal = document.getElementById('inLienHe')?.value.trim() || '';
+      document.getElementById('boxClientTel').style.display = lienHeVal ? 'block' : 'none';
+      capNhatTextGiuDinhDang('preLienHe', lienHeVal);
+
+      const boxXkDetails = document.getElementById('boxXkDetails');
+      const diaDiemXK = document.getElementById('inDiaDiemXK')?.value.trim() || '';
+      const bienSoXe = document.getElementById('inBienSoXe')?.value.trim() || '';
+      if (boxXkDetails) {
+        if (isXK && (diaDiemXK || bienSoXe)) {
+          boxXkDetails.style.display = 'block';
+          document.getElementById('boxDiaDiemXK').style.display = diaDiemXK ? 'block' : 'none';
+          document.getElementById('preDiaDiemXK').innerText = diaDiemXK;
+          document.getElementById('boxBienSoXe').style.display = bienSoXe ? 'block' : 'none';
+          document.getElementById('preBienSoXe').innerText = bienSoXe;
+        } else {
+          boxXkDetails.style.display = 'none';
+        }
+      }
+
+      const maVal = document.getElementById('inMa')?.value || 'QUO-2026-001';
+      document.getElementById('preMa').innerText = maVal;
+      document.getElementById('preNgay').innerText = document.getElementById('inNgay')?.value || new Date().toLocaleDateString('vi-VN');
+
+      const validVal = document.getElementById('inValidUntil')?.value.trim() || '';
+      const prepVal = document.getElementById('inPreparedBy')?.value.trim() || '';
+      document.getElementById('boxValidUntil').style.display = (isEN && validVal) ? 'table-row' : 'none';
+      document.getElementById('preValidUntil').innerText = validVal;
+      document.getElementById('boxPreparedBy').style.display = (isEN && prepVal) ? 'table-row' : 'none';
+      document.getElementById('prePreparedBy').innerText = prepVal;
+
+      const dieuKhoanVal = document.getElementById('inDieuKhoan')?.value.trim() || '';
+  const notesVal = document.getElementById('inNotesRieng')?.value.trim() || '';
+  const payVal = (!isXK) ? (document.getElementById('inPaymentTerm')?.value.trim() || '') : '';
+  const bankVal = (isEN && isPI) ? (document.getElementById('inBankInfo')?.value.trim() || '') : '';
+
+  document.getElementById('lblNotesHeader').innerText = isEN ? 'TERMS:' : (isXK ? 'ĐIỀU KHOẢN XUẤT KHO:' : 'ĐIỀU KHOẢN THƯƠNG MẠI:');
+  const lblSeparateNotes = document.getElementById('lblSeparateNotesHeader');
+  if (lblSeparateNotes) lblSeparateNotes.innerText = isEN ? 'NOTES:' : 'GHI CHÚ:';
+  document.getElementById('lblPaymentHeader').innerText = isEN ? 'PAYMENT TERMS:' : 'PHƯƠNG THỨC THANH TOÁN:';
+
+  const termsBox = document.getElementById('termsSectionBox');
+  if (dieuKhoanVal || notesVal || payVal || bankVal) {
+    termsBox.style.display = 'block';
+
+    // 1. Hiển thị mục TERMS
+    document.getElementById('boxNotesSection').style.display = dieuKhoanVal ? 'block' : 'none';
+    capNhatTextGiuDinhDang('preDieuKhoan', dieuKhoanVal);
+
+    // 2. Hiển thị mục NOTES riêng
+    const boxNotesRieng = document.getElementById('boxSeparateNotesSection');
+    const preNotesRieng = document.getElementById('preNotesRieng');
+    if (boxNotesRieng) {
+      boxNotesRieng.style.display = notesVal ? 'block' : 'none';
+      boxNotesRieng.style.borderTop = dieuKhoanVal ? '1px dashed #cbd5e1' : 'none';
+      boxNotesRieng.style.paddingTop = dieuKhoanVal ? '8px' : '0';
+      boxNotesRieng.style.marginTop = dieuKhoanVal ? '8px' : '0';
+    }
+    if (preNotesRieng) capNhatTextGiuDinhDang(preNotesRieng, notesVal);
+
+    // 3. Hiển thị mục PAYMENT TERMS
+    const boxPayEl = document.getElementById('boxPaymentTermPre');
+    if (boxPayEl) {
+      const hasAbovePay = Boolean(dieuKhoanVal || notesVal);
+      boxPayEl.style.display = payVal ? 'block' : 'none';
+      boxPayEl.style.borderTop = hasAbovePay ? '1px dashed #cbd5e1' : 'none';
+      boxPayEl.style.paddingTop = hasAbovePay ? '8px' : '0';
+      boxPayEl.style.marginTop = hasAbovePay ? '8px' : '0';
+    }
+    capNhatTextGiuDinhDang('prePaymentTerm', payVal);
+
+    // 4. Hiển thị mục BANKING INFO
+    const boxBankEl = document.getElementById('boxBankInfoPre');
+    if (boxBankEl) {
+      const hasAboveBank = Boolean(dieuKhoanVal || notesVal || payVal);
+      boxBankEl.style.display = bankVal ? 'block' : 'none';
+      boxBankEl.style.borderTop = hasAboveBank ? '1px dashed #cbd5e1' : 'none';
+      boxBankEl.style.paddingTop = hasAboveBank ? '8px' : '0';
+      boxBankEl.style.marginTop = hasAboveBank ? '8px' : '0';
+    }
+    capNhatTextGiuDinhDang('preBankInfo', bankVal);
+  } else {
+    termsBox.style.display = 'none';
+  }
+
+      const enNoteVal = document.getElementById('inEnNote')?.value.trim() || '';
+      document.getElementById('boxEnNotePre').style.display = (isEN && enNoteVal) ? 'block' : 'none';
+      capNhatTextGiuDinhDang('preEnNote', enNoteVal);
+
+      window.datLaiNoiDungMacDinh(false);
+      window.tuDongLuuLenCloud();
+    };
+
+    window.chenIncotermThongMinh = function() {
+      duLieuDaThayDoiBoiNguoiDung = true;
+      const inc = document.getElementById('selIncoterm')?.value || 'FOB';
+      const port = (document.getElementById('inPortName')?.value.trim() || 'HO CHI MINH CITY').toUpperCase();
+      const lead = document.getElementById('inLeadTime')?.value.trim();
+      let line = `The above rates are ${inc} ${port}.`;
+      if (lead) line += `\nEstimated Lead Time: ${lead}.`;
+      const area = document.getElementById('inDieuKhoan');
+      if (area) {
+        area.value = area.value ? (area.value + '\n' + line) : line;
+        updatePreview();
+      }
+    };
+
+    window.taoDonMoi = function() {
+      dangNapDuLieuDon = true;
+      duLieuDaThayDoiBoiNguoiDung = false;
+      window.gioHang = [];
+      window.savedA4CustomHtml = {};
+      window.anCanhBaoXungDotDon();
+      dangSuaGioIndex = -1;
+      const maMoi = taoMaDonNgauNhienKhongTrung();
+      sessionStorage.setItem('argon_active_ma_don', maMoi);
+
+      document.getElementById('inKhach').value = '';
+      document.getElementById('inLienHe').value = '';
+      document.getElementById('inMa').value = maMoi;
+      document.getElementById('inNgay').value = new Date().toLocaleDateString('vi-VN');
+      if (document.getElementById('inDieuKhoan')) document.getElementById('inDieuKhoan').value = '';
+      if (document.getElementById('inNotesRieng')) document.getElementById('inNotesRieng').value = '';
+      xoaAnhSpTam();
+      renderTable();
+      updatePreview();
+      dangNapDuLieuDon = false;
+      capNhatTrangThaiNutAutoCloud('Tự động lưu Cloud: BẬT', false);
+      hienToast(`✨ Đã tạo đơn mới [${maMoi}]!`);
+    };
+
+    // =====================================================
+    // 5. LƯU ĐƠN HÀNG LÊN CLOUD FIRESTORE & ĐỒNG BỘ REALTIME 4-5 NGƯỜI
+    // =====================================================
+    window.luuVaoAppSheet = async function() {
+      const maDon = document.getElementById('inMa')?.value.trim();
+      if (!maDon) {
+        hienToast("⚠️ Vui lòng nhập Số chứng từ (Mã đơn) trước khi lưu lên Cloud!");
+        return;
+      }
+
+      const overlay = document.getElementById('loading-overlay');
+      if (overlay) overlay.style.display = 'flex';
+
+      const orderData = thuThapDuLieuDonHangHienTai();
+      sessionStorage.setItem('argon_active_ma_don', maDon);
+
+      try {
+        await db.collection("DonHang").doc(maDon).set(orderData, { merge: true });
+        const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        capNhatTrangThaiNutAutoCloud(`Đã lưu Cloud (${timeStr})`, false);
+        hienToast(`✅ Đã lưu đơn [${maDon}] lên Cloud thành công!`);
+      } catch (err) {
+        console.error("Lỗi lưu Cloud:", err);
+        hienToast("❌ Không thể lưu đơn lên Cloud: " + err.message);
+      } finally {
+        if (overlay) overlay.style.display = 'none';
+      }
+    };
+
+    function capNhatGiaoDienDanhSachDon(arr) {
+      const sel = document.getElementById('savedOrdersSelect');
+      if (sel) {
+        const curVal = sel.value;
+        const opts = ['<option value="">-- Chọn đơn hàng lưu trên Cloud --</option>'];
+        arr.forEach(item => {
+          const labelMode = item.cheDo === 'BG_EN' ? (item.isPI ? 'PI-EN' : 'Quote-EN') : (item.cheDo === 'XK' ? 'Xuất Kho' : 'BG-VN');
+          opts.push(`<option value="${escapeHtml(item.id)}" ${item.id === curVal ? 'selected' : ''}>[${escapeHtml(item.id)}] ${escapeHtml(item.tenKhach || '...')} (${labelMode})</option>`);
+        });
+        sel.innerHTML = opts.join('');
+      }
+      renderKapellaDashboard();
+    }
+
+    window.taiDanhSachDonLuuApp = async function() {
+      try {
+        const snap = await db.collection("DonHang").get();
+        window.masterCache.orders = {};
+        const arr = [];
+        snap.forEach(doc => {
+          const d = doc.data();
+          const id = doc.id;
+          window.masterCache.orders[id] = d;
+          arr.push({ id, ...d });
+        });
+        arr.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
+        capNhatGiaoDienDanhSachDon(arr);
+        return arr;
+      } catch (err) {
+        console.error("Lỗi tải danh sách đơn Cloud:", err);
+        return [];
+      }
+    };
+
+    window.renderKapellaDashboard = function() {
+      const ordersObj = window.masterCache.orders || {};
+      const allOrders = Object.values(ordersObj);
+      allOrders.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
+
+      const total = allOrders.length;
+      const countEN = allOrders.filter(o => o.cheDo === 'BG_EN').length;
+      const countVN = allOrders.filter(o => o.cheDo !== 'BG_EN').length;
+      const countXK = allOrders.filter(o => o.cheDo === 'XK').length;
+      const countBGVN = allOrders.filter(o => o.cheDo === 'BG_VN' || !o.cheDo).length;
+
+      if (document.getElementById('kpTotalOrders')) document.getElementById('kpTotalOrders').innerText = total;
+      if (document.getElementById('kpCountEN')) document.getElementById('kpCountEN').innerText = countEN;
+      if (document.getElementById('kpCountVN')) document.getElementById('kpCountVN').innerText = countVN;
+
+      const pctEN = total > 0 ? Math.round((countEN / total) * 100) : 0;
+      const pctVN = total > 0 ? Math.round((countVN / total) * 100) : 0;
+      if (document.getElementById('kpBarEN')) document.getElementById('kpBarEN').style.width = pctEN + '%';
+      if (document.getElementById('kpBarVN')) document.getElementById('kpBarVN').style.width = pctVN + '%';
+
+      const tbody = document.getElementById('kpRecentOrdersBody');
+      const kw = (document.getElementById('kpSearchOrder')?.value || '').trim().toLowerCase();
+
+      if (tbody) {
+        const filtered = allOrders.filter(o => {
+          if (!kw) return true;
+          return String(o.maDon || '').toLowerCase().includes(kw) || String(o.tenKhach || '').toLowerCase().includes(kw);
+        });
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:20px;">Chưa có đơn hàng nào được lưu trên Cloud</td></tr>';
+        } else {
+          const rowsHtml = [];
+          filtered.forEach(o => {
+            const ma = o.maDon || '';
+            let badge = '<span style="background:#f1fdf6;color:#256f3a;border:1px solid #256f3a;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;">🇻🇳 Báo Giá VN</span>';
+            if (o.cheDo === 'BG_EN') {
+              badge = o.isPI
+                ? '<span style="background:#fff8f1;color:#e76500;border:1px solid #e76500;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;">🌐 Proforma Invoice</span>'
+                : '<span style="background:#e8f3ff;color:#0064d9;border:1px solid #0064d9;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;">🌐 Quotation EN</span>';
+            } else if (o.cheDo === 'XK') {
+              badge = '<span style="background:#f3e8ff;color:#6b21a8;border:1px solid #6b21a8;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;">📦 Xuất Kho</span>';
+            }
+
+            rowsHtml.push(`
+              <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:10px 8px;font-weight:800;color:#0f172a;">${escapeHtml(ma)}</td>
+                <td style="padding:10px 8px;">${badge}</td>
+                <td style="padding:10px 8px;font-weight:600;color:#1e293b;">${escapeHtml(o.tenKhach || '...')} <span style="color:#64748b;font-size:11px;font-weight:400;">(${(o.gioHang || []).length} SP)</span></td>
+                <td style="padding:10px 8px;color:#475569;">${escapeHtml(o.ngayLap || '')}</td>
+                <td style="padding:10px 8px;text-align:right;white-space:nowrap;">
+                  <button onclick="taiDonTuApp('${escapeHtml(ma)}')" class="sap-btn sap-btn-emphasized" style="padding:4px 10px !important;font-size:11px !important;margin-right:4px;">📂 Mở đơn</button>
+                  <button onclick="xoaDonTrongApp('${escapeHtml(ma)}')" class="sap-btn sap-btn-reject" style="padding:4px 10px !important;font-size:11px !important;">🗑️ Xóa</button>
+                </td>
+              </tr>`);
+          });
+          tbody.innerHTML = rowsHtml.join('');
+        }
+      }
+
+      if (currentMainTab === 'DASH') {
+        const ctx = document.getElementById('kpOrderChart');
+        if (ctx && typeof Chart !== 'undefined') {
+          if (window.kpChartInstance) window.kpChartInstance.destroy();
+          window.kpChartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels: ['Quốc Tế (Quote/PI)', 'Báo Giá Nội Địa (VN)', 'Phiếu Xuất Kho'],
+              datasets: [{
+                data: (total === 0) ? [1, 1, 1] : [countEN, countBGVN, countXK],
+                backgroundColor: ['#256f3a', '#e76500', '#0064d9'],
+                borderWidth: 0
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+            }
+          });
+        }
+      }
+    };
+
+    window.taiDonTuApp = function(maDonParam, imLang = false) {
+      const maDon = maDonParam || document.getElementById('savedOrdersSelect')?.value;
+      if (!maDon) {
+        if (!imLang) hienToast("⚠️ Vui lòng chọn một đơn hàng trong danh sách Cloud!");
+        return;
+      }
+      const d = window.masterCache.orders[maDon];
+      if (!d) {
+        if (!imLang) hienToast("❌ Không tìm thấy dữ liệu của đơn hàng này!");
+        return;
+      }
+
+      dangNapDuLieuDon = true;
+      duLieuDaThayDoiBoiNguoiDung = false;
+      sessionStorage.setItem('argon_active_ma_don', d.maDon || maDon);
+
+      if (document.getElementById('chkIsPI')) document.getElementById('chkIsPI').checked = !!d.isPI;
+      if (document.getElementById('inTitleEN') && d.titleEN) document.getElementById('inTitleEN').value = d.titleEN;
+      if (document.getElementById('inMa')) document.getElementById('inMa').value = d.maDon || maDon;
+      if (document.getElementById('inKhach')) document.getElementById('inKhach').value = d.tenKhach || '';
+      if (document.getElementById('inLienHe')) document.getElementById('inLienHe').value = d.lienHe || '';
+      if (document.getElementById('inNgay')) document.getElementById('inNgay').value = d.ngayLap || '';
+      if (document.getElementById('inPreparedBy')) document.getElementById('inPreparedBy').value = d.preparedBy || '';
+      if (document.getElementById('inValidUntil')) document.getElementById('inValidUntil').value = d.validUntil || '';
+      if (document.getElementById('inDiaDiemXK')) document.getElementById('inDiaDiemXK').value = d.diaDiemXK || '';
+      if (document.getElementById('inBienSoXe')) document.getElementById('inBienSoXe').value = d.bienSoXe || '';
+      if (document.getElementById('inDieuKhoan')) document.getElementById('inDieuKhoan').value = d.dieuKhoan || '';
+      if (document.getElementById('inNotesRieng')) document.getElementById('inNotesRieng').value = d.notesRieng || '';
+      if (document.getElementById('inEnNote')) document.getElementById('inEnNote').value = d.enNote || '';
+      if (document.getElementById('inPaymentTerm')) document.getElementById('inPaymentTerm').value = d.paymentTerm || '';
+      if (document.getElementById('inBankInfo')) document.getElementById('inBankInfo').value = d.bankInfo || '';
+      if (document.getElementById('inCurrency') && d.currency) document.getElementById('inCurrency').value = d.currency;
+      if (document.getElementById('inVolumeType') && d.volumeType) document.getElementById('inVolumeType').value = d.volumeType;
+      if (document.getElementById('inEmailKhach')) document.getElementById('inEmailKhach').value = d.emailKhach || '';
+      if (document.getElementById('inThongTinLienHeMail')) document.getElementById('inThongTinLienHeMail').value = d.thongTinLienHeMail || '';
+
+      window.gioHang = Array.isArray(d.gioHang) ? JSON.parse(JSON.stringify(d.gioHang)) : [];
+
+      // Khôi phục Logo & Watermark từ Master Data gắn với đơn hàng (nếu có)
+      if (typeof d.wmOpacity === 'number') {
+        window.wmOpacityPercent = d.wmOpacity;
+        if (document.getElementById('wmOpacitySlider')) document.getElementById('wmOpacitySlider').value = d.wmOpacity;
+        if (document.getElementById('wmOpacityLabel')) document.getElementById('wmOpacityLabel').innerText = d.wmOpacity + '%';
+      }
+      if (d.logoMasterId && window.masterCache.logo?.[d.logoMasterId]) {
+        const logoSel = document.getElementById('logoMasterSelect');
+        if (logoSel) logoSel.value = d.logoMasterId;
+        window.chonLogoTuMaster(true);
+      }
+      if (d.wmMasterId && window.masterCache.watermark?.[d.wmMasterId]) {
+        const wmSel = document.getElementById('wmMasterSelect');
+        if (wmSel) wmSel.value = d.wmMasterId;
+        window.chonWatermarkTuMaster(true);
+      }
+
+      window.anCanhBaoXungDotDon();
+      window.savedA4CustomHtml = d.a4CustomHtml || {};
+      window.chuyenManHinhKapella('STUDIO');
+      window.doiCheDo(d.cheDo || 'BG_VN');
+
+      // Khôi phục lại định dạng bôi đen (Font/Cỡ/Màu/In đậm) đã lưu trên Cloud
+      if (d.a4CustomHtml) {
+        window.apDungDinhDangA4TuyChinh(d.a4CustomHtml);
+      }
+
+      dangNapDuLieuDon = false;
+      capNhatTrangThaiNutAutoCloud('Tự động lưu Cloud: BẬT', false);
+
+      // Nhắc nhẹ nếu đơn hàng vừa được phiên khác chỉnh sửa trong vòng 5 phút gần đây
+      if (d.lastEditorSession && d.lastEditorSession !== window.currentClientSessionId && d.updatedAt) {
+        const diffMs = Date.now() - new Date(d.updatedAt).getTime();
+        if (diffMs >= 0 && diffMs < 5 * 60 * 1000 && !imLang) {
+          hienToast(`ℹ️ Đơn [${maDon}] vừa được ${d.lastEditorSession} cập nhật cách đây ít phút.`);
+          return;
+        }
+      }
+
+      if (!imLang) hienToast(`📂 Đã mở đơn hàng [${maDon}] từ Cloud thành công!`);
+    };
+
+    window.xoaDonTrongApp = function(maDonParam) {
+      const maDon = maDonParam || document.getElementById('savedOrdersSelect')?.value;
+      if (!maDon) {
+        hienToast("⚠️ Vui lòng chọn đơn hàng cần xóa!");
+        return;
+      }
+      window.hienHopThoaiXacNhan(`Bạn có chắc chắn muốn xóa đơn hàng [${maDon}] khỏi Cloud không?`, async function() {
+        try {
+          await db.collection("DonHang").doc(maDon).delete();
+          hienToast(`✅ Đã xóa đơn hàng [${maDon}] khỏi Cloud thành công!`);
+        } catch (e) {
+          hienToast("❌ Lỗi khi xóa đơn: " + e.message);
+        }
+      });
+    };
+
+    // =====================================================
+    // 6. XUẤT FULL A4 PDF & GỬI MAIL KÈM PDF
+    // =====================================================
+    // =====================================================
+    // CHUẨN HÓA ẢNH SẢN PHẨM & LOGO TRƯỚC KHI XUẤT PDF (KHÔNG BAO GIỜ BỊ MÉO ẢNH)
+    // =====================================================
+    async function chuanHoaAnhKhongMeoChoPDF(cloneRoot) {
+      const waitImg = (imgEl) => new Promise(resolve => {
+        if (!imgEl || !imgEl.src) return resolve();
+        if (imgEl.complete && imgEl.naturalWidth > 0) return resolve();
+        imgEl.onload = () => resolve();
+        imgEl.onerror = () => resolve();
+        setTimeout(resolve, 1500);
+      });
+
+      // 1. Cắt ảnh sản phẩm đúng chuẩn object-fit: cover ở độ phân giải 3x (160x145 -> 480x435)
+      const prodImgs = Array.from(cloneRoot.querySelectorAll('img.pdf-product-img'));
+      for (const img of prodImgs) {
+        await waitImg(img);
+        const natW = img.naturalWidth;
+        const natH = img.naturalHeight;
+        if (!natW || !natH) continue;
+
+        const targetW = img.clientWidth || 160;
+        const targetH = img.clientHeight || 145;
+        const dpr = 3;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(targetW * dpr);
+        canvas.height = Math.round(targetH * dpr);
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+
+        // Nền trắng sạch & tính tỷ lệ cắt giữa chuẩn object-fit: cover
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const srcRatio = natW / natH;
+        const dstRatio = targetW / targetH;
+        let sx = 0, sy = 0, sw = natW, sh = natH;
+        if (srcRatio > dstRatio) {
+          sw = natH * dstRatio;
+          sx = (natW - sw) / 2;
+        } else {
+          sh = natW / dstRatio;
+          sy = (natH - sh) / 2;
+        }
+
+        try {
+          ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+          img.src = canvas.toDataURL('image/jpeg', 0.96);
+          img.style.setProperty('width', targetW + 'px', 'important');
+          img.style.setProperty('height', targetH + 'px', 'important');
+          img.style.setProperty('object-fit', 'fill', 'important');
+        } catch (e) {
+          console.warn('Không thể chuẩn hóa ảnh SP cho PDF:', e);
+        }
+      }
+
+      // 2. Giữ nguyên tỷ lệ gốc cho Logo Công ty (object-fit: contain trong khung 200x75)
+      const logoImg = cloneRoot.querySelector('#sysLogo');
+      if (logoImg && logoImg.src && logoImg.style.display !== 'none') {
+        await waitImg(logoImg);
+        const natW = logoImg.naturalWidth;
+        const natH = logoImg.naturalHeight;
+        if (natW > 0 && natH > 0) {
+          const maxW = 200;
+          const maxH = 75;
+          const scale = Math.min(maxW / natW, maxH / natH, 1);
+          const finalW = Math.round(natW * scale);
+          const finalH = Math.round(natH * scale);
+          logoImg.style.setProperty('width', finalW + 'px', 'important');
+          logoImg.style.setProperty('height', finalH + 'px', 'important');
+          logoImg.style.setProperty('object-fit', 'fill', 'important');
+        }
+      }
+    }
+
+    window.xuatPDF = async function(khongTaiXuong = false) {
+      damBaoHienThiWebsiteCongTy();
+      const paper = document.getElementById('a4Paper');
+      const wmImg = document.getElementById('watermarkImg');
+      const overlay = document.getElementById('loading-overlay');
+
+      if (!paper) {
+        hienToast("❌ Không tìm thấy khung giấy A4!");
+        return null;
+      }
+
+      if (overlay) {
+        overlay.style.display = 'flex';
+        overlay.style.background = 'rgba(15, 23, 42, 0.92)';
+        overlay.style.zIndex = '99999';
+      }
+
+      const maDon = document.getElementById('inMa')?.value.trim() || 'BAO-GIA';
+      const fileName = `${maDon}.pdf`;
+
+      const tempStage = document.createElement('div');
+      tempStage.style.cssText = 'position:fixed; top:0; left:0; width:794px; background:#ffffff; z-index:99990; margin:0; padding:0; overflow:visible; pointer-events:none;';
+
+      const clonePaper = paper.cloneNode(true);
+      clonePaper.removeAttribute('contenteditable');
+      clonePaper.classList.add('pdf-exporting-mode');
+      clonePaper.style.cssText = 'width:794px !important; min-width:794px !important; max-width:794px !important; min-height:1122px !important; height:auto !important; overflow:visible !important; margin:0 !important; transform:none !important; box-shadow:none !important; position:relative !important; left:0 !important; top:0 !important; background:#ffffff !important;';
+
+      const cloneWm = clonePaper.querySelector('#watermarkImg');
+      if (cloneWm) cloneWm.style.setProperty('display', 'none', 'important');
+
+      tempStage.appendChild(clonePaper);
+      document.body.appendChild(tempStage);
+
+      // Chống méo / bóp ảnh khi html2canvas chụp PDF (giữ tỷ lệ chuẩn 100% giống web)
+      await chuanHoaAnhKhongMeoChoPDF(clonePaper);
+      await new Promise(r => setTimeout(r, 100));
+
+      try {
+        const opt = {
+          margin: 0,
+          filename: fileName,
+          image: { type: 'jpeg', quality: 0.98 },
+          pagebreak: {
+            mode: ['css', 'legacy'],
+            avoid: ['tr', '.terms-block', '.signatures-single-container', '.signatures-xk-container', '.amount-in-words-box']
+          },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            x: 0,
+            y: 0,
+            scrollX: 0,
+            scrollY: 0,
+            width: 794,
+            windowWidth: 794
+          },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        const worker = html2pdf().set(opt).from(clonePaper).toPdf();
+        const pdf = await worker.get('pdf');
+
+        const wmSrc = window.processedWatermarkBase64 || (wmImg && wmImg.src && wmImg.src.startsWith('data:image') ? wmImg.src : '');
+        if (wmSrc) {
+          const totalPages = pdf.internal.getNumberOfPages();
+          const pageW = pdf.internal.pageSize.getWidth();
+          const pageH = pdf.internal.pageSize.getHeight();
+          const tempImg = new Image();
+          await new Promise(res => { tempImg.onload = res; tempImg.onerror = res; tempImg.src = wmSrc; });
+          const wmW = 125;
+          const ratio = (tempImg.width && tempImg.height) ? (tempImg.height / tempImg.width) : 1;
+          const wmH = Math.min(160, Math.round(wmW * ratio));
+          const xPos = (pageW - wmW) / 2;
+          const yPos = (pageH - wmH) / 2;
+
+          for (let i = 1; i <= totalPages; i++) {
+            pdf.setPage(i);
+            pdf.addImage(wmSrc, 'PNG', xPos, yPos, wmW, wmH, undefined, 'FAST');
+          }
+        }
+
+        const pdfBlob = pdf.output('blob');
+
+        if (!khongTaiXuong) {
+          const blobUrl = URL.createObjectURL(pdfBlob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 8000);
+          hienToast("✅ Đã tải xuống file PDF: " + fileName);
+        }
+
+        return pdfBlob;
+      } catch (err) {
+        hienToast("❌ Lỗi khi tải PDF: " + err.message);
+        return null;
+      } finally {
+        if (tempStage && tempStage.parentNode) {
+          tempStage.parentNode.removeChild(tempStage);
+        }
+        if (overlay) overlay.style.display = 'none';
+      }
+    };
+
+    window.guiEmailChoKhachHang = async function() {
+      const email = document.getElementById('inEmailKhach')?.value.trim();
+      if (!email) {
+        hienToast("⚠️ Vui lòng nhập địa chỉ Email khách hàng ở mục số 4!");
+        document.getElementById('inEmailKhach')?.focus();
+        return;
+      }
+
+      if (!document.getElementById('inEmailSubject')?.value.trim() || !document.getElementById('inEmailBody')?.value.trim()) {
+        window.datLaiNoiDungMacDinh(false);
+      }
+
+      const subject = document.getElementById('inEmailSubject')?.value.trim() || 'Official Quotation';
+      const bodyMsg = document.getElementById('inEmailBody')?.value.trim() || '';
+      const maDon = document.getElementById('inMa')?.value.trim() || 'BAO-GIA';
+      const fileName = `${maDon}.pdf`;
+      const selectedApp = document.getElementById('inMailAppSelect')?.value || 'SHARE_PDF';
+
+      await window.copyTextToClipboard(email);
+
+      if (selectedApp === 'SHARE_PDF') {
+        const pdfBlob = await window.xuatPDF(true);
+        if (!pdfBlob) return;
+
+        await window.copyTextToClipboard(email);
+
+        const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+        const canShareFile = !!(navigator.canShare && navigator.canShare({ files: [pdfFile] }));
+
+        if (canShareFile) {
+          const fullTextForIOS = `${subject}\n\n${bodyMsg}`;
+          const shareData = {
+            files: [pdfFile],
+            title: subject,
+            text: fullTextForIOS
+          };
+
+          try {
+            hienToast(`📋 Đã Copy sẵn người nhận: ${email} — Chạm ô "Tới:" và bấm Dán!`);
+            await navigator.share(shareData);
+            return;
+          } catch (err) {
+            if (err.name === 'AbortError') return;
+            const modal = document.getElementById('quickShareConfirmModal');
+            const infoText = document.getElementById('quickShareInfoText');
+            const btnNow = document.getElementById('btnTriggerNativeShareNow');
+            if (modal && btnNow) {
+              if (infoText) {
+                infoText.innerHTML = `Đã đính kèm <b>${escapeHtml(fileName)}</b> &amp; Chủ đề chuẩn.<br>📋 Đã Copy sẵn Email: <b style="color:#0064d9;">${escapeHtml(email)}</b><br><span style="font-size:11px;color:#d97706;">(Khi cửa sổ Thư Mới hiện lên, bạn chỉ cần chạm ô <b>Tới:</b> rồi bấm <b>Dán / Paste</b>)</span>`;
+              }
+              btnNow.onclick = async function() {
+                modal.style.display = 'none';
+                await window.copyTextToClipboard(email);
+                try {
+                  await navigator.share(shareData);
+                } catch (e) {}
+              };
+              modal.style.display = 'flex';
+              return;
+            }
+          }
+        } else {
+          const blobUrl = URL.createObjectURL(pdfBlob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
+          return;
+        }
+      }
+
+      await window.xuatPDF(false);
+
+      if (selectedApp === 'OUTLOOK_APP') {
+        window.location.href = `ms-outlook://compose?to=${encodeURIComponent(email)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
+      } else if (selectedApp === 'GMAIL_APP') {
+        window.location.href = `googlegmail:///co?to=${encodeURIComponent(email)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
+      } else if (selectedApp === 'MAILTO_DEFAULT') {
+        window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
+      } else {
+        const gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyMsg)}`;
+        window.open(gmailWebUrl, '_blank');
+      }
+    };
+
+    // =====================================================
+    // 7. QUẢN LÝ MASTER DATA (BATCH RENDER & REALTIME SYNC)
+    // =====================================================
+    window.themSanPhamNhanh = async function() {
+      const maSP = document.getElementById('qtMaSP')?.value.trim();
+      const tenSP = document.getElementById('qtTenSP')?.value.trim();
+      const moTaSP = document.getElementById('qtMoTaSP')?.value.trim() || '';
+      const dvt = document.getElementById('qtDVT')?.value.trim() || 'CTN';
+      const gia = parseFloat(document.getElementById('qtGia')?.value) || 0;
+      const anhSP = window.currentMasterSpImageBase64 || (dangSuaSPId && window.masterCache.sp[dangSuaSPId]?.anhSP) || '';
+
+      if (!maSP || !tenSP) {
+        hienToast("⚠️ Vui lòng nhập đầy đủ Mã SP và Tên Sản Phẩm!");
+        return;
+      }
+
+      try {
+        const isEdit = !!dangSuaSPId;
+        if (dangSuaSPId && dangSuaSPId !== maSP) {
+          await db.collection("Database").doc(dangSuaSPId).delete();
+        }
+        await db.collection("Database").doc(maSP).set({
+          maSP, tenSP, moTaSP, dvt, gia, anhSP,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+
+        huySuaSP();
+        hienToast(isEdit ? `✅ Đã cập nhật sản phẩm [${maSP}] thành công!` : `✅ Đã thêm sản phẩm [${maSP}] thành công!`);
+      } catch (err) {
+        hienToast("❌ Lỗi: " + err.message);
+      }
+    };
+
+    window.suaSanPham = function(docId) {
+      const d = window.masterCache.sp[docId];
+      if (!d) return;
+      dangSuaSPId = docId;
+      document.getElementById('qtMaSP').value = d.maSP || docId;
+      document.getElementById('qtTenSP').value = d.tenSP || '';
+      document.getElementById('qtMoTaSP').value = d.moTaSP || '';
+      document.getElementById('qtDVT').value = d.dvt || 'CTN';
+      document.getElementById('qtGia').value = d.gia || 0;
+      window.currentMasterSpImageBase64 = d.anhSP || '';
+
+      const img = document.getElementById('qtPreviewSP');
+      if (img) {
+        if (d.anhSP) { img.src = d.anhSP; img.style.display = 'block'; }
+        else { img.src = ''; img.style.display = 'none'; }
+      }
+
+      document.getElementById('titleFormSP').innerText = "✏️ Đang Sửa SP: " + (d.maSP || docId);
+      document.getElementById('btnSaveSP').innerText = "💾 Cập Nhật SP";
+      document.getElementById('btnCancelSP').style.display = 'inline-block';
+      document.getElementById('qtTenSP').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    window.huySuaSP = function() {
+      dangSuaSPId = null;
+      window.currentMasterSpImageBase64 = '';
+      document.getElementById('qtMaSP').value = '';
+      document.getElementById('qtTenSP').value = '';
+      document.getElementById('qtMoTaSP').value = '';
+      document.getElementById('qtDVT').value = 'CTN';
+      document.getElementById('qtGia').value = '0';
+      if (document.getElementById('qtFileSP')) document.getElementById('qtFileSP').value = '';
+      if (document.getElementById('qtPreviewSP')) {
+        document.getElementById('qtPreviewSP').src = '';
+        document.getElementById('qtPreviewSP').style.display = 'none';
+      }
+      document.getElementById('titleFormSP').innerText = "➕ Thêm Sản Phẩm Mới";
+      document.getElementById('btnSaveSP').innerText = "💾 Lưu Sản Phẩm";
+      document.getElementById('btnCancelSP').style.display = 'none';
+    };
+
+    window.themKhachHangNhanh = async function() {
+      const tenKH = document.getElementById('qtTenKH')?.value.trim();
+      const infoKH = document.getElementById('qtInfoKH')?.value.trim() || '';
+      if (!tenKH) { hienToast("⚠️ Vui lòng nhập Tên Khách Hàng!"); return; }
+
+      try {
+        const isEdit = !!dangSuaKHId;
+        if (dangSuaKHId) {
+          await db.collection("KhachHang").doc(dangSuaKHId).set({ tenKH, infoKH, updatedAt: new Date().toISOString() }, { merge: true });
+        } else {
+          await db.collection("KhachHang").add({ tenKH, infoKH, createdAt: new Date().toISOString() });
+        }
+        huySuaKH();
+        hienToast(isEdit ? `✅ Đã cập nhật khách hàng [${tenKH}] thành công!` : `✅ Đã thêm khách hàng [${tenKH}] thành công!`);
+      } catch (e) { hienToast("❌ Lỗi: " + e.message); }
+    };
+
+    window.suaKhachHang = function(docId) {
+      const d = window.masterCache.kh[docId];
+      if (!d) return;
+      dangSuaKHId = docId;
+      document.getElementById('qtTenKH').value = d.tenKH || '';
+      document.getElementById('qtInfoKH').value = d.infoKH || '';
+      document.getElementById('titleFormKH').innerText = "✏️ Đang Sửa Khách Hàng";
+      document.getElementById('btnSaveKH').innerText = "💾 Cập Nhật KH";
+      document.getElementById('btnCancelKH').style.display = 'inline-block';
+      document.getElementById('qtTenKH').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    window.huySuaKH = function() {
+      dangSuaKHId = null;
+      document.getElementById('qtTenKH').value = '';
+      document.getElementById('qtInfoKH').value = '';
+      document.getElementById('titleFormKH').innerText = "👤 Thêm Khách Hàng (CRM)";
+      document.getElementById('btnSaveKH').innerText = "💾 Lưu Khách Hàng";
+      document.getElementById('btnCancelKH').style.display = 'none';
+    };
+
+    window.themBankNhanh = async function() {
+      const bankName = document.getElementById('qtBankName')?.value.trim();
+      const accName = document.getElementById('qtAccName')?.value.trim() || '';
+      const accNo = document.getElementById('qtAccNo')?.value.trim();
+      const swift = document.getElementById('qtSwift')?.value.trim() || '';
+      if (!bankName || !accNo) { hienToast("⚠️ Vui lòng nhập Tên ngân hàng và Số tài khoản!"); return; }
+
+      try {
+        const isEdit = !!dangSuaBankId;
+        if (dangSuaBankId) {
+          await db.collection("DM_Bank").doc(dangSuaBankId).set({ bankName, accName, accNo, swift, updatedAt: new Date().toISOString() }, { merge: true });
+        } else {
+          await db.collection("DM_Bank").add({ bankName, accName, accNo, swift, createdAt: new Date().toISOString() });
+        }
+        huySuaBank();
+        hienToast(isEdit ? `✅ Đã cập nhật ngân hàng [${bankName}] thành công!` : `✅ Đã thêm ngân hàng [${bankName}] thành công!`);
+      } catch (e) { hienToast("❌ Lỗi: " + e.message); }
+    };
+
+    window.suaBank = function(docId) {
+      const d = window.masterCache.bank[docId];
+      if (!d) return;
+      dangSuaBankId = docId;
+      document.getElementById('qtBankName').value = d.bankName || '';
+      document.getElementById('qtAccName').value = d.accName || '';
+      document.getElementById('qtAccNo').value = d.accNo || '';
+      document.getElementById('qtSwift').value = d.swift || '';
+      document.getElementById('titleFormBank').innerText = "✏️ Đang Sửa Ngân Hàng";
+      document.getElementById('btnSaveBank').innerText = "💾 Cập Nhật Bank";
+      document.getElementById('btnCancelBank').style.display = 'inline-block';
+      document.getElementById('qtBankName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    window.huySuaBank = function() {
+      dangSuaBankId = null;
+      document.getElementById('qtBankName').value = '';
+      document.getElementById('qtAccName').value = '';
+      document.getElementById('qtAccNo').value = '';
+      document.getElementById('qtSwift').value = '';
+      document.getElementById('titleFormBank').innerText = "🏦 Thêm Ngân Hàng T/T";
+      document.getElementById('btnSaveBank').innerText = "💾 Lưu Ngân Hàng";
+      document.getElementById('btnCancelBank').style.display = 'none';
+    };
+
+    // Các hàm kết xuất Batch DOM cho từng bảng Master (không làm giật giao diện khi 4-5 người cùng thao tác)
+    function renderBangSanPhamMaster(spSnap) {
+      window.masterCache.sp = {};
+      const spSelect = document.getElementById('spSelect');
+      const tableSP = document.querySelector('#tableHistorySP tbody');
+      const curSpVal = spSelect?.value || '';
+
+      const opts = ['<option value="">-- Chọn sản phẩm từ Database --</option>'];
+      const rows = [];
+
+      spSnap.forEach(doc => {
+        const d = doc.data();
+        const docId = doc.id;
+        const ma = d.maSP || docId;
+        const ten = d.tenSP || '';
+        const moTa = d.moTaSP || d.moTa || d.chiTiet || '';
+        const dvt = d.dvt || 'CTN';
+        const gia = Number(d.gia) || 0;
+        const anhSP = d.anhSP || '';
+
+        window.masterCache.sp[docId] = { docId, maSP: ma, tenSP: ten, moTaSP: moTa, dvt, gia, anhSP };
+
+        opts.push(`<option value="${escapeHtml(docId)}" ${docId === curSpVal ? 'selected' : ''}>[${escapeHtml(ma)}] ${escapeHtml(ten)} — ${gia.toLocaleString('vi-VN')} (${escapeHtml(dvt)})</option>`);
+        rows.push(`
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:8px; vertical-align:top;">
+              <div style="display:flex;gap:8px;align-items:flex-start;">
+                ${anhSP ? `<img src="${anhSP}" loading="lazy" style="width:48px;height:48px;object-fit:cover;border-radius:4px;border:1px solid #cbd5e1;background:#fff;">` : ''}
+                <div>
+                  <div style="font-weight:700; color:#0f172a;">[${escapeHtml(ma)}] ${escapeHtml(ten)}</div>
+                  ${moTa ? `<div style="color:#475569; font-size:11px; white-space:pre-line; margin-top:3px;">📝 ${escapeHtml(moTa)}</div>` : `<div style="color:#94a3b8; font-size:11px; font-style:italic;">(Chưa có mô tả chi tiết)</div>`}
+                </div>
+              </div>
+            </td>
+            <td style="padding:8px; vertical-align:top; font-weight:700; color:var(--sap-success);">
+              ${gia.toLocaleString('vi-VN')}<br><span style="font-size:11px; color:#64748b;">ĐVT: ${escapeHtml(dvt)}</span>
+            </td>
+            <td style="padding:8px; text-align:right; vertical-align:top; white-space:nowrap;">
+              <button onclick="suaSanPham('${escapeHtml(docId)}')" style="background:#fff8f1; color:#e76500; border:1px solid #e76500; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; margin-right:3px;">Sửa</button>
+              <button onclick="xoaFirestore('Database', '${escapeHtml(docId)}', 'sản phẩm')" style="background:#fff1f1; color:#aa0808; border:1px solid #aa0808; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer;">Xóa</button>
+            </td>
+          </tr>`);
+      });
+
+      if (spSelect) spSelect.innerHTML = opts.join('');
+      if (tableSP) tableSP.innerHTML = rows.join('');
+      capNhatChiSoMasterCount();
+    }
+
+    function renderBangKhachHangMaster(khSnap) {
+      window.masterCache.kh = {};
+      const khSelect = document.getElementById('khSelect');
+      const tableKH = document.querySelector('#tableHistoryKH tbody');
+      const curKhVal = khSelect?.value || '';
+
+      const opts = ['<option value="">-- Chọn khách hàng lưu sẵn --</option>'];
+      const rows = [];
+
+      khSnap.forEach(doc => {
+        const d = doc.data();
+        const docId = doc.id;
+        const ten = d.tenKH || d.tenKhachHang || d.name || docId;
+        const info = d.infoKH || d.lienHe || d.thongTin || '';
+
+        window.masterCache.kh[docId] = { docId, tenKH: ten, infoKH: info };
+
+        opts.push(`<option value="${escapeHtml(docId)}" ${docId === curKhVal ? 'selected' : ''}>${escapeHtml(ten)}</option>`);
+        rows.push(`
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:8px; vertical-align:top;">
+              <div style="font-weight:700; color:var(--sap-brand);">${escapeHtml(ten)}</div>
+              ${info ? `<div style="color:#475569; font-size:11px; white-space:pre-line; margin-top:3px;">📍 ${escapeHtml(info)}</div>` : `<div style="color:#94a3b8; font-size:11px; font-style:italic;">(Chưa có thông tin liên hệ)</div>`}
+            </td>
+            <td style="padding:8px; text-align:right; vertical-align:top; white-space:nowrap;">
+              <button onclick="suaKhachHang('${escapeHtml(docId)}')" style="background:#fff8f1; color:#e76500; border:1px solid #e76500; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; margin-right:3px;">Sửa</button>
+              <button onclick="xoaFirestore('KhachHang', '${escapeHtml(docId)}', 'khách hàng')" style="background:#fff1f1; color:#aa0808; border:1px solid #aa0808; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer;">Xóa</button>
+            </td>
+          </tr>`);
+      });
+
+      if (khSelect) khSelect.innerHTML = opts.join('');
+      if (tableKH) tableKH.innerHTML = rows.join('');
+      capNhatChiSoMasterCount();
+    }
+
+    function renderBangBankMaster(bankSnap) {
+      window.masterCache.bank = {};
+      const bankSelect = document.getElementById('bankSelect');
+      const tableBank = document.querySelector('#tableHistoryBank tbody');
+      const curBankVal = bankSelect?.value || '';
+
+      const opts = ['<option value="">-- Chọn Bank từ Database --</option>'];
+      const rows = [];
+
+      bankSnap.forEach(doc => {
+        const d = doc.data();
+        const docId = doc.id;
+        const bName = d.bankName || d.tenBank || '';
+        const accName = d.accName || d.tenTaiKhoan || '';
+        const accNo = d.accNo || d.soTaiKhoan || '';
+        const swift = d.swift || d.swiftCode || '';
+
+        window.masterCache.bank[docId] = { docId, bankName: bName, accName, accNo, swift };
+
+        opts.push(`<option value="${escapeHtml(docId)}" ${docId === curBankVal ? 'selected' : ''}>${escapeHtml(bName)} — A/C: ${escapeHtml(accNo)}</option>`);
+        rows.push(`
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:8px; vertical-align:top;">
+              <div style="font-weight:700; color:var(--sap-warning);">🏦 ${escapeHtml(bName)}</div>
+              <div style="color:#0f172a; font-size:11.5px;">👤 <b>Chủ TK:</b> ${escapeHtml(accName || '---')}</div>
+              <div style="color:#0f172a; font-size:11.5px;">💳 <b>Số TK:</b> ${escapeHtml(accNo)}</div>
+              <div style="color:#475569; font-size:11px;">🌐 <b>Swift:</b> ${escapeHtml(swift || '---')}</div>
+            </td>
+            <td style="padding:8px; text-align:right; vertical-align:top; white-space:nowrap;">
+              <button onclick="suaBank('${escapeHtml(docId)}')" style="background:#fff8f1; color:#e76500; border:1px solid #e76500; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; margin-right:3px;">Sửa</button>
+              <button onclick="xoaFirestore('DM_Bank', '${escapeHtml(docId)}', 'ngân hàng')" style="background:#fff1f1; color:#aa0808; border:1px solid #aa0808; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer;">Xóa</button>
+            </td>
+          </tr>`);
+      });
+
+      if (bankSelect) bankSelect.innerHTML = opts.join('');
+      if (tableBank) tableBank.innerHTML = rows.join('');
+    }
+
+    // =====================================================
+    // 7B. MASTER DATA HÌNH ẢNH: LOGO CÔNG TY & WATERMARK RIÊNG BIỆT
+    // =====================================================
+    window.loadMasterLogoImage = function(input) {
+      const file = input?.files?.[0];
+      if (!file) return;
+      docFileAnhMasterAnToan(file, 550, true, function(dataUrl) {
+        window.currentMasterLogoBase64 = dataUrl;
+        const img = document.getElementById('qtPreviewLogo');
+        if (img) { img.src = dataUrl; img.style.display = 'block'; }
+        // Tự động gợi ý tên ảnh nếu người dùng chưa gõ
+        const nameInp = document.getElementById('qtTenLogo');
+        if (nameInp && !nameInp.value.trim()) {
+          nameInp.value = file.name.replace(/\.[^/.]+$/, '');
+        }
+      });
+    };
+
+    window.themLogoMasterNhanh = async function() {
+      const tenAnh = document.getElementById('qtTenLogo')?.value.trim();
+      const anhBase64 = window.currentMasterLogoBase64 || (dangSuaLogoId && window.masterCache.logo?.[dangSuaLogoId]?.anhBase64) || '';
+
+      if (!tenAnh) {
+        hienToast("⚠️ Vui lòng đặt tên cho ảnh Logo!");
+        document.getElementById('qtTenLogo')?.focus();
+        return;
+      }
+      if (!anhBase64) {
+        hienToast("⚠️ Vui lòng chọn tệp ảnh Logo!");
+        return;
+      }
+
+      try {
+        const isEdit = !!dangSuaLogoId;
+        const payload = { tenAnh, anhBase64, loai: 'LOGO', updatedAt: new Date().toISOString() };
+        if (dangSuaLogoId) {
+          await db.collection("DM_Logo").doc(dangSuaLogoId).set(payload, { merge: true });
+        } else {
+          payload.createdAt = new Date().toISOString();
+          await db.collection("DM_Logo").add(payload);
+        }
+        huySuaLogoMaster();
+        hienToast(isEdit ? `✅ Đã cập nhật Logo [${tenAnh}]!` : `✅ Đã lưu Logo [${tenAnh}] vào Master Data!`);
+      } catch (e) {
+        hienToast("❌ Lỗi lưu Logo (ảnh có thể quá lớn): " + e.message);
+      }
+    };
+
+    window.suaLogoMaster = function(docId) {
+      const d = window.masterCache.logo?.[docId];
+      if (!d) return;
+      dangSuaLogoId = docId;
+      document.getElementById('qtTenLogo').value = d.tenAnh || '';
+      window.currentMasterLogoBase64 = d.anhBase64 || '';
+      const img = document.getElementById('qtPreviewLogo');
+      if (img) {
+        if (d.anhBase64) { img.src = d.anhBase64; img.style.display = 'block'; }
+        else { img.src = ''; img.style.display = 'none'; }
+      }
+      document.getElementById('titleFormLogo').innerText = "✏️ Đang Sửa Logo: " + (d.tenAnh || '');
+      document.getElementById('btnSaveLogo').innerText = "💾 Cập Nhật Logo";
+      document.getElementById('btnCancelLogo').style.display = 'inline-block';
+      document.getElementById('qtTenLogo').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    window.huySuaLogoMaster = function() {
+      dangSuaLogoId = null;
+      window.currentMasterLogoBase64 = '';
+      if (document.getElementById('qtTenLogo')) document.getElementById('qtTenLogo').value = '';
+      if (document.getElementById('qtFileLogo')) document.getElementById('qtFileLogo').value = '';
+      if (document.getElementById('qtPreviewLogo')) {
+        document.getElementById('qtPreviewLogo').src = '';
+        document.getElementById('qtPreviewLogo').style.display = 'none';
+      }
+      document.getElementById('titleFormLogo').innerText = "🏢 Thêm Logo Công Ty";
+      document.getElementById('btnSaveLogo').innerText = "💾 Lưu Logo vào Master Data";
+      document.getElementById('btnCancelLogo').style.display = 'none';
+    };
+
+    window.apDungLogoTuMasterBangId = function(docId) {
+      const sel = document.getElementById('logoMasterSelect');
+      if (sel) sel.value = docId;
+      window.chonLogoTuMaster(false);
+      window.chuyenManHinhKapella('STUDIO');
+    };
+
+    window.loadMasterWmImage = function(input) {
+      const file = input?.files?.[0];
+      if (!file) return;
+      docFileAnhMasterAnToan(file, 650, true, function(dataUrl) {
+        window.currentMasterWmBase64 = dataUrl;
+        const img = document.getElementById('qtPreviewWm');
+        if (img) { img.src = dataUrl; img.style.display = 'block'; }
+        const nameInp = document.getElementById('qtTenWm');
+        if (nameInp && !nameInp.value.trim()) {
+          nameInp.value = file.name.replace(/\.[^/.]+$/, '');
+        }
+      });
+    };
+
+    window.themWmMasterNhanh = async function() {
+      const tenAnh = document.getElementById('qtTenWm')?.value.trim();
+      const anhBase64 = window.currentMasterWmBase64 || (dangSuaWmId && window.masterCache.watermark?.[dangSuaWmId]?.anhBase64) || '';
+
+      if (!tenAnh) {
+        hienToast("⚠️ Vui lòng đặt tên cho ảnh Watermark!");
+        document.getElementById('qtTenWm')?.focus();
+        return;
+      }
+      if (!anhBase64) {
+        hienToast("⚠️ Vui lòng chọn tệp ảnh Watermark!");
+        return;
+      }
+
+      try {
+        const isEdit = !!dangSuaWmId;
+        const payload = { tenAnh, anhBase64, loai: 'WATERMARK', updatedAt: new Date().toISOString() };
+        if (dangSuaWmId) {
+          await db.collection("DM_Watermark").doc(dangSuaWmId).set(payload, { merge: true });
+        } else {
+          payload.createdAt = new Date().toISOString();
+          await db.collection("DM_Watermark").add(payload);
+        }
+        huySuaWmMaster();
+        hienToast(isEdit ? `✅ Đã cập nhật Watermark [${tenAnh}]!` : `✅ Đã lưu Watermark [${tenAnh}] vào Master Data!`);
+      } catch (e) {
+        hienToast("❌ Lỗi lưu Watermark (ảnh có thể quá lớn): " + e.message);
+      }
+    };
+
+    window.suaWmMaster = function(docId) {
+      const d = window.masterCache.watermark?.[docId];
+      if (!d) return;
+      dangSuaWmId = docId;
+      document.getElementById('qtTenWm').value = d.tenAnh || '';
+      window.currentMasterWmBase64 = d.anhBase64 || '';
+      const img = document.getElementById('qtPreviewWm');
+      if (img) {
+        if (d.anhBase64) { img.src = d.anhBase64; img.style.display = 'block'; }
+        else { img.src = ''; img.style.display = 'none'; }
+      }
+      document.getElementById('titleFormWm').innerText = "✏️ Đang Sửa Watermark: " + (d.tenAnh || '');
+      document.getElementById('btnSaveWm').innerText = "💾 Cập Nhật Watermark";
+      document.getElementById('btnCancelWm').style.display = 'inline-block';
+      document.getElementById('qtTenWm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    window.huySuaWmMaster = function() {
+      dangSuaWmId = null;
+      window.currentMasterWmBase64 = '';
+      if (document.getElementById('qtTenWm')) document.getElementById('qtTenWm').value = '';
+      if (document.getElementById('qtFileWm')) document.getElementById('qtFileWm').value = '';
+      if (document.getElementById('qtPreviewWm')) {
+        document.getElementById('qtPreviewWm').src = '';
+        document.getElementById('qtPreviewWm').style.display = 'none';
+      }
+      document.getElementById('titleFormWm').innerText = "💧 Thêm Watermark";
+      document.getElementById('btnSaveWm').innerText = "💾 Lưu Watermark vào Master Data";
+      document.getElementById('btnCancelWm').style.display = 'none';
+    };
+
+    window.apDungWmTuMasterBangId = function(docId) {
+      const sel = document.getElementById('wmMasterSelect');
+      if (sel) sel.value = docId;
+      window.chonWatermarkTuMaster(false);
+      window.chuyenManHinhKapella('STUDIO');
+    };
+
+    function renderBangLogoMaster(logoSnap) {
+      window.masterCache.logo = {};
+      const sel = document.getElementById('logoMasterSelect');
+      const tbody = document.querySelector('#tableHistoryLogo tbody');
+      const curId = window.selectedLogoMasterId || sel?.value || '';
+
+      const items = [];
+      logoSnap.forEach(doc => {
+        const d = doc.data();
+        const docId = doc.id;
+        const tenAnh = d.tenAnh || d.name || docId;
+        const anhBase64 = d.anhBase64 || d.url || '';
+        const item = { docId, tenAnh, anhBase64, updatedAt: d.updatedAt || d.createdAt || '' };
+        window.masterCache.logo[docId] = item;
+        items.push(item);
+      });
+      items.sort((a, b) => a.tenAnh.localeCompare(b.tenAnh, 'vi'));
+
+      const opts = ['<option value="">-- Chọn Logo từ Master Data --</option>'];
+      const rows = [];
+
+      if (items.length === 0) {
+        rows.push('<tr><td colspan="2" style="text-align:center;color:#94a3b8;padding:16px;">Chưa có Logo nào trong Master Data</td></tr>');
+      } else {
+        items.forEach(item => {
+          opts.push(`<option value="${escapeHtml(item.docId)}" ${item.docId === curId ? 'selected' : ''}>🏢 ${escapeHtml(item.tenAnh)}</option>`);
+          rows.push(`
+            <tr style="border-bottom:1px solid #f1f5f9;">
+              <td style="padding:8px; vertical-align:middle;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  ${item.anhBase64 ? `<img src="${item.anhBase64}" loading="lazy" style="width:54px;height:40px;object-fit:contain;border-radius:6px;border:1px solid #cbd5e1;background:#f8fafc;padding:2px;">` : ''}
+                  <div style="font-weight:700;color:#0f172a;">${escapeHtml(item.tenAnh)}</div>
+                </div>
+              </td>
+              <td style="padding:8px; text-align:right; vertical-align:middle; white-space:nowrap;">
+                <button onclick="apDungLogoTuMasterBangId('${escapeHtml(item.docId)}')" style="background:#ebf5ff; color:#0070f2; border:1px solid #93c5fd; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; margin-right:3px;">Dùng</button>
+                <button onclick="suaLogoMaster('${escapeHtml(item.docId)}')" style="background:#fff8f1; color:#e76500; border:1px solid #e76500; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; margin-right:3px;">Sửa</button>
+                <button onclick="xoaFirestore('DM_Logo', '${escapeHtml(item.docId)}', 'Logo')" style="background:#fff1f1; color:#aa0808; border:1px solid #aa0808; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer;">Xóa</button>
+              </td>
+            </tr>`);
+        });
+      }
+
+      if (sel) sel.innerHTML = opts.join('');
+      if (tbody) tbody.innerHTML = rows.join('');
+
+      // Tự động áp dụng lại Logo đang chọn nếu tồn tại trong Master Data
+      if (curId && window.masterCache.logo[curId]) {
+        if (sel) sel.value = curId;
+        const activeLogo = window.masterCache.logo[curId];
+        apDungLogo(activeLogo.anhBase64, activeLogo.tenAnh);
+      }
+      capNhatChiSoMasterCount();
+    }
+
+    function renderBangWmMaster(wmSnap) {
+      window.masterCache.watermark = {};
+      const sel = document.getElementById('wmMasterSelect');
+      const tbody = document.querySelector('#tableHistoryWm tbody');
+      const curId = window.selectedWmMasterId || sel?.value || '';
+
+      const items = [];
+      wmSnap.forEach(doc => {
+        const d = doc.data();
+        const docId = doc.id;
+        const tenAnh = d.tenAnh || d.name || docId;
+        const anhBase64 = d.anhBase64 || d.url || '';
+        const item = { docId, tenAnh, anhBase64, updatedAt: d.updatedAt || d.createdAt || '' };
+        window.masterCache.watermark[docId] = item;
+        items.push(item);
+      });
+      items.sort((a, b) => a.tenAnh.localeCompare(b.tenAnh, 'vi'));
+
+      const opts = ['<option value="">-- Chọn Watermark từ Master Data --</option>'];
+      const rows = [];
+
+      if (items.length === 0) {
+        rows.push('<tr><td colspan="2" style="text-align:center;color:#94a3b8;padding:16px;">Chưa có Watermark nào trong Master Data</td></tr>');
+      } else {
+        items.forEach(item => {
+          opts.push(`<option value="${escapeHtml(item.docId)}" ${item.docId === curId ? 'selected' : ''}>💧 ${escapeHtml(item.tenAnh)}</option>`);
+          rows.push(`
+            <tr style="border-bottom:1px solid #f1f5f9;">
+              <td style="padding:8px; vertical-align:middle;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  ${item.anhBase64 ? `<img src="${item.anhBase64}" loading="lazy" style="width:54px;height:40px;object-fit:contain;border-radius:6px;border:1px solid #cbd5e1;background:#f8fafc;padding:2px;">` : ''}
+                  <div style="font-weight:700;color:#0f172a;">${escapeHtml(item.tenAnh)}</div>
+                </div>
+              </td>
+              <td style="padding:8px; text-align:right; vertical-align:middle; white-space:nowrap;">
+                <button onclick="apDungWmTuMasterBangId('${escapeHtml(item.docId)}')" style="background:#f1fdf6; color:#256f3a; border:1px solid #86efac; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; margin-right:3px;">Dùng</button>
+                <button onclick="suaWmMaster('${escapeHtml(item.docId)}')" style="background:#fff8f1; color:#e76500; border:1px solid #e76500; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; margin-right:3px;">Sửa</button>
+                <button onclick="xoaFirestore('DM_Watermark', '${escapeHtml(item.docId)}', 'Watermark')" style="background:#fff1f1; color:#aa0808; border:1px solid #aa0808; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer;">Xóa</button>
+              </td>
+            </tr>`);
+        });
+      }
+
+      if (sel) sel.innerHTML = opts.join('');
+      if (tbody) tbody.innerHTML = rows.join('');
+
+      // Tự động áp dụng lại Watermark đang chọn nếu tồn tại trong Master Data
+      if (curId && window.masterCache.watermark[curId]) {
+        if (sel) sel.value = curId;
+        const activeWm = window.masterCache.watermark[curId];
+        window.rawWatermarkBase64 = activeWm.anhBase64;
+        const pct = parseInt(document.getElementById('wmOpacitySlider')?.value || window.wmOpacityPercent || '20', 10);
+        taoWatermarkTachNenTrang(activeWm.anhBase64, pct, function(processedPng) {
+          apDungWatermark(processedPng, activeWm.tenAnh, activeWm.anhBase64);
+        });
+      }
+      capNhatChiSoMasterCount();
+    }
+
+    function capNhatChiSoMasterCount() {
+      const countSP = Object.keys(window.masterCache.sp || {}).length;
+      const countKH = Object.keys(window.masterCache.kh || {}).length;
+      const kpCountMaster = document.getElementById('kpCountMaster');
+      if (kpCountMaster) kpCountMaster.innerText = `${countSP} SP / ${countKH} KH`;
+    }
+
+    // Kích hoạt đồng bộ Realtime cho 4-5 người dùng cùng lúc
+    function kichHoatDongBoRealtimeDaNguoiDung() {
+      if (realtimeListenersInitialized || typeof db === 'undefined') return;
+      realtimeListenersInitialized = true;
+
+      db.collection("Database").onSnapshot(snap => {
+        requestAnimationFrame(() => renderBangSanPhamMaster(snap));
+      }, err => console.warn("Realtime SP:", err));
+
+      db.collection("KhachHang").onSnapshot(snap => {
+        requestAnimationFrame(() => renderBangKhachHangMaster(snap));
+      }, err => console.warn("Realtime KH:", err));
+
+      db.collection("DM_Bank").onSnapshot(snap => {
+        requestAnimationFrame(() => renderBangBankMaster(snap));
+      }, err => console.warn("Realtime Bank:", err));
+
+      db.collection("DM_Logo").onSnapshot(snap => {
+        requestAnimationFrame(() => renderBangLogoMaster(snap));
+      }, err => console.warn("Realtime Logo:", err));
+
+      db.collection("DM_Watermark").onSnapshot(snap => {
+        requestAnimationFrame(() => renderBangWmMaster(snap));
+      }, err => console.warn("Realtime Watermark:", err));
+
+      let firstDonHangSnapshot = true;
+      db.collection("DonHang").onSnapshot(snap => {
+        const modifiedChanges = !firstDonHangSnapshot ? snap.docChanges().filter(c => c.type === 'modified') : [];
+        firstDonHangSnapshot = false;
+
+        requestAnimationFrame(() => {
+          window.masterCache.orders = {};
+          const arr = [];
+          snap.forEach(doc => {
+            const d = doc.data();
+            const id = doc.id;
+            window.masterCache.orders[id] = d;
+            arr.push({ id, ...d });
+          });
+          arr.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
+          capNhatGiaoDienDanhSachDon(arr);
+
+          // Khóa xung đột nhẹ: Cảnh báo nếu phiên khác vừa sửa trùng mã đơn bạn đang mở
+          const activeMa = document.getElementById('inMa')?.value.trim() || '';
+          if (activeMa && modifiedChanges.length > 0) {
+            modifiedChanges.forEach(change => {
+              if (change.doc.id === activeMa) {
+                const d = change.doc.data() || {};
+                const changeSig = `${activeMa}_${d.updatedAt || ''}`;
+                if (
+                  d.lastEditorSession &&
+                  d.lastEditorSession !== window.currentClientSessionId &&
+                  window.conflictBannerDismissedFor !== changeSig
+                ) {
+                  window.hienCanhBaoXungDotDon(activeMa, d.lastEditorSession, d.updatedAt);
+                }
+              }
+            });
+          }
+        });
+      }, err => console.warn("Realtime DonHang:", err));
+    }
+
+    // Tải song song toàn bộ Master Data trong 1 nhịp duy nhất
+    window.taiDuLieuMasterTuFirestore = async function() {
+      try {
+        const [spSnap, khSnap, bankSnap, logoSnap, wmSnap] = await Promise.all([
+          db.collection("Database").get(),
+          db.collection("KhachHang").get(),
+          db.collection("DM_Bank").get(),
+          db.collection("DM_Logo").get(),
+          db.collection("DM_Watermark").get()
+        ]);
+        renderBangSanPhamMaster(spSnap);
+        renderBangKhachHangMaster(khSnap);
+        renderBangBankMaster(bankSnap);
+        renderBangLogoMaster(logoSnap);
+        renderBangWmMaster(wmSnap);
+      } catch (err) {
+        console.error("Lỗi tải Master:", err);
+      }
+    };
+
+    window.xoaFirestore = function(collectionName, docId, tenLoai) {
+      window.hienHopThoaiXacNhan(`Bạn có chắc chắn muốn xóa ${tenLoai} này khỏi hệ thống không?`, async function() {
+        try {
+          await db.collection(collectionName).doc(docId).delete();
+          hienToast(`✅ Đã xóa ${tenLoai} thành công!`);
+        } catch (e) {
+          hienToast("❌ Lỗi: " + e.message);
+        }
+      });
+    };
+
+    window.chonSPDatabase = function() {
+      const sel = document.getElementById('spSelect');
+      if (!sel || !sel.value) return;
+      const item = window.masterCache.sp[sel.value];
+      if (!item) return;
+
+      const fullDesc = item.moTaSP ? `${item.tenSP}\n${item.moTaSP}` : item.tenSP;
+      if (document.getElementById('inTenSP')) document.getElementById('inTenSP').value = fullDesc;
+      if (document.getElementById('inMaSPMoi')) document.getElementById('inMaSPMoi').value = item.maSP;
+      if (document.getElementById('inDVT')) document.getElementById('inDVT').value = item.dvt;
+      if (document.getElementById('inGia')) document.getElementById('inGia').value = item.gia;
+
+      if (item.anhSP) {
+        window.currentSpImageBase64 = item.anhSP;
+        const preview = document.getElementById('spPreviewLeft');
+        const btnClear = document.getElementById('btnClearSpImg');
+        if (preview) { preview.src = item.anhSP; preview.style.display = 'inline-block'; }
+        if (btnClear) btnClear.style.display = 'inline-block';
+      }
+    };
+
+    window.chonKhachHangCRM = function() {
+      const sel = document.getElementById('khSelect');
+      if (!sel || !sel.value) return;
+      const kh = window.masterCache.kh[sel.value];
+      if (!kh) return;
+      duLieuDaThayDoiBoiNguoiDung = true;
+      if (document.getElementById('inKhach')) document.getElementById('inKhach').value = kh.tenKH || '';
+      if (document.getElementById('inLienHe')) document.getElementById('inLienHe').value = kh.infoKH || '';
+      updatePreview();
+    };
+
+    window.chonBankTuSheet = function() {
+      const sel = document.getElementById('bankSelect');
+      if (!sel || !sel.value) return;
+      const b = window.masterCache.bank[sel.value];
+      if (!b) return;
+      duLieuDaThayDoiBoiNguoiDung = true;
+
+      const lines = [];
+      if (b.bankName) lines.push(`Bank Name: ${b.bankName}`);
+      if (b.accName) lines.push(`Beneficiary: ${b.accName}`);
+      if (b.accNo) lines.push(`Account No: ${b.accNo}`);
+      if (b.swift) lines.push(`SWIFT Code: ${b.swift}`);
+
+      if (document.getElementById('inBankInfo')) {
+        document.getElementById('inBankInfo').value = lines.join('\n');
+      }
+      updatePreview();
+    };
+
+    window.luuKhachHangTuStudio = async function() {
+      const tenKH = document.getElementById('inKhach')?.value.trim();
+      const infoKH = document.getElementById('inLienHe')?.value.trim() || '';
+      if (!tenKH) { hienToast("⚠️ Vui lòng nhập Tên khách hàng!"); return; }
+      try {
+        await db.collection("KhachHang").add({ tenKH, infoKH, createdAt: new Date().toISOString() });
+        hienToast(`✅ Đã thêm khách hàng [${tenKH}] thành công!`);
+      } catch (e) { hienToast("❌ Lỗi: " + e.message); }
+    };
+
+    window.luuSanPhamTuStudio = async function() {
+      const maSP = document.getElementById('inMaSPMoi')?.value.trim() || ('SP' + Date.now().toString().slice(-4));
+      const fullText = document.getElementById('inTenSP')?.value.trim() || '';
+      const dvt = document.getElementById('inDVT')?.value.trim() || 'CTN';
+      const gia = parseFloat(document.getElementById('inGia')?.value) || 0;
+      const anhSP = window.currentSpImageBase64 || '';
+      if (!fullText) { hienToast("⚠️ Vui lòng nhập Tên / Mô tả sản phẩm!"); return; }
+
+      const parts = fullText.split('\n');
+      const tenSP = parts[0];
+      const moTaSP = parts.slice(1).join('\n');
+
+      try {
+        await db.collection("Database").doc(maSP).set({
+          maSP, tenSP, moTaSP, dvt, gia, anhSP, updatedAt: new Date().toISOString()
+        }, { merge: true });
+        hienToast(`✅ Đã thêm sản phẩm [${maSP}] thành công!`);
+      } catch (e) { hienToast("❌ Lỗi: " + e.message); }
+    };
+
+    window.chenMauNhanh = function(elementId, text) {
+      const el = document.getElementById(elementId);
+      if (el) {
+        duLieuDaThayDoiBoiNguoiDung = true;
+        el.value = text;
+        el.dispatchEvent(new Event('input'));
+        updatePreview();
+      }
+    };
+
+    function khoiPhucLogoVaWatermarkTuBoNho() {
+      try {
+        const savedLogo = localStorage.getItem('argon_saved_logo');
+        const savedLogoName = localStorage.getItem('argon_saved_logo_name') || 'Logo đã chọn';
+        if (savedLogo) apDungLogo(savedLogo, savedLogoName);
+
+        const savedPct = parseInt(localStorage.getItem('argon_wm_opacity') || '20', 10);
+        window.wmOpacityPercent = savedPct;
+        if (document.getElementById('wmOpacitySlider')) document.getElementById('wmOpacitySlider').value = savedPct;
+        if (document.getElementById('wmOpacityLabel')) document.getElementById('wmOpacityLabel').innerText = savedPct + '%';
+
+        // Tách riêng hoàn toàn Watermark khỏi Logo (không lấy nhầm Logo làm Watermark)
+        const rawWm = localStorage.getItem('argon_raw_wm') || localStorage.getItem('argon_saved_wm');
+        const savedWmName = localStorage.getItem('argon_saved_wm_name') || 'Watermark đã chọn';
+        if (rawWm) {
+          window.rawWatermarkBase64 = rawWm;
+          taoWatermarkTachNenTrang(rawWm, savedPct, function(processedPng) {
+            apDungWatermark(processedPng, savedWmName, rawWm);
+            try { localStorage.setItem('argon_saved_wm', processedPng); } catch (e) {}
+          });
+        }
+      } catch (e) {}
+    }
+
+    // =====================================================
+    // 8. TỶ GIÁ NGÂN HÀNG VIỆT NAM TỰ ĐỘNG THEO NGÀY
+    // =====================================================
+    window.currentExchangeRates = { USD: 25990, CNY: 3890, EUR: 29625, GBP: 35185, VND: 1 };
+    window.exchangeRatesUpdateDate = '';
+    window.currentBankCode = 'vietcombank';
+    window.currentRateType = 'sell';
+    window.allBanksDailyRates = {};
+
+    const DANH_SACH_NGAN_HANG_VN = {
+      vietcombank: { name: 'Vietcombank (VCB)', slug: 'vietcombank', spread: 1.000 },
+      techcombank: { name: 'Techcombank (TCB)', slug: 'techcombank', spread: 1.0005 },
+      bidv:        { name: 'BIDV',              slug: 'bidv',        spread: 0.9998 },
+      vietinbank:  { name: 'VietinBank (CTG)',  slug: 'vietinbank',  spread: 0.9996 },
+      agribank:    { name: 'Agribank',          slug: 'agribank',    spread: 0.9995 }
+    };
+
+    function layMaNgayHomNay() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function docSoTyGiaVN(str) {
+      if (!str || str === '-') return 0;
+      const clean = String(str).trim().replace(/[^\d.,]/g, '');
+      if (!clean) return 0;
+      let normalized = clean;
+      if (clean.includes('.') && clean.includes(',')) {
+        normalized = clean.replace(/\./g, '').replace(',', '.');
+      } else if (clean.includes(',')) {
+        const parts = clean.split(',');
+        normalized = (parts[parts.length - 1].length === 3) ? clean.replace(/,/g, '') : clean.replace(',', '.');
+      } else if (clean.includes('.')) {
+        const parts = clean.split('.');
+        normalized = (parts[parts.length - 1].length === 3) ? clean.replace(/\./g, '') : clean;
+      }
+      const val = parseFloat(normalized);
+      return isNaN(val) ? 0 : val;
+    }
+
+    async function fetchQuaCorsProxy(targetUrl) {
+      const proxies = [
+        (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}&t=${Date.now()}`,
+        (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+        (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`
+      ];
+
+      for (const buildUrl of proxies) {
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 5500);
+          const res = await fetch(buildUrl(targetUrl), { signal: controller.signal });
+          clearTimeout(timer);
+          if (res.ok) {
+            const text = await res.text();
+            if (text && text.length > 200) return text;
+          }
+        } catch (e) {}
+      }
+      throw new Error("Tất cả CORS Proxy đều phản hồi chậm.");
+    }
+
+    function bocTachBangWebGia(htmlText) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const rows = doc.querySelectorAll('table tr');
+      const kq = {
+        USD: { buy: 0, sell: 0 },
+        CNY: { buy: 0, sell: 0 },
+        EUR: { buy: 0, sell: 0 },
+        GBP: { buy: 0, sell: 0 }
+      };
+
+      const minValid = { USD: 20000, CNY: 2500, EUR: 22000, GBP: 26000 };
+
+      rows.forEach(tr => {
+        const cells = Array.from(tr.querySelectorAll('td, th')).map(c => c.textContent.trim());
+        if (cells.length < 3) return;
+        const firstCol = cells[0].toUpperCase();
+
+        ['USD', 'CNY', 'EUR', 'GBP'].forEach(code => {
+          if (firstCol === code || firstCol.startsWith(code + ' ') || firstCol.startsWith(code + '(')) {
+            const nums = cells.slice(1).map(docSoTyGiaVN).filter(n => n >= minValid[code]);
+            if (nums.length > 0) {
+              const sellRate = Math.max(...nums);
+              const buyRate = nums.length > 1 ? nums[Math.min(1, nums.length - 2)] : nums[0];
+              if (sellRate > kq[code].sell) {
+                kq[code] = { buy: Math.round(buyRate), sell: Math.round(sellRate) };
+              }
+            }
+          }
+        });
+      });
+
+      if (kq.USD.sell > 20000 && kq.EUR.sell > 22000) return kq;
+      return null;
+    }
+
+    async function layTyGiaBienDongDuPhong(bankKey) {
+      const res = await fetch(`https://open.er-api.com/v6/latest/USD?t=${Date.now()}`);
+      const data = await res.json();
+      const r = data?.rates || {};
+      const spread = DANH_SACH_NGAN_HANG_VN[bankKey]?.spread || 1.0;
+
+      const vndBase = (r.VND || 25600) * 1.0145 * spread;
+      const cnySell = r.CNY ? (vndBase / r.CNY) * 1.012 : 3890;
+      const eurSell = r.EUR ? (vndBase / r.EUR) * 1.015 : 29625;
+      const gbpSell = r.GBP ? (vndBase / r.GBP) * 1.015 : 35185;
+
+      return {
+        USD: { buy: Math.round(vndBase - 380), sell: Math.round(vndBase) },
+        CNY: { buy: Math.round(cnySell - 85),  sell: Math.round(cnySell) },
+        EUR: { buy: Math.round(eurSell - 1150), sell: Math.round(eurSell) },
+        GBP: { buy: Math.round(gbpSell - 1100), sell: Math.round(gbpSell) }
+      };
+    }
+
+    window.taiTyGiaNgoaiTeClient = async function(forceRefresh = false) {
+      const bankKey = window.currentBankCode || 'vietcombank';
+      const bankInfo = DANH_SACH_NGAN_HANG_VN[bankKey];
+      const todayKey = layMaNgayHomNay();
+      const cacheKey = `argon_rates_${bankKey}_${todayKey}`;
+
+      const statusEl = document.getElementById('lblRateSyncStatus');
+      if (statusEl) statusEl.innerText = '⏳ Đang đồng bộ tỷ giá hôm nay...';
+
+      let bankRates = null;
+      let sourceLabel = 'WebGia Live';
+
+      if (!forceRefresh) {
+        try {
+          const cached = localStorage.getItem(cacheKey);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (parsed && parsed.USD?.sell > 20000) {
+              bankRates = parsed;
+              sourceLabel = 'Đã đồng bộ hôm nay';
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (!bankRates) {
+        try {
+          if (typeof db !== 'undefined') {
+            const snap = await db.collection("DM_TyGia").doc(`VN_${bankKey}`).get();
+            if (snap.exists && snap.data()?.date === todayKey && snap.data()?.rates) {
+              bankRates = snap.data().rates;
+              sourceLabel = 'Cloud Hôm nay';
+              try { localStorage.setItem(cacheKey, JSON.stringify(bankRates)); } catch (e) {}
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (!bankRates) {
+        try {
+          const url = `https://webgia.com/ty-gia/${bankInfo.slug}/`;
+          const html = await fetchQuaCorsProxy(url);
+          const parsed = bocTachBangWebGia(html);
+          if (parsed) {
+            bankRates = parsed;
+            sourceLabel = 'Trực tiếp WebGia';
+            try { localStorage.setItem(cacheKey, JSON.stringify(bankRates)); } catch (e) {}
+            if (typeof db !== 'undefined') {
+              db.collection("DM_TyGia").doc(`VN_${bankKey}`).set({
+                date: todayKey,
+                bank: bankInfo.name,
+                rates: bankRates,
+                updatedAt: new Date().toISOString()
+              }, { merge: true }).catch(() => {});
+            }
+          }
+        } catch (err) {
+          console.warn(`⚠️ Proxy WebGia (${bankKey}) phản hồi chậm, chuyển sang Live API:`, err.message);
+        }
+      }
+
+      if (!bankRates) {
+        try {
+          bankRates = await layTyGiaBienDongDuPhong(bankKey);
+          sourceLabel = 'Live Market VN';
+          try { localStorage.setItem(cacheKey, JSON.stringify(bankRates)); } catch (e) {}
+        } catch (e) {
+          bankRates = {
+            USD: { buy: 25580, sell: 25990 },
+            CNY: { buy: 3805,  sell: 3890 },
+            EUR: { buy: 28425, sell: 29625 },
+            GBP: { buy: 34093, sell: 35185 }
+          };
+          sourceLabel = 'Mặc định';
+        }
+      }
+
+      window.allBanksDailyRates[bankKey] = bankRates;
+      apDungTyGiaHienHanh(bankRates, sourceLabel);
+    };
+
+    function apDungTyGiaHienHanh(bankRates, sourceLabel = '') {
+      const mode = window.currentRateType || 'sell';
+      window.currentExchangeRates = {
+        USD: bankRates.USD?.[mode] || 25990,
+        CNY: bankRates.CNY?.[mode] || 3890,
+        EUR: bankRates.EUR?.[mode] || 29625,
+        GBP: bankRates.GBP?.[mode] || 35185,
+        VND: 1
+      };
+      window.exchangeRatesUpdateDate = new Date().toLocaleDateString('vi-VN');
+      hienThiWidgetTyGiaTrenStudio(sourceLabel);
+      if (typeof renderTable === 'function') renderTable();
+    }
+
+    window.hienThiWidgetTyGiaTrenStudio = function(sourceLabel = 'Hôm nay') {
+      let widget = document.getElementById('sapExchangeRateWidget');
+      if (!widget) {
+        const targetContainer = document.getElementById('rowEnOptions');
+        if (!targetContainer) return;
+
+        widget = document.createElement('div');
+        widget.id = 'sapExchangeRateWidget';
+        widget.style.cssText = 'background:var(--sap-brand-light, #e8f3ff); border:1px solid #b8daff; border-radius:10px; padding:10px 12px; margin-bottom:12px; font-size:11.5px; color:var(--sap-text, #1d2d3e); display:flex; flex-direction:column; gap:8px;';
+        targetContainer.parentNode.insertBefore(widget, targetContainer);
+      }
+
+      const r = window.currentExchangeRates;
+      const fmt = (n) => Math.round(Number(n) || 0).toLocaleString('vi-VN');
+
+      let bankOpts = '';
+      for (const [k, info] of Object.entries(DANH_SACH_NGAN_HANG_VN)) {
+        bankOpts += `<option value="${k}" ${k === window.currentBankCode ? 'selected' : ''}>🏦 ${info.name}</option>`;
+      }
+
+      widget.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+          <span style="font-weight:800; color:var(--sap-brand, #0064d9);">
+            💱 Tỷ giá Ngân hàng VN (${window.exchangeRatesUpdateDate || new Date().toLocaleDateString('vi-VN')})
+          </span>
+          <span id="lblRateSyncStatus" style="font-size:10px; font-weight:700; color:var(--sap-success, #256f3a); background:#f1fdf6; padding:2px 8px; border-radius:10px; border:1px solid #bbf7d0;">
+            🟢 ${sourceLabel || 'Đã cập nhật'}
+          </span>
+        </div>
+
+        <div style="display:flex; gap:6px; align-items:center;">
+          <select onchange="window.currentBankCode=this.value; taiTyGiaNgoaiTeClient(false);" style="flex:1.3; padding:5px 8px; font-weight:700; font-size:11.5px; border-radius:6px;">
+            ${bankOpts}
+          </select>
+          <select onchange="window.currentRateType=this.value; apDungTyGiaHienHanh(window.allBanksDailyRates[window.currentBankCode]);" style="flex:1; padding:5px 6px; font-weight:700; font-size:11px; border-radius:6px;">
+            <option value="sell" ${window.currentRateType === 'sell' ? 'selected' : ''}>Bán ra</option>
+            <option value="buy" ${window.currentRateType === 'buy' ? 'selected' : ''}>Mua CK</option>
+          </select>
+          <button type="button" onclick="taiTyGiaNgoaiTeClient(true); hienToast('🔄 Đang tải lại tỷ giá mới nhất...');" style="background:#ffffff; color:var(--sap-brand, #0064d9); border:1px solid #0064d9; padding:5px 10px; border-radius:14px; font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap;">
+            🔄 Làm mới
+          </button>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:6px; margin-top:2px;">
+          <div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; padding:6px 8px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:800; color:#0f172a;">🇺🇸 1 USD</span>
+            <span style="font-weight:800; color:#0064d9;">${fmt(r.USD)} đ</span>
+          </div>
+          <div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; padding:6px 8px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:800; color:#0f172a;">🇨🇳 1 CNY</span>
+            <span style="font-weight:800; color:#d97706;">${fmt(r.CNY)} đ</span>
+          </div>
+          <div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; padding:6px 8px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:800; color:#0f172a;">🇪🇺 1 EUR</span>
+            <span style="font-weight:800; color:#256f3a;">${fmt(r.EUR)} đ</span>
+          </div>
+          <div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; padding:6px 8px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:800; color:#0f172a;">🇬🇧 1 GBP</span>
+            <span style="font-weight:800; color:#7c3aed;">${fmt(r.GBP)} đ</span>
+          </div>
+        </div>
+      `;
+    };
+
+    // =====================================================
+    // 9. ĐỒNG BỘ ICON SVG SAP FIORI & THANH AUTO-SAVE CLOUD
+    // =====================================================
+    function taoSapSvgIcon(pathData, color = "currentColor", size = "14px") {
+      return `<svg xmlns="http://www.w3.org/2000/svg" fill="${color}" viewBox="0 0 16 16" style="width:${size};height:${size};display:inline-block;vertical-align:middle;flex-shrink:0;"><path d="${pathData}"/></svg>`;
+    }
+
+    const SAP_PATHS = {
+      menu: "M15.25 12.5a.75.75 0 0 1 0 1.5H.75a.75.75 0 0 1 0-1.5h14.5Zm0-5.5a.75.75 0 0 1 0 1.5H.75a.75.75 0 0 1 0-1.5h14.5Zm0-5a.75.75 0 0 1 0 1.5H.75a.75.75 0 0 1 0-1.5h14.5Z",
+      add: "M8 1a.75.75 0 0 1 .75.75v5.5h5.5a.75.75 0 0 1 0 1.5h-5.5v5.5a.75.75 0 0 1-1.5 0v-5.5h-5.5a.75.75 0 0 1 0-1.5h5.5v-5.5A.75.75 0 0 1 8 1Z",
+      cloud: "M7.813 2c2.085 0 3.828 1.332 4.497 3.168 2.099.363 3.69 2.248 3.69 4.38C16 11.724 14.152 14 11.87 14H3.486a3.493 3.493 0 0 1-.472-6.954c0-.08.004-.16.004-.241A4.8 4.8 0 0 1 7.813 2Zm0 1.5A3.3 3.3 0 0 0 4.52 6.805c0 .346-.01.67-.021.982a.75.75 0 0 1-.749.726c-1.243 0-2.249.712-2.249 1.994 0 1.1.894 1.993 1.987 1.993h8.382c1.473 0 2.621-1.59 2.621-2.962a2.937 2.937 0 0 0-2.79-2.933.75.75 0 0 1-.69-.57C10.655 4.578 9.364 3.5 7.813 3.5Z",
+      pdf: "M12.25 0C13.216 0 14 .784 14 1.75v12.5A1.75 1.75 0 0 1 12.25 16h-8.5A1.75 1.75 0 0 1 2 14.25V6.37c0-.417.15-.821.42-1.139L6.38.611A1.751 1.751 0 0 1 7.71 0h4.54ZM7.71 1.5a.25.25 0 0 0-.19.087L7 2.193V5.25a.75.75 0 0 1-.75.75H3.738c-.089.104-.238.37-.238.37v7.88c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25H7.71Z",
+      mail: "M13.25 2A2.75 2.75 0 0 1 16 4.75v6.5A2.75 2.75 0 0 1 13.25 14H2.75A2.75 2.75 0 0 1 0 11.25v-6.5A2.75 2.75 0 0 1 2.75 2h10.5ZM9.521 8.54a2.75 2.75 0 0 1-3.042 0L1.5 5.232v6.018c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25V5.232L9.521 8.54Z",
+      customer: "M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm-.025 10.95a4.903 4.903 0 0 0-4.04 2.12A6.47 6.47 0 0 0 8 14.5a6.47 6.47 0 0 0 4.031-1.403 4.903 4.903 0 0 0-4.056-2.147Z",
+      product: "M4.668 2.077a.75.75 0 0 1 .727.035l5.25 3.25A.75.75 0 0 1 11 6v1.25a.75.75 0 0 1-1.5 0v-.833L5.022 3.646 2.5 5.392v5.682L8 14.375l.445-.267a.75.75 0 1 1 .772 1.287l-.831.499Z"
+    };
+
+    function dongBoSapIconsToanHeThong() {
+      const menuBtn = document.querySelector('.sap-shell-left .sap-icon-btn');
+      if (menuBtn) {
+        menuBtn.innerHTML = taoSapSvgIcon(SAP_PATHS.menu, "#0064d9", "16px");
+      }
+
+      const createBtn = document.querySelector('.sap-shell-right button[onclick*="taoDonMoi"]');
+      if (createBtn) {
+        createBtn.innerHTML = `${taoSapSvgIcon(SAP_PATHS.add, "#ffffff", "13px")} Tạo Đơn Mới`;
+      }
+
+      // Cập nhật chính xác từng nút theo chức năng (đã bỏ nút Lưu Cloud Ngay & Tải PDF thừa)
+      const btnFont = document.querySelector('.sap-pill-bar button[onclick*="batTatPopupFont"]');
+      if (btnFont) btnFont.innerHTML = `<i class="mdi mdi-format-font"></i> Font Chữ`;
+
+      const btnAuto = document.querySelector('.sap-pill-bar button[onclick*="luuDon"]');
+      if (btnAuto) btnAuto.innerHTML = `☁️ Tự động lưu Cloud: BẬT`;
+
+      const btnMail = document.querySelector('.sap-pill-bar button[onclick*="guiEmailChoKhachHang"]');
+      if (btnMail) btnMail.innerHTML = `${taoSapSvgIcon(SAP_PATHS.mail, "#ffffff", "13px")} Tải PDF &amp; Gửi Mail`;
+
+      const cardTitles = document.querySelectorAll('#panelLeftForm .argon-card-title');
+      if (cardTitles[1]) cardTitles[1].innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;">${taoSapSvgIcon(SAP_PATHS.customer, "#0064d9", "15px")} 1. Thông Tin Khách Hàng &amp; Đơn</span>`;
+      if (cardTitles[2]) cardTitles[2].innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;">${taoSapSvgIcon(SAP_PATHS.product, "#0064d9", "15px")} 2. Chi Tiết Hàng Hóa</span>`;
+    }
+
+    // =====================================================
+    // KHỞI CHẠY HỆ THỐNG KHI MỞ WEB (CHẾ ĐỘ ĐA NGƯỜI DÙNG)
+    // =====================================================
+    window.addEventListener('DOMContentLoaded', async () => {
+      khoiTaoGiaoDienThongBaoSAP();
+      damBaoHienThiWebsiteCongTy();
+
+      // 1. Tắt tự động hiện Joule AI khi mới mở trang
+      document.getElementById('sapJouleDrawer')?.classList.remove('open');
+
+      // 2. Thu gọn menu trái trên màn hình nhỏ / điện thoại
+      if (window.innerWidth <= 1024) {
+        document.getElementById('sapSideNav')?.classList.add('collapsed');
+      }
+
+      // 3. Khởi tạo ngày lập & mã đơn riêng biệt cho mỗi người truy cập (tránh 4-5 người đè đơn QUO-2026-001)
+      if (document.getElementById('inNgay') && !document.getElementById('inNgay').value) {
+        document.getElementById('inNgay').value = new Date().toLocaleDateString('vi-VN');
+      }
+      const inMaEl = document.getElementById('inMa');
+      const savedSessionMa = sessionStorage.getItem('argon_active_ma_don');
+      if (inMaEl && (!inMaEl.value || inMaEl.value === 'QUO-2026-001')) {
+        const maRieng = savedSessionMa || taoMaDonNgauNhienKhongTrung();
+        inMaEl.value = maRieng;
+        sessionStorage.setItem('argon_active_ma_don', maRieng);
+      }
+
+      // 4. Đồng bộ Icon SAP, Logo, Watermark
+      dongBoSapIconsToanHeThong();
+      khoiPhucLogoVaWatermarkTuBoNho();
+      window.chuyenManHinhKapella('STUDIO');
+      window.doiCheDo('BG_VN');
+
+      // 5. Kích hoạt lắng nghe Realtime Firestore cho 4-5 người dùng đồng thời
+      kichHoatDongBoRealtimeDaNguoiDung();
+
+      // 6. Tải tỷ giá ngân hàng Việt Nam hôm nay (ưu tiên đọc từ Cloud chung của cả nhóm)
+      setTimeout(() => {
+        taiTyGiaNgoaiTeClient(false);
+      }, 300);
+    });
+
+    window.addEventListener('load', () => {
+      setTimeout(khoiPhucLogoVaWatermarkTuBoNho, 200);
+    });
+
+// ==========================================================================
+// 10. ĐỊNH DẠNG CHỌN VÙNG (SELECTION RANGE) & ĐỒNG BỘ ĐỊNH DẠNG LÊN CLOUD
+// ==========================================================================
+window.currentWordFontSize = 12;
+    window.savedA4SelectionRange = null;
+
+    // 1. Tự động bật chế độ cho phép bôi đen & ghi nhớ chính xác đoạn chữ bạn vừa quét chọn trên tờ A4
+    function kichHoatChonVungTrenA4() {
+      const paper = document.getElementById('a4Paper');
+      if (!paper) return;
+      paper.setAttribute('contenteditable', 'true');
+      paper.setAttribute('spellcheck', 'false');
+      paper.style.outline = 'none';
+
+      const luuVungChon = () => {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+          const range = sel.getRangeAt(0);
+          if (paper.contains(range.commonAncestorContainer) && range.toString().trim().length > 0) {
+            window.savedA4SelectionRange = range.cloneRange();
+          }
+        }
+      };
+
+      paper.addEventListener('mouseup', luuVungChon);
+      paper.addEventListener('keyup', luuVungChon);
+      paper.addEventListener('touchend', luuVungChon);
+      paper.addEventListener('input', () => {
+        duLieuDaThayDoiBoiNguoiDung = true;
+        window.tuDongLuuLenCloud();
+      });
+    }
+
+    function dongBoDinhDangVuaChinhLenCloud() {
+      duLieuDaThayDoiBoiNguoiDung = true;
+      if (typeof window.thuThapDinhDangA4TuyChinh === 'function') {
+        window.thuThapDinhDangA4TuyChinh();
+      }
+      if (typeof window.tuDongLuuLenCloud === 'function') {
+        window.tuDongLuuLenCloud();
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', kichHoatChonVungTrenA4);
+    setTimeout(kichHoatChonVungTrenA4, 500);
+
+    // Khôi phục lại đúng đoạn bôi đen trước khi áp dụng Font / Cỡ chữ / Màu sắc
+    function khoiPhucVungBoiDenA4() {
+      const paper = document.getElementById('a4Paper');
+      if (paper && paper.getAttribute('contenteditable') !== 'true') {
+        paper.setAttribute('contenteditable', 'true');
+      }
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0 && paper && paper.contains(sel.anchorNode) && sel.toString().trim().length > 0) {
+        return sel.getRangeAt(0);
+      }
+      if (window.savedA4SelectionRange && sel) {
+        sel.removeAllRanges();
+        sel.addRange(window.savedA4SelectionRange);
+        return window.savedA4SelectionRange;
+      }
+      return null;
+    }
+
+    // Hàm bọc style trực tiếp vào đúng đoạn chữ đang tô đen (không ảnh hưởng chỗ khác)
+    function apDungStyleChoDoanBoiDen(styleProp, styleVal) {
+      const range = khoiPhucVungBoiDenA4();
+      if (!range || range.collapsed) {
+        if (typeof hienToast === 'function') {
+          hienToast("⚠️ Hãy bôi đen (quét chọn) đoạn chữ trên tờ A4 trước khi đổi!");
+        }
+        return false;
+      }
+
+      const span = document.createElement('span');
+      span.style[styleProp] = styleVal;
+
+      try {
+        const fragment = range.extractContents();
+        // Xóa style trùng bên trong các thẻ con (nếu đoạn đó đã từng đổi trước đó)
+        fragment.querySelectorAll('span').forEach(s => {
+          if (s.style && s.style[styleProp]) s.style[styleProp] = '';
+        });
+        span.appendChild(fragment);
+        range.insertNode(span);
+
+        // Giữ nguyên vùng bôi đen trên đoạn vừa đổi để bạn có thể chỉnh tiếp cỡ chữ / màu sắc
+        const newRange = document.createRange();
+        newRange.selectNodeContents(span);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(newRange);
+        window.savedA4SelectionRange = newRange.cloneRange();
+        return true;
+      } catch (e) {
+        console.warn("Lỗi bọc vùng chọn:", e);
+        return false;
+      }
+    }
+
+    // 2. Đổi Font chữ: Chỉ đổi đúng chỗ đang tô đen
+    window.apDungFontWord2026 = function(fontFamilyVal) {
+      // Xóa thẻ style toàn trang cũ nếu từng bị tạo trước đó
+      const oldGlobalFont = document.getElementById('word2026CustomFontStyle');
+      if (oldGlobalFont) oldGlobalFont.remove();
+
+      if (apDungStyleChoDoanBoiDen('fontFamily', fontFamilyVal)) {
+        dongBoDinhDangVuaChinhLenCloud();
+        if (typeof hienToast === 'function') hienToast("🔤 Đã đổi Font & tự động lưu Cloud!");
+      }
+    };
+
+    // 3. Đổi Cỡ chữ: Chỉ đổi đúng chỗ đang tô đen
+    window.apDungCoChuWord2026 = function(sizePx) {
+      const oldGlobalSize = document.getElementById('word2026CustomSizeStyle');
+      if (oldGlobalSize) oldGlobalSize.remove();
+
+      const num = Math.min(36, Math.max(8, parseFloat(sizePx) || 12));
+      window.currentWordFontSize = num;
+      const sel = document.getElementById('wordFontSizeSelect');
+      if (sel) sel.value = String(num);
+
+      if (apDungStyleChoDoanBoiDen('fontSize', num + 'px')) {
+        dongBoDinhDangVuaChinhLenCloud();
+        if (typeof hienToast === 'function') hienToast(`📏 Đã đổi cỡ chữ (${num}pt) & tự động lưu Cloud!`);
+      }
+    };
+
+    window.tangGiamCoChuWord2026 = function(delta) {
+      window.apDungCoChuWord2026((window.currentWordFontSize || 12) + delta);
+    };
+
+    // 4. In đậm (B), In nghiêng (I), Gạch chân (U), Gạch ngang (ab): Chỉ áp dụng chỗ tô đen
+    window.dinhDangChuWord2026 = function(cmd) {
+      const range = khoiPhucVungBoiDenA4();
+      if (!range || range.collapsed) {
+        if (typeof hienToast === 'function') hienToast("⚠️ Hãy bôi đen đoạn chữ trên tờ A4 trước!");
+        return;
+      }
+      document.execCommand(cmd, false, null);
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0) {
+        window.savedA4SelectionRange = sel.getRangeAt(0).cloneRange();
+      }
+      dongBoDinhDangVuaChinhLenCloud();
+    };
+
+    // 5. Tô dạ quang (Highlight): Chỉ tô chỗ đang bôi đen
+    window.toDaQuangWord2026 = function(color) {
+      const range = khoiPhucVungBoiDenA4();
+      if (!range || range.collapsed) {
+        if (typeof hienToast === 'function') hienToast("⚠️ Hãy bôi đen đoạn chữ cần tô dạ quang!");
+        return;
+      }
+      document.execCommand('hiliteColor', false, color);
+      dongBoDinhDangVuaChinhLenCloud();
+    };
+
+    // 6. Đổi màu chữ (Font Color): Chỉ đổi màu đoạn đang bôi đen
+    window.doiMauChuWord2026 = function(color) {
+      const range = khoiPhucVungBoiDenA4();
+      if (!range || range.collapsed) {
+        if (typeof hienToast === 'function') hienToast("⚠️ Hãy bôi đen đoạn chữ cần đổi màu!");
+        return;
+      }
+      document.execCommand('foreColor', false, color);
+      dongBoDinhDangVuaChinhLenCloud();
+    };
+
+    // 7. Xóa định dạng của đoạn đang bôi đen
+    window.xoaDinhDangWord2026 = function() {
+      const oldGlobalFont = document.getElementById('word2026CustomFontStyle');
+      if (oldGlobalFont) oldGlobalFont.remove();
+      const oldGlobalSize = document.getElementById('word2026CustomSizeStyle');
+      if (oldGlobalSize) oldGlobalSize.remove();
+
+      const range = khoiPhucVungBoiDenA4();
+      if (range && !range.collapsed) {
+        document.execCommand('removeFormat', false, null);
+        const sel = window.getSelection();
+        if (sel && sel.focusNode && sel.focusNode.parentElement) {
+          const parent = sel.focusNode.parentElement;
+          if (parent.tagName === 'SPAN') {
+            parent.style.fontFamily = '';
+            parent.style.fontSize = '';
+            parent.style.backgroundColor = '';
+            parent.style.color = '';
+          }
+        }
+        dongBoDinhDangVuaChinhLenCloud();
+        if (typeof hienToast === 'function') hienToast("🧹 Đã xóa định dạng & cập nhật Cloud!");
+      }
+    };
+
+    window.batTatPopupFont = function(forceState) {
+      // Lưu lại vùng đang bôi đen ngay khoảnh khắc bấm nút "Font Chữ"
+      const paper = document.getElementById('a4Paper');
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0 && paper && paper.contains(sel.anchorNode) && sel.toString().trim().length > 0) {
+        window.savedA4SelectionRange = sel.getRangeAt(0).cloneRange();
+      }
+
+      const modal = document.getElementById('sapFontModalOverlay');
+      if (!modal) return;
+      if (typeof forceState === 'boolean') {
+        modal.style.display = forceState ? 'flex' : 'none';
+      } else {
+        modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
+      }
+    };
